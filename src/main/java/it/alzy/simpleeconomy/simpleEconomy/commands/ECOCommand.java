@@ -36,7 +36,7 @@ public class ECOCommand extends BaseCommand {
 
     @Default
     public void root(Player player) {
-        ChatUtils.send(player, "&#6B7280Usage &#374151| &#F9FAFB/eco &#6B7280<give|set|remove> <player> <amount>");
+        ChatUtils.send(player, config.USAGE_ECO, "%prefix%", config.PREFIX);
         return;
     }
 
@@ -55,12 +55,6 @@ public class ECOCommand extends BaseCommand {
             return false;
         }
         return true;
-    }
-
-    private void sendVaultError(Player player, String message) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            ChatUtils.send(player, "&cErrore Vault: " + message);
-        });
     }
 
     @Subcommand("set")
@@ -83,7 +77,6 @@ public class ECOCommand extends BaseCommand {
         executor.execute(() -> {
             var economy = VaultHook.getEconomy();
             if (economy == null) {
-                sendVaultError(player, "Economy system not found");
                 return;
             }
 
@@ -106,7 +99,6 @@ public class ECOCommand extends BaseCommand {
             }
 
             if (!response.transactionSuccess()) {
-                sendVaultError(player, response.errorMessage);
                 return;
             }
 
@@ -141,13 +133,11 @@ public class ECOCommand extends BaseCommand {
         executor.execute(() -> {
             var economy = VaultHook.getEconomy();
             if (economy == null) {
-                sendVaultError(player, "Economy system not found");
                 return;
             }
 
             EconomyResponse response = economy.depositPlayer(target, amount);
             if (!response.transactionSuccess()) {
-                sendVaultError(player, response.errorMessage);
                 return;
             }
 
@@ -190,7 +180,6 @@ public class ECOCommand extends BaseCommand {
         executor.execute(() -> {
             var economy = VaultHook.getEconomy();
             if (economy == null) {
-                sendVaultError(player, "Economy system not found");
                 return;
             }
 
@@ -204,7 +193,6 @@ public class ECOCommand extends BaseCommand {
 
             EconomyResponse withdraw = economy.withdrawPlayer(target, amount);
             if (!withdraw.transactionSuccess()) {
-                sendVaultError(player, withdraw.errorMessage);
                 return;
             }
 

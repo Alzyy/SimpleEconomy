@@ -50,9 +50,6 @@ public class LangConfig extends BaseConfig {
     @Path("messages.eco.remove_success")
     public String REMOVE_SUCCESS = "%prefix% &#FCA5A5✔ &#6B7280Removed &#F9FAFB%amount% &#6B7280from &#F9FAFB%target%'s balance";
 
-    @Path("messages.eco.unknown_subcommand")
-    public String UNKNOWN_SUBCOMMAND = "%prefix% &#F97316✘ &#EF4444Unknown subcommand &#6B7280| &#FBBF24Use: give, set, or remove";
-
     @Path("messages.eco.usage")
     public String USAGE_ECO = "%prefix% &#6B7280Usage &#374151| &#F9FAFB/eco &#6B7280<give|set|remove> <player> <amount>";
 
