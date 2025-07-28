@@ -1,0 +1,31 @@
+# ───────────────────────────────────────────────
+# SimpleEconomy - AlzyIT
+# Customize balance system, formatting, and storage
+# ───────────────────────────────────────────────
+
+settings:
+  # Default balance given to a new player
+  starting-balance: 1000
+
+  # Symbol displayed after the currency value
+  currency-symbol: "$"
+
+  # Storage system to use: SQLITE or FILE
+  storage-system: SQLITE
+
+  # Auto-save interval in minutes
+  # Automatically saves all cached player data every X minutes
+  auto-save-time: 30
+
+  # Maximum number of threads used for async operations
+  max-thread-pool-size: 2
+
+  #Enable vouchers
+  enable-vouchers: true
+
+format:
+  # Number formatting for large balances
+  thousand: "k"     # e.g. 1,200 -> 1.2k
+  million: "M"      # e.g. 2,000,000 -> 2M
+  billion: "B"     # e.g. 3,000,000,000 -> 3B
+  trillion: "T"    # e.g. 4,000,000,000,000 -> 4T

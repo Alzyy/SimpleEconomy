@@ -1,0 +1,7 @@
+name: SimpleEconomy
+version: '1.0-SNAPSHOT'
+main: it.alzy.simpleeconomy.simpleEconomy.SimpleEconomy
+api-version: '1.21'
+author: 'Alzy'
+prefix: SE
+softdepend: ['Vault']
