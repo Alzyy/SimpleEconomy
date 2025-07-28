@@ -54,7 +54,7 @@ Shows the player's current balance.
 | `simpleconomy.eco.set`           | Use `/eco set`                             |
 | `simpleconomy.eco.give`          | Use `/eco give`                            |
 | `simpleconomy.eco.remove`        | Use `/eco remove`                          |
-| `simpleconomy.command.reload`    | Reload the plugin (if a command exists)    |
+| `simpleconomy.command.reload`    | Reload the plugin                          |
 
 ---
 
@@ -64,8 +64,8 @@ Choose between `sqlite` or `file` storage in the plugin's `settings.yml`.
 Example:
 
 ```yaml
-storage: sqlite
-auto-save-interval: 5 # In minutes
+storage-system: sqlite
+auto-save-time: 5 # In minutes
 ````
 
 ---
@@ -84,8 +84,6 @@ GNU GPLv3 License
 ---
 
 Made with ❤️ by [Alzy](https://github.com/Alzyy)
-
-```
 
 ---
 
