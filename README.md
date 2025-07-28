@@ -20,7 +20,7 @@ It supports data storage via **SQLite** or **flat file** and integrates fully wi
 
 1. Download the plugin `.jar` and place it in your server’s `/plugins` folder.
 2. Start or reload the server to generate the configuration files.
-3. Configure the plugin in `settings.yml` to choose the preferred storage method (`sqlite` or `file`).
+3. Configure the plugin in `config.yml` to choose the preferred storage method (`sqlite` or `file`).
 4. Make sure you have **Vault** installed and a compatible permissions plugin (e.g., LuckPerms).
 
 ---
