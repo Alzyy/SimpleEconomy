@@ -141,7 +141,6 @@ public class SQLiteStorage implements Storage {
                 .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join(); 
-        plugin.getCacheMap().clear();
     }
 
     public void close() {

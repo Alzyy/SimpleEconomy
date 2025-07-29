@@ -98,6 +98,5 @@ public class FileStorage implements Storage {
                 .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        plugin.getCacheMap().clear();
     }
 }

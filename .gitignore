@@ -2,3 +2,5 @@ build/
 .gradle/
 .git/
 .vscode/
+bin/
+gradle/

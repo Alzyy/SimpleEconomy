@@ -1,5 +1,7 @@
 package it.alzy.simpleeconomy.simpleEconomy.configurations;
 
+import java.util.List;
+
 import net.pino.simpleconfig.LightConfig;
 import net.pino.simpleconfig.annotations.Config;
 import net.pino.simpleconfig.annotations.ConfigFile;
@@ -45,6 +47,30 @@ public class SettingsConfig extends LightConfig {
         return this.fileConfiguration.getString("format.trillion", "T");
     }
 
+    public boolean areVoucherEnabled() {
+        return this.fileConfiguration.getBoolean("settings.enable-vouchers", true);
+    }
+
+    public String getVoucherMaterial() {
+        return this.fileConfiguration.getString("vouchers.item", "PAPER");
+    }
+    
+    public String getVoucherItemName() {
+        return this.fileConfiguration.getString("vouchers.name", "PAPER");
+    }
+
+    public List<String> getVoucherLore() {
+        return this.fileConfiguration.getStringList("vouchers.lore");
+    }
+
+    public boolean checkForUpdates() {
+        return this.fileConfiguration.getBoolean("settings.check-for-updates", true);
+    }
+
+    public int getMaxVoucherAmount() {
+        return this.fileConfiguration.getInt("max-check-amount", 1000000);
+    }
+    
     private SettingsConfig() {}
 
 

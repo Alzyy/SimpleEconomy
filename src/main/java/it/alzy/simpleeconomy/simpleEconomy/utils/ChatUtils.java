@@ -33,7 +33,6 @@ public class ChatUtils {
     }
 
     public static Component parse(String message) {
-        System.out.println("Parsing message: " + message); // DEBUG
 
         if (message == null || message.isEmpty()) {
             return EMPTY_COMPONENT;

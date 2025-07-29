@@ -30,7 +30,7 @@ public class SECommand extends BaseCommand {
 
     @Subcommand("reload")
     public void reload(Player player) {
-        if (!player.hasPermission("simpleeconomy.command.reload")) {
+        if (!player.hasPermission("simpleconomy.command.reload")) {
             ChatUtils.send(player, config.NO_PERMISSION, "%prefix%", config.PREFIX);
             return;
         }

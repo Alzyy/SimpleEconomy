@@ -9,9 +9,12 @@ import it.alzy.simpleeconomy.simpleEconomy.SimpleEconomy;
 import it.alzy.simpleeconomy.simpleEconomy.configurations.LangConfig;
 import it.alzy.simpleeconomy.simpleEconomy.utils.ChatUtils;
 import it.alzy.simpleeconomy.simpleEconomy.utils.VaultHook;
+import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
+import java.math.BigDecimal;
 
 @CommandAlias("pay")
 @Description("Sends money to a player")
@@ -23,9 +26,8 @@ public class PayCommand extends BaseCommand {
     @Default
     @CommandCompletion("@players")
     public void root(Player sender, String targetName, double amount) {
-
-        if (amount <= 0) {
-            ChatUtils.send(sender, config.NEGATIVE_AMOUNT, "%prefix%", config.PREFIX);
+        if (!Double.isFinite(amount) || amount <= 0 || BigDecimal.valueOf(amount).scale() > 2) {
+            ChatUtils.send(sender, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
             return;
         }
 
@@ -35,17 +37,18 @@ public class PayCommand extends BaseCommand {
         }
 
         Player target = Bukkit.getPlayerExact(targetName);
-        if (target == null || target.getName() == null) {
+        if (target == null) {
             ChatUtils.send(sender, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
             return;
         }
 
-        plugin.getExecutor().execute(() -> {
-            if (VaultHook.getEconomy() == null) {
-                return;
-            }
+        Economy economy = VaultHook.getEconomy();
+        if (economy == null) {
+            return;
+        }
 
-            double senderBalance = VaultHook.getEconomy().getBalance(sender);
+        plugin.getExecutor().execute(() -> {
+            double senderBalance = economy.getBalance(sender);
             if (senderBalance < amount) {
                 Bukkit.getScheduler().runTask(plugin, () -> ChatUtils.send(sender, config.NOT_ENOUGH_MONEY,
                         "%prefix%", config.PREFIX,
@@ -53,45 +56,40 @@ public class PayCommand extends BaseCommand {
                 return;
             }
 
-            EconomyResponse withdrawal = VaultHook.getEconomy().withdrawPlayer(sender, amount);
-            if (!withdrawal.transactionSuccess()) {
+            EconomyResponse withdrawal = economy.withdrawPlayer(sender, amount);
+            if (!withdrawal.transactionSuccess())
                 return;
-            }
 
-            EconomyResponse deposit = VaultHook.getEconomy().depositPlayer(target, amount);
+            EconomyResponse deposit = economy.depositPlayer(target, amount);
             if (!deposit.transactionSuccess()) {
-                VaultHook.getEconomy().depositPlayer(sender, amount); 
+                economy.depositPlayer(sender, amount); 
                 return;
             }
 
-            double newSenderBalance = VaultHook.getEconomy().getBalance(sender);
-            double newTargetBalance = VaultHook.getEconomy().getBalance(target);
+            double newSenderBalance = economy.getBalance(sender);
+            double newTargetBalance = economy.getBalance(target);
 
             plugin.getCacheMap().put(sender.getUniqueId(), newSenderBalance);
             plugin.getCacheMap().put(target.getUniqueId(), newTargetBalance);
+
             plugin.getStorage().save(sender.getUniqueId(), newSenderBalance);
             plugin.getStorage().save(target.getUniqueId(), newTargetBalance);
 
             String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
-            String targetDisplayName = target.getName() != null ? target.getName() : "Unknown";
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 ChatUtils.send(sender, config.GAVE_MONEY,
                         "%prefix%", config.PREFIX,
                         "%amount%", formattedAmount,
-                        "%target%", targetDisplayName);
+                        "%target%", target.getName());
 
                 if (target.isOnline()) {
-                    Player targetPlayer = target.getPlayer();
-                    if (targetPlayer != null) {
-                        ChatUtils.send(targetPlayer, config.RECEIVED_MONEY,
-                                "%prefix%", config.PREFIX,
-                                "%amount%", formattedAmount,
-                                "%source%", sender.getName());
-                    }
+                    ChatUtils.send(target, config.RECEIVED_MONEY,
+                            "%prefix%", config.PREFIX,
+                            "%amount%", formattedAmount,
+                            "%source%", sender.getName());
                 }
             });
         });
     }
-
 }

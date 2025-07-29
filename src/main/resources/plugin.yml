@@ -1,5 +1,5 @@
 name: SimpleEconomy
-version: '1.0-SNAPSHOT'
+version: ${version}
 main: it.alzy.simpleeconomy.simpleEconomy.SimpleEconomy
 api-version: '1.21'
 author: 'Alzy'

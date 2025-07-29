@@ -1,31 +1,48 @@
 # ───────────────────────────────────────────────
-# SimpleEconomy - AlzyIT
-# Customize balance system, formatting, and storage
+# SimpleEconomy by AlzyIT v1.1
+# Configuration file for balance system, formatting, storage, and vouchers.
 # ───────────────────────────────────────────────
 
 settings:
-  # Default balance given to a new player
+  # Default balance assigned to a new player
   starting-balance: 1000
 
-  # Symbol displayed after the currency value
+  # Symbol displayed after the currency amount
   currency-symbol: "$"
 
-  # Storage system to use: SQLITE or FILE
+  # Storage system: choose between SQLITE or FILE
   storage-system: SQLITE
 
-  # Auto-save interval in minutes
-  # Automatically saves all cached player data every X minutes
+  # Interval (in minutes) to auto-save all cached player data
   auto-save-time: 30
 
-  # Maximum number of threads used for async operations
+  # Maximum number of threads used for asynchronous tasks
   max-thread-pool-size: 2
 
-  #Enable vouchers
+  # Enable or disable cheque (voucher) system
   enable-vouchers: true
 
+  # Check for plugin updates on startup
+  check-for-updates: true
+
+vouchers:
+  # Material used to represent a voucher item
+  item: PAPER
+
+  # Display name of the voucher (does NOT support PlaceholderAPI)
+  name: "&cCHECK &7(%playerName%)"
+
+  # Maximum withdrawable amount per voucher (set to 0 to disable limit)
+  max-check-amount: 1000000
+
+  # Lore shown on the voucher (does NOT support PlaceholderAPI)
+  lore:
+    - "&eAmount: %amount%"
+    - "&cCreated: %creationDate%"
+
 format:
-  # Number formatting for large balances
+  # Short number formatting for large balances
   thousand: "k"     # e.g. 1,200 -> 1.2k
   million: "M"      # e.g. 2,000,000 -> 2M
-  billion: "B"     # e.g. 3,000,000,000 -> 3B
-  trillion: "T"    # e.g. 4,000,000,000,000 -> 4T
+  billion: "B"      # e.g. 3,000,000,000 -> 3B
+  trillion: "T"     # e.g. 4,000,000,000,000 -> 4T

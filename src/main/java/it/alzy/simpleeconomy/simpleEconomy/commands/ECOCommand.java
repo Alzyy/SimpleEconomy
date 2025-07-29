@@ -2,7 +2,7 @@ package it.alzy.simpleeconomy.simpleEconomy.commands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
+import org.bukkit.command.CommandSender;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
@@ -18,6 +18,7 @@ import it.alzy.simpleeconomy.simpleEconomy.utils.VaultHook;
 
 import net.milkbowl.vault.economy.EconomyResponse;
 
+import java.math.BigDecimal;
 import java.util.concurrent.ExecutorService;
 
 @CommandAlias("eco")
@@ -35,12 +36,12 @@ public class ECOCommand extends BaseCommand {
     }
 
     @Default
-    public void root(Player player) {
+    public void root(CommandSender player) {
         ChatUtils.send(player, config.USAGE_ECO, "%prefix%", config.PREFIX);
         return;
     }
 
-    private OfflinePlayer getOfflinePlayerOrSendNotFound(Player sender, String targetName) {
+    private OfflinePlayer getOfflinePlayerOrSendNotFound(CommandSender sender, String targetName) {
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
         if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
             ChatUtils.send(sender, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
@@ -49,17 +50,29 @@ public class ECOCommand extends BaseCommand {
         return target;
     }
 
-    private boolean validateAmount(Player player, double amount) {
+    private boolean validateAmount(CommandSender player, double amount) {
+        if (!Double.isFinite(amount)) {
+            ChatUtils.send(player, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
+            return false;
+        }
+
         if (amount <= 0) {
             ChatUtils.send(player, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
             return false;
         }
+
+
+        BigDecimal bd = BigDecimal.valueOf(amount);
+        if (bd.scale() > 2) {
+            ChatUtils.send(player, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
+            return false;
+        }
+
         return true;
     }
-
     @Subcommand("set")
     @CommandCompletion("@players")
-    public void setSubCommand(Player player, String targetName, double amount) {
+    public void setSubCommand(CommandSender player, String targetName, double amount) {
         if (!player.hasPermission("simpleconomy.eco.set")) {
             ChatUtils.send(player, config.NO_PERMISSION, "%prefix%", config.PREFIX);
             return;
@@ -118,7 +131,7 @@ public class ECOCommand extends BaseCommand {
 
     @Subcommand("give")
     @CommandCompletion("@players")
-    public void giveSubCommand(Player player, String targetName, double amount) {
+    public void giveSubCommand(CommandSender player, String targetName, double amount) {
         if (!player.hasPermission("simpleconomy.eco.give")) {
             ChatUtils.send(player, config.NO_PERMISSION, "%prefix%", config.PREFIX);
             return;
@@ -165,7 +178,7 @@ public class ECOCommand extends BaseCommand {
 
     @Subcommand("remove")
     @CommandCompletion("@players")
-    public void removeSubCommand(Player player, String targetName, double amount) {
+    public void removeSubCommand(CommandSender player, String targetName, double amount) {
         if (!player.hasPermission("simpleconomy.eco.remove")) {
             ChatUtils.send(player, config.NO_PERMISSION, "%prefix%", config.PREFIX);
             return;

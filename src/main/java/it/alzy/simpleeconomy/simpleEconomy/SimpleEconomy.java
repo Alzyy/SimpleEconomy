@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.google.common.collect.Maps;
@@ -14,13 +15,18 @@ import it.alzy.simpleeconomy.simpleEconomy.commands.BalanceCommand;
 import it.alzy.simpleeconomy.simpleEconomy.commands.ECOCommand;
 import it.alzy.simpleeconomy.simpleEconomy.commands.PayCommand;
 import it.alzy.simpleeconomy.simpleEconomy.commands.SECommand;
+import it.alzy.simpleeconomy.simpleEconomy.commands.VoucherCommand;
 import it.alzy.simpleeconomy.simpleEconomy.configurations.LangConfig;
 import it.alzy.simpleeconomy.simpleEconomy.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.simpleEconomy.events.PlayerListener;
+import it.alzy.simpleeconomy.simpleEconomy.events.VoucherEvents;
 import it.alzy.simpleeconomy.simpleEconomy.storage.Storage;
 import it.alzy.simpleeconomy.simpleEconomy.storage.impl.FileStorage;
 import it.alzy.simpleeconomy.simpleEconomy.storage.impl.SQLiteStorage;
+import it.alzy.simpleeconomy.simpleEconomy.tasks.AutoSaveTask;
 import it.alzy.simpleeconomy.simpleEconomy.utils.FormatUtils;
+import it.alzy.simpleeconomy.simpleEconomy.utils.ItemUtils;
+import it.alzy.simpleeconomy.simpleEconomy.utils.UpdateUtils;
 import it.alzy.simpleeconomy.simpleEconomy.utils.VaultHook;
 import lombok.Getter;
 
@@ -41,6 +47,14 @@ public final class SimpleEconomy extends JavaPlugin {
     @Getter
     private FormatUtils formatUtils;
 
+    @Getter
+    private ItemUtils itemUtils;
+
+    @Getter
+    private NamespacedKey amountKey;
+    @Getter
+    private NamespacedKey uuidKey;
+
     private PaperCommandManager commandManager;
 
     @Override
@@ -60,7 +74,14 @@ public final class SimpleEconomy extends JavaPlugin {
 
         // Initialize utils
         formatUtils = new FormatUtils();
+        itemUtils = new ItemUtils();
+        amountKey = new NamespacedKey(this, getName() + "_voucheramount");
+        uuidKey = new NamespacedKey(this, getName() + "_voucheruuid");
         new VaultHook();
+        if(SettingsConfig.getInstance().checkForUpdates()) {
+            new UpdateUtils().checkForUpdates();
+        }
+        new AutoSaveTask(this).register();
     }
 
     private void registerCommands() {
@@ -68,7 +89,10 @@ public final class SimpleEconomy extends JavaPlugin {
         commandManager.registerCommand(new ECOCommand());
         commandManager.registerCommand(new BalanceCommand());
         commandManager.registerCommand(new PayCommand());
-
+        if(SettingsConfig.getInstance().areVoucherEnabled()) {
+            commandManager.registerCommand(new VoucherCommand());
+            getServer().getPluginManager().registerEvents(new VoucherEvents(), instance);
+        }
     }
 
     @Override
@@ -93,6 +117,7 @@ public final class SimpleEconomy extends JavaPlugin {
         }
 
         instance = null;
+        cacheMap.clear();
     }
 
     private void loadStorageSystem() {

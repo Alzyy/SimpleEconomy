@@ -65,6 +65,14 @@ public class LangConfig extends BaseConfig {
     @Path("messages.self-command")
     public String SELF = "%prefix% &#F97316✘ &#EF4444You cannot use this command on yourself";
 
+    @Path("messages.inventory-full")
+    public String INVENTORY_FULL = "%prefix% &#F97316✘ &#EF4444Your inventory is full!";
+
+    @Path("messages.voucher-created")
+    public String VOUCHER_CREATED = "%prefix% &#22C55E✔ &#6B7280Voucher created successfully for &#F9FAFB%amount%";
+
+    @Path("messages.voucher-checked")
+    public String VOUCHER_CHECKED = "%prefix% &#22C55Eℹ &#6B7280You have checked a voucher worth &#F9FAFB%amount%";
 
     public static LangConfig getInstance() {
         if (instance == null)

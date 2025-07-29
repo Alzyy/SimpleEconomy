@@ -119,8 +119,6 @@ public class VaultHook implements Economy {
         double newBalance = SimpleEconomy.getInstance().getCacheMap().compute(uuid, (key, oldBalance) -> {
             return (oldBalance == null ? 0.0 : oldBalance) + amount;
         });
-
-
         return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, "Success");
     }
 
