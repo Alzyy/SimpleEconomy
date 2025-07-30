@@ -99,4 +99,12 @@ public class FileStorage implements Storage {
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
     }
+
+    @Override
+    public CompletableFuture<Boolean> hasAccount(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            File file = new File(folder, uuid.toString() + ".yml");
+            return file.exists();
+        }, plugin.getExecutor());
+    }
 }

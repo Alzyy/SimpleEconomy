@@ -71,6 +71,34 @@ public class SettingsConfig extends LightConfig {
         return this.fileConfiguration.getInt("max-check-amount", 1000000);
     }
     
+    public String getDBHost() {
+        return this.fileConfiguration.getString("database.host", "localhost");
+    }
+    
+    public String getDBUsername() {
+        return this.fileConfiguration.getString("database.username", "root");
+    }
+
+    public String getDBPassword() {
+        return this.fileConfiguration.getString("database.password", "CHANGEME");
+    }
+    
+    public String getDBName() {
+        return this.fileConfiguration.getString("database.database", "simpleeconomy");
+    }
+    
+    public int getDBPort() {
+        return this.fileConfiguration.getInt("database.port",3306);
+    }
+
+    public int getDBMaxPool() {
+        return this.fileConfiguration.getInt("database.max-connection-pool", 10);
+    }
+
+    public boolean registerPlaceholderAPI() {
+        return this.fileConfiguration.getBoolean("settings.use-placeholderapi", true);
+    }
+
     private SettingsConfig() {}
 
 

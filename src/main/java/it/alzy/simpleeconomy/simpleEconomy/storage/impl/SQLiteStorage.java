@@ -142,10 +142,28 @@ public class SQLiteStorage implements Storage {
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join(); 
     }
+    
+    @Override
+    public CompletableFuture<Boolean> hasAccount(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (Connection conn = dataSource.getConnection();
+                    PreparedStatement stmt = conn.prepareStatement("SELECT balance FROM players WHERE uuid = ?")) {
+                stmt.setString(1, uuid.toString());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    return rs.next();
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to load data for UUID " + uuid + ": " + e.getMessage());
+                return false;
+            }
+        }, plugin.getExecutor());
+    }
 
     public void close() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
         }
     }
+
+    
 }

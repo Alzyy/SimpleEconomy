@@ -21,6 +21,12 @@ public class PlayerListener implements Listener {
         UUID uuid = event.getPlayerProfile().getId();
         String name = event.getPlayerProfile().getName();
 
+        plugin.getStorage().hasAccount(uuid).thenAccept(hasAccount -> {
+            plugin.getStorage().create(uuid);
+            plugin.getLogger().info("Created account for " + name + " (" + uuid + ")");
+            return;
+        });
+
         plugin.getStorage().load(uuid).thenAccept(balance -> {
             plugin.getLogger().info("Loaded balance for " + name + " (" + uuid + "): " + balance);
         });

@@ -10,4 +10,5 @@ public interface Storage {
     void saveSync(UUID uuid, double balance);
     CompletableFuture<Double> load(UUID player);
     void create(UUID player);
+    CompletableFuture<Boolean> hasAccount(UUID uuid);
 }

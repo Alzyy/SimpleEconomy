@@ -19,7 +19,7 @@ import net.kyori.adventure.text.Component;
 
 public class ItemUtils {
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd:MM:yyyy HH:mm");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final LangConfig config = LangConfig.getInstance();
     private static final SettingsConfig SETTINGS = SettingsConfig.getInstance();
     private static final SimpleEconomy plugin = SimpleEconomy.getInstance();

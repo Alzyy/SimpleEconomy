@@ -5,7 +5,7 @@ plugins {
 
 description = 'SimpleEconomy'
 group = 'it.alzy.simpleeconomy'
-version = '1.1'
+version = '1.0'
 
 repositories {
     mavenCentral()
@@ -19,6 +19,9 @@ repositories {
     }
     maven { url "https://repo.aikar.co/content/groups/aikar/" }
     maven { url "https://jitpack.io" }
+    maven {
+        url = 'https://repo.extendedclip.com/releases/'
+    }
 }
 
 dependencies {
@@ -29,7 +32,9 @@ dependencies {
     implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
     compileOnly "com.github.kaepsis:VaultAPI:ennamo"
     implementation "com.zaxxer:HikariCP:7.0.0"
-
+    dependencies {
+        compileOnly 'me.clip:placeholderapi:2.11.6'
+    }
 }
  
 def targetJavaVersion = 21

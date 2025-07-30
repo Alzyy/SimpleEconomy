@@ -10,7 +10,7 @@ settings:
   # Symbol displayed after the currency amount
   currency-symbol: "$"
 
-  # Storage system: choose between SQLITE or FILE
+  # Storage system: choose between SQLITE, FILE or MYSQL
   storage-system: SQLITE
 
   # Interval (in minutes) to auto-save all cached player data
@@ -24,6 +24,17 @@ settings:
 
   # Check for plugin updates on startup
   check-for-updates: true
+  
+  #Register PlaceholderAPI expansion
+  use-placeholderapi: true
+
+database:
+  host: "localhost"
+  username: "root"
+  password: "CHANGEME"
+  database: "simpleeconomy"
+  max-connection-pool: 10
+  port: 3306
 
 vouchers:
   # Material used to represent a voucher item
