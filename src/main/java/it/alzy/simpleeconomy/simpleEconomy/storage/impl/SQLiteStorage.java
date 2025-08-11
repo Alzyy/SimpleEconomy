@@ -6,7 +6,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import java.io.File;
 import java.sql.*;
 import java.util.UUID;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
@@ -135,12 +134,20 @@ public class SQLiteStorage implements Storage {
         });
     }
 
-    public void bulkSaveAndShutdown() {
-        List<CompletableFuture<Void>> futures = plugin.getCacheMap().entrySet().stream()
-                .map(entry -> saveAsync(entry.getKey(), entry.getValue()))
-                .toList();
+    @Override
+    public void bulkSave() {
+        var futures = plugin.getCacheMap().entrySet().stream()
+            .map(entry -> CompletableFuture.runAsync(() -> saveSync(entry.getKey(), entry.getValue()), executor))
+            .toList();
 
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join(); 
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    }
+
+    @Override
+    public void close() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+        }
     }
     
     @Override
@@ -157,12 +164,6 @@ public class SQLiteStorage implements Storage {
                 return false;
             }
         }, plugin.getExecutor());
-    }
-
-    public void close() {
-        if (dataSource != null && !dataSource.isClosed()) {
-            dataSource.close();
-        }
     }
 
     

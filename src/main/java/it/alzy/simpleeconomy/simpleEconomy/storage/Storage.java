@@ -11,4 +11,6 @@ public interface Storage {
     CompletableFuture<Double> load(UUID player);
     void create(UUID player);
     CompletableFuture<Boolean> hasAccount(UUID uuid);
+    void bulkSave();
+    void close();
 }

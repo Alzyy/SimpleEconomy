@@ -5,8 +5,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import it.alzy.simpleeconomy.simpleEconomy.SimpleEconomy;
 import it.alzy.simpleeconomy.simpleEconomy.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.simpleEconomy.storage.Storage;
-import it.alzy.simpleeconomy.simpleEconomy.storage.impl.FileStorage;
-import it.alzy.simpleeconomy.simpleEconomy.storage.impl.SQLiteStorage;
 
 public class AutoSaveTask extends BukkitRunnable {
 
@@ -19,11 +17,7 @@ public class AutoSaveTask extends BukkitRunnable {
     public void run() {
         Storage storage = plugin.getStorage();
         plugin.getLogger().info(String.format("Saving data for %d players from cache has started.", plugin.getCacheMap().size()));
-        if (storage instanceof FileStorage fStorage) {
-            fStorage.bulkSaveAndShutdown();
-        } else if (storage instanceof SQLiteStorage sLiteStorage) {
-            sLiteStorage.bulkSaveAndShutdown();
-        }
+        storage.bulkSave();
     }
 
 

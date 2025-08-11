@@ -22,6 +22,7 @@ public class PlayerListener implements Listener {
         String name = event.getPlayerProfile().getName();
 
         plugin.getStorage().hasAccount(uuid).thenAccept(hasAccount -> {
+            if(hasAccount) return;
             plugin.getStorage().create(uuid);
             plugin.getLogger().info("Created account for " + name + " (" + uuid + ")");
             return;

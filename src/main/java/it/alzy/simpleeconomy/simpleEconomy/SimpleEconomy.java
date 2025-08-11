@@ -2,13 +2,14 @@ package it.alzy.simpleeconomy.simpleEconomy;
 
 import co.aikar.commands.PaperCommandManager;
 import com.google.common.collect.Maps;
-import it.alzy.simpleeconomy.api.PAPIExpansion;
-import it.alzy.simpleeconomy.records.DatabaseInfo;
+
+import it.alzy.simpleeconomy.simpleEconomy.api.PAPIExpansion;
 import it.alzy.simpleeconomy.simpleEconomy.commands.*;
 import it.alzy.simpleeconomy.simpleEconomy.configurations.LangConfig;
 import it.alzy.simpleeconomy.simpleEconomy.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.simpleEconomy.events.PlayerListener;
 import it.alzy.simpleeconomy.simpleEconomy.events.VoucherEvents;
+import it.alzy.simpleeconomy.simpleEconomy.records.DatabaseInfo;
 import it.alzy.simpleeconomy.simpleEconomy.storage.Storage;
 import it.alzy.simpleeconomy.simpleEconomy.storage.impl.FileStorage;
 import it.alzy.simpleeconomy.simpleEconomy.storage.impl.MySQLStorage;
@@ -71,15 +72,8 @@ public final class SimpleEconomy extends JavaPlugin {
     public void onDisable() {
         if (storage != null) {
             try {
-                if (storage instanceof FileStorage fs) {
-                    fs.bulkSaveAndShutdown();
-                } else if (storage instanceof SQLiteStorage sqlite) {
-                    sqlite.bulkSaveAndShutdown();
-                    sqlite.close();
-                } else if (storage instanceof MySQLStorage mysql) {
-                    mysql.bulkSaveAndShutdown();
-                    mysql.close();
-                }
+                storage.bulkSave();
+                storage.close();
             } catch (Exception e) {
                 getLogger().severe("Error while shutting down storage: " + e.getMessage());
                 e.printStackTrace();
@@ -153,7 +147,9 @@ public final class SimpleEconomy extends JavaPlugin {
                         settings.getDBPassword(),
                         settings.getDBPort(),
                         settings.getDBName(),
-                        settings.getDBMaxPool());
+                        settings.getDBMaxPool(),
+                        settings.getDBPrefixTable()
+                        );
                 storage = new MySQLStorage(this, info);
             }
             default -> {

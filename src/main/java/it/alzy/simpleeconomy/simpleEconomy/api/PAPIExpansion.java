@@ -1,4 +1,4 @@
-package it.alzy.simpleeconomy.api;
+package it.alzy.simpleeconomy.simpleEconomy.api;
 
 
 import org.bukkit.entity.Player;

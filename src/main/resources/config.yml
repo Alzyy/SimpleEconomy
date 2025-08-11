@@ -33,6 +33,7 @@ database:
   username: "root"
   password: "CHANGEME"
   database: "simpleeconomy"
+  table-prefix: "se_"
   max-connection-pool: 10
   port: 3306
 

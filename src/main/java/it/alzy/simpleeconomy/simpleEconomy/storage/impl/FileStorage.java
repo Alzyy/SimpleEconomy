@@ -92,12 +92,19 @@ public class FileStorage implements Storage {
         executor.execute(() -> writeBalanceToFile(uuid, balance));
     }
 
-    public void bulkSaveAndShutdown() {
-        List<CompletableFuture<Void>> futures = plugin.getCacheMap().entrySet().stream()
-                .map(entry -> saveAsync(entry.getKey(), entry.getValue()))
-                .toList();
+
+    @Override
+    public void bulkSave() {
+        var futures = plugin.getCacheMap().entrySet().stream()
+            .map(entry -> CompletableFuture.runAsync(() -> saveSync(entry.getKey(), entry.getValue()), executor))
+            .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    }
+
+    @Override
+    public void close() {
+        // no need
     }
 
     @Override

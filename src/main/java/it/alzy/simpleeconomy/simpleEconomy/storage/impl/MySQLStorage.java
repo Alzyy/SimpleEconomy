@@ -11,9 +11,9 @@ import java.util.concurrent.Executor;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import it.alzy.simpleeconomy.records.DatabaseInfo;
 import it.alzy.simpleeconomy.simpleEconomy.SimpleEconomy;
 import it.alzy.simpleeconomy.simpleEconomy.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.simpleEconomy.records.DatabaseInfo;
 import it.alzy.simpleeconomy.simpleEconomy.storage.Storage;
 
 public class MySQLStorage implements Storage {
@@ -21,10 +21,12 @@ public class MySQLStorage implements Storage {
     private final SimpleEconomy plugin;
     private final HikariDataSource dataSource;
     private final Executor executor;
+    private final String tableName;
 
     public MySQLStorage(SimpleEconomy plugin, DatabaseInfo info) {
         this.plugin = plugin;
         this.executor = plugin.getExecutor();
+        this.tableName = info.tablePrefix() + "players";
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(info.JDBCString());
@@ -35,18 +37,21 @@ public class MySQLStorage implements Storage {
         config.setConnectionTestQuery("SELECT 1");
         config.setPoolName("SimpleEconomy-MySQL-Pool");
 
-        this.dataSource = new HikariDataSource(config); 
+        this.dataSource = new HikariDataSource(config);
 
+        createTableIfNotExists();
+    }
+
+    private void createTableIfNotExists() {
+        String sql = "CREATE TABLE IF NOT EXISTS `" + tableName + "` (" +
+                     "uuid VARCHAR(36) PRIMARY KEY, " +
+                     "balance DOUBLE NOT NULL" +
+                     ")";
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement("""
-                            CREATE TABLE IF NOT EXISTS players (
-                                uuid VARCHAR(36) PRIMARY KEY,
-                                balance DOUBLE NOT NULL
-                            )
-                        """)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().severe(String.format("Couldn't create table using MySQL: %s", e.getMessage()));
+            plugin.getLogger().severe("Couldn't create table using MySQL: " + e.getMessage());
         }
     }
 
@@ -57,12 +62,10 @@ public class MySQLStorage implements Storage {
 
     @Override
     public void saveSync(UUID uuid, double balance) {
+        String sql = "INSERT INTO `" + tableName + "` (uuid, balance) VALUES (?, ?) " +
+                     "ON DUPLICATE KEY UPDATE balance = VALUES(balance)";
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement("""
-                            INSERT INTO players (uuid, balance)
-                            VALUES (?, ?)
-                            ON DUPLICATE KEY UPDATE balance = VALUES(balance)
-                        """)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, uuid.toString());
             stmt.setDouble(2, balance);
             stmt.executeUpdate();
@@ -74,8 +77,9 @@ public class MySQLStorage implements Storage {
     @Override
     public CompletableFuture<Double> load(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT balance FROM `" + tableName + "` WHERE uuid = ?";
             try (Connection conn = dataSource.getConnection();
-                    PreparedStatement stmt = conn.prepareStatement("SELECT balance FROM players WHERE uuid = ?")) {
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, uuid.toString());
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
@@ -98,14 +102,16 @@ public class MySQLStorage implements Storage {
         });
     }
 
-    public void bulkSaveAndShutdown() {
+    @Override
+    public void bulkSave() {
         var futures = plugin.getCacheMap().entrySet().stream()
-                .map(entry -> CompletableFuture.runAsync(() -> saveSync(entry.getKey(), entry.getValue()), executor))
-                .toList();
+            .map(entry -> CompletableFuture.runAsync(() -> saveSync(entry.getKey(), entry.getValue()), executor))
+            .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
     }
 
+    @Override
     public void close() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
@@ -115,16 +121,17 @@ public class MySQLStorage implements Storage {
     @Override
     public CompletableFuture<Boolean> hasAccount(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT 1 FROM `" + tableName + "` WHERE uuid = ?";
             try (Connection conn = dataSource.getConnection();
-                    PreparedStatement stmt = conn.prepareStatement("SELECT balance FROM players WHERE uuid = ?")) {
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, uuid.toString());
                 try (ResultSet rs = stmt.executeQuery()) {
                     return rs.next();
                 }
             } catch (SQLException e) {
-                plugin.getLogger().warning("Failed to load data for UUID " + uuid + ": " + e.getMessage());
+                plugin.getLogger().warning("Failed to check account for UUID " + uuid + ": " + e.getMessage());
                 return false;
             }
-        }, plugin.getExecutor());
+        }, executor);
     }
 }

@@ -99,6 +99,10 @@ public class SettingsConfig extends LightConfig {
         return this.fileConfiguration.getBoolean("settings.use-placeholderapi", true);
     }
 
+    public String getDBPrefixTable() {
+        return this.fileConfiguration.getString("database.table-prefix", "se_");
+    }
+
     private SettingsConfig() {}
 
 
