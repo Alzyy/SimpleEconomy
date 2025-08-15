@@ -41,6 +41,7 @@ public class PlayerListener implements Listener {
         if (balance != null) {
             plugin.getLogger().info("Saving economy data for: " + event.getPlayer().getName());
             plugin.getStorage().save(uuid, balance);
+            plugin.getCacheMap().remove(uuid);
         } else {
             plugin.getLogger().warning("No cached balance to save for: " + event.getPlayer().getName());
         }
