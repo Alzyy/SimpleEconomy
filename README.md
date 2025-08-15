@@ -2,7 +2,7 @@
 # SimpleEconomy
 
 **SimpleEconomy** is a lightweight, high-performance economy plugin for **Spigot 1.21**.  
-It supports data storage via **SQLite** or **flat file** and integrates fully with **Vault**, ensuring compatibility with other economy-based plugins.
+It supports data storage via **MySQL**, **SQLite** or **flat file** and integrates fully with **Vault**, ensuring compatibility with other economy-based plugins.
 
 ---
 
@@ -10,7 +10,7 @@ It supports data storage via **SQLite** or **flat file** and integrates fully wi
 
 - Vault-compatible economy system
 - Lightweight and optimized for performance
-- Configurable data storage (SQLite or flat file)
+- Configurable data storage (MYSQL, SQLite or flat file)
 - Core economy commands (`/eco`, `/pay`, `/balance`)
 - Permission-based command access
 
