@@ -154,7 +154,7 @@ public class SQLiteStorage implements Storage {
     public CompletableFuture<Boolean> hasAccount(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
             try (Connection conn = dataSource.getConnection();
-                    PreparedStatement stmt = conn.prepareStatement("SELECT balance FROM players WHERE uuid = ?")) {
+                    PreparedStatement stmt = conn.prepareStatement("SELECT balance FROM users WHERE uuid = ?")) {
                 stmt.setString(1, uuid.toString());
                 try (ResultSet rs = stmt.executeQuery()) {
                     return rs.next();
