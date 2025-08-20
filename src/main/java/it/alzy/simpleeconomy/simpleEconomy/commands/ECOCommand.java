@@ -19,6 +19,7 @@ import it.alzy.simpleeconomy.simpleEconomy.utils.VaultHook;
 import net.milkbowl.vault.economy.EconomyResponse;
 
 import java.math.BigDecimal;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 @CommandAlias("eco")
@@ -50,6 +51,31 @@ public class ECOCommand extends BaseCommand {
         return target;
     }
 
+
+    private Collection<? extends OfflinePlayer> resolveTargets(CommandSender sender, String targetName) {
+        if (targetName.equalsIgnoreCase("@a")) { // all players
+            return Bukkit.getOnlinePlayers();
+        }
+
+        if (targetName.equalsIgnoreCase("@p")) { //nearest or self
+            if (sender instanceof OfflinePlayer p) {
+                return List.of(p);
+            }
+            return List.of();
+        }
+
+        if (targetName.equalsIgnoreCase("@r")) { //random player
+            var online = Bukkit.getOnlinePlayers();
+            if (online.isEmpty()) return List.of();
+            int idx = new Random().nextInt(online.size());
+            return List.of(online.stream().toList().get(idx));
+        }
+
+        OfflinePlayer target = getOfflinePlayerOrSendNotFound(sender, targetName); //fallback
+        if (target == null) return List.of();
+        return List.of(target);
+    }
+
     private boolean validateAmount(CommandSender player, double amount) {
         if (!Double.isFinite(amount)) {
             ChatUtils.send(player, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
@@ -61,7 +87,6 @@ public class ECOCommand extends BaseCommand {
             return false;
         }
 
-
         BigDecimal bd = BigDecimal.valueOf(amount);
         if (bd.scale() > 2) {
             ChatUtils.send(player, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
@@ -70,8 +95,9 @@ public class ECOCommand extends BaseCommand {
 
         return true;
     }
+
     @Subcommand("set")
-    @CommandCompletion("@players")
+    @CommandCompletion("@players|@a|@p|@r")
     public void setSubCommand(CommandSender player, String targetName, double amount) {
         if (!player.hasPermission("simpleconomy.eco.set")) {
             ChatUtils.send(player, config.NO_PERMISSION, "%prefix%", config.PREFIX);
@@ -83,54 +109,58 @@ public class ECOCommand extends BaseCommand {
             return;
         }
 
-        OfflinePlayer target = getOfflinePlayerOrSendNotFound(player, targetName);
-        if (target == null)
+        var targets = resolveTargets(player, targetName);
+        if (targets.isEmpty()) {
+            ChatUtils.send(player, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
             return;
+        }
 
-        executor.execute(() -> {
-            var economy = VaultHook.getEconomy();
-            if (economy == null) {
-                return;
-            }
+        for (OfflinePlayer target : targets) {
+            executor.execute(() -> {
+                var economy = VaultHook.getEconomy();
+                if (economy == null) {
+                    return;
+                }
 
-            double currentBalance = economy.getBalance(target);
-            if (currentBalance == amount) {
+                double currentBalance = economy.getBalance(target);
+                if (currentBalance == amount) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        ChatUtils.send(player, config.SET_SUCCESS,
+                                "%prefix%", config.PREFIX,
+                                "%amount%", plugin.getFormatUtils().formatBalance(amount),
+                                "%target%", target.getName());
+                    });
+                    return;
+                }
+
+                EconomyResponse response;
+                if (currentBalance > amount) {
+                    response = economy.withdrawPlayer(target, currentBalance - amount);
+                } else {
+                    response = economy.depositPlayer(target, amount - currentBalance);
+                }
+
+                if (!response.transactionSuccess()) {
+                    return;
+                }
+
+                plugin.getCacheMap().put(target.getUniqueId(), amount);
+                plugin.getStorage().save(target.getUniqueId(), amount);
+
+                String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
+
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     ChatUtils.send(player, config.SET_SUCCESS,
                             "%prefix%", config.PREFIX,
-                            "%amount%", plugin.getFormatUtils().formatBalance(amount),
+                            "%amount%", formattedAmount,
                             "%target%", target.getName());
                 });
-                return;
-            }
-
-            EconomyResponse response;
-            if (currentBalance > amount) {
-                response = economy.withdrawPlayer(target, currentBalance - amount);
-            } else {
-                response = economy.depositPlayer(target, amount - currentBalance);
-            }
-
-            if (!response.transactionSuccess()) {
-                return;
-            }
-
-            plugin.getCacheMap().put(target.getUniqueId(), amount);
-            plugin.getStorage().save(target.getUniqueId(), amount);
-
-            String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                ChatUtils.send(player, config.SET_SUCCESS,
-                        "%prefix%", config.PREFIX,
-                        "%amount%", formattedAmount,
-                        "%target%", target.getName());
             });
-        });
+        }
     }
 
     @Subcommand("give")
-    @CommandCompletion("@players")
+    @CommandCompletion("@players|@a|@p|@r")
     public void giveSubCommand(CommandSender player, String targetName, double amount) {
         if (!player.hasPermission("simpleconomy.eco.give")) {
             ChatUtils.send(player, config.NO_PERMISSION, "%prefix%", config.PREFIX);
@@ -139,45 +169,49 @@ public class ECOCommand extends BaseCommand {
         if (!validateAmount(player, amount))
             return;
 
-        OfflinePlayer target = getOfflinePlayerOrSendNotFound(player, targetName);
-        if (target == null)
+        var targets = resolveTargets(player, targetName);
+        if (targets.isEmpty()) {
+            ChatUtils.send(player, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
             return;
+        }
 
-        executor.execute(() -> {
-            var economy = VaultHook.getEconomy();
-            if (economy == null) {
-                return;
-            }
+        for (OfflinePlayer target : targets) {
+            executor.execute(() -> {
+                var economy = VaultHook.getEconomy();
+                if (economy == null) {
+                    return;
+                }
 
-            EconomyResponse response = economy.depositPlayer(target, amount);
-            if (!response.transactionSuccess()) {
-                return;
-            }
+                EconomyResponse response = economy.depositPlayer(target, amount);
+                if (!response.transactionSuccess()) {
+                    return;
+                }
 
-            double newBalance = economy.getBalance(target);
-            plugin.getCacheMap().put(target.getUniqueId(), newBalance);
-            plugin.getStorage().save(target.getUniqueId(), newBalance);
+                double newBalance = economy.getBalance(target);
+                plugin.getCacheMap().put(target.getUniqueId(), newBalance);
+                plugin.getStorage().save(target.getUniqueId(), newBalance);
 
-            String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
+                String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                ChatUtils.send(player, config.GAVE_MONEY,
-                        "%prefix%", config.PREFIX,
-                        "%amount%", formattedAmount,
-                        "%target%", target.getName());
-
-                if (target.isOnline()) {
-                    ChatUtils.send(target.getPlayer(), config.RECEIVED_MONEY,
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    ChatUtils.send(player, config.GAVE_MONEY,
                             "%prefix%", config.PREFIX,
                             "%amount%", formattedAmount,
-                            "%source%", player.getName());
-                }
+                            "%target%", target.getName());
+
+                    if (target.isOnline()) {
+                        ChatUtils.send(target.getPlayer(), config.RECEIVED_MONEY,
+                                "%prefix%", config.PREFIX,
+                                "%amount%", formattedAmount,
+                                "%source%", player.getName());
+                    }
+                });
             });
-        });
+        }
     }
 
     @Subcommand("remove")
-    @CommandCompletion("@players")
+    @CommandCompletion("@players|@a|@p|@r")
     public void removeSubCommand(CommandSender player, String targetName, double amount) {
         if (!player.hasPermission("simpleconomy.eco.remove")) {
             ChatUtils.send(player, config.NO_PERMISSION, "%prefix%", config.PREFIX);
@@ -186,48 +220,52 @@ public class ECOCommand extends BaseCommand {
         if (!validateAmount(player, amount))
             return;
 
-        OfflinePlayer target = getOfflinePlayerOrSendNotFound(player, targetName);
-        if (target == null)
+        var targets = resolveTargets(player, targetName);
+        if (targets.isEmpty()) {
+            ChatUtils.send(player, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
             return;
+        }
 
-        executor.execute(() -> {
-            var economy = VaultHook.getEconomy();
-            if (economy == null) {
-                return;
-            }
+        for (OfflinePlayer target : targets) {
+            executor.execute(() -> {
+                var economy = VaultHook.getEconomy();
+                if (economy == null) {
+                    return;
+                }
 
-            double currentBalance = economy.getBalance(target);
-            if (currentBalance < amount) {
+                double currentBalance = economy.getBalance(target);
+                if (currentBalance < amount) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        ChatUtils.send(player, config.NOT_ENOUGH_MONEY, "%prefix%", config.PREFIX);
+                    });
+                    return;
+                }
+
+                EconomyResponse withdraw = economy.withdrawPlayer(target, amount);
+                if (!withdraw.transactionSuccess()) {
+                    return;
+                }
+
+                double newBalance = economy.getBalance(target);
+                plugin.getCacheMap().put(target.getUniqueId(), newBalance);
+                plugin.getStorage().save(target.getUniqueId(), newBalance);
+
+                String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
+
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    ChatUtils.send(player, config.NOT_ENOUGH_MONEY, "%prefix%", config.PREFIX);
-                });
-                return;
-            }
-
-            EconomyResponse withdraw = economy.withdrawPlayer(target, amount);
-            if (!withdraw.transactionSuccess()) {
-                return;
-            }
-
-            double newBalance = economy.getBalance(target);
-            plugin.getCacheMap().put(target.getUniqueId(), newBalance);
-            plugin.getStorage().save(target.getUniqueId(), newBalance);
-
-            String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                ChatUtils.send(player, config.REMOVED_MONEY,
-                        "%prefix%", config.PREFIX,
-                        "%amount%", formattedAmount,
-                        "%target%", target.getName());
-
-                if (target.isOnline()) {
-                    ChatUtils.send(target.getPlayer(), config.MONEY_REMOVED,
+                    ChatUtils.send(player, config.REMOVED_MONEY,
                             "%prefix%", config.PREFIX,
                             "%amount%", formattedAmount,
-                            "%source%", player.getName());
-                }
+                            "%target%", target.getName());
+
+                    if (target.isOnline()) {
+                        ChatUtils.send(target.getPlayer(), config.MONEY_REMOVED,
+                                "%prefix%", config.PREFIX,
+                                "%amount%", formattedAmount,
+                                "%source%", player.getName());
+                    }
+                });
             });
-        });
+        }
     }
 }

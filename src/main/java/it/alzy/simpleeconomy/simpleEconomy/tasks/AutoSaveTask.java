@@ -15,6 +15,7 @@ public class AutoSaveTask extends BukkitRunnable {
 
     @Override
     public void run() {
+        if(plugin.getCacheMap().isEmpty()) return;
         Storage storage = plugin.getStorage();
         plugin.getLogger().info(String.format("Saving data for %d players from cache has started.", plugin.getCacheMap().size()));
         storage.bulkSave();
