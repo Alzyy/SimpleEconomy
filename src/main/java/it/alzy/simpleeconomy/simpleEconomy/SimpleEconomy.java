@@ -15,9 +15,11 @@ import it.alzy.simpleeconomy.simpleEconomy.storage.impl.FileStorage;
 import it.alzy.simpleeconomy.simpleEconomy.storage.impl.MySQLStorage;
 import it.alzy.simpleeconomy.simpleEconomy.storage.impl.SQLiteStorage;
 import it.alzy.simpleeconomy.simpleEconomy.tasks.AutoSaveTask;
+import it.alzy.simpleeconomy.simpleEconomy.tasks.BalTopRefreshTask;
 import it.alzy.simpleeconomy.simpleEconomy.utils.*;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -31,6 +33,8 @@ public final class SimpleEconomy extends JavaPlugin {
 
     @Getter
     private ConcurrentMap<UUID, Double> cacheMap;
+    @Getter @Setter
+    private ConcurrentMap<String, Double> topMap;
     @Getter
     private ExecutorService executor;
     @Getter
@@ -116,7 +120,7 @@ public final class SimpleEconomy extends JavaPlugin {
 
         executor = Executors.newFixedThreadPool(settings.getThreadPoolSize());
         cacheMap = Maps.newConcurrentMap();
-
+        topMap = Maps.newConcurrentMap();
         formatUtils = new FormatUtils();
         itemUtils = new ItemUtils();
 
@@ -163,6 +167,7 @@ public final class SimpleEconomy extends JavaPlugin {
         registerListeners();
         registerCommands();
         new AutoSaveTask(this).register();
+        new BalTopRefreshTask(this).register();
 
         if (SettingsConfig.getInstance().registerPlaceholderAPI()) {
             if (getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) {
@@ -190,6 +195,7 @@ public final class SimpleEconomy extends JavaPlugin {
         commandManager.registerCommand(new ECOCommand());
         commandManager.registerCommand(new BalanceCommand());
         commandManager.registerCommand(new PayCommand());
+        commandManager.registerCommand(new BalTopCommand());
 
         if (SettingsConfig.getInstance().areVoucherEnabled()) {
             commandManager.registerCommand(new VoucherCommand());

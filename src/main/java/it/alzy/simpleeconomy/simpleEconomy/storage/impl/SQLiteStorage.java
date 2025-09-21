@@ -5,6 +5,8 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import java.io.File;
 import java.sql.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -164,6 +166,27 @@ public class SQLiteStorage implements Storage {
                 return false;
             }
         }, plugin.getExecutor());
+    }
+
+    @Override
+    public Map<String, Double> getTopBalances(int limit) {
+        Map<String, Double> topBalances = new LinkedHashMap<>();
+        String sql = "SELECT uuid, balance FROM users ORDER BY balance DESC LIMIT ?";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                double balance = rs.getDouble("balance");
+                topBalances.put(uuid, balance);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to retrieve top balances", e);
+        }
+
+        return topBalances;
     }
 
     

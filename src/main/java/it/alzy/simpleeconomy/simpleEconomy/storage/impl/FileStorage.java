@@ -2,6 +2,9 @@ package it.alzy.simpleeconomy.simpleEconomy.storage.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -105,6 +108,46 @@ public class FileStorage implements Storage {
     public void close() {
         // no need
     }
+
+    @Override
+    public Map<String, Double> getTopBalances(int limit) {
+        try {
+            var task = executor.submit(() -> {
+                Map<String, Double> balances = new HashMap<>();
+
+                File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml"));
+                if (files != null) {
+                    for (File file : files) {
+                        try {
+                            YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+                            double balance = config.getDouble("balance", SettingsConfig.getInstance().startingBalance());
+                            String uuid = file.getName().replace(".yml", "");
+                            balances.put(uuid, balance);
+                        } catch (Exception e) {
+                            plugin.getLogger().log(Level.WARNING, "Failed to read balance from " + file.getName(), e);
+                        }
+                    }
+                }
+
+                return balances.entrySet().stream()
+                        .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
+                        .limit(limit)
+                        .collect(
+                                java.util.stream.Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        Map.Entry::getValue,
+                                        (a, b) -> a,
+                                        LinkedHashMap::new
+                                )
+                        );
+            });
+            return task.get();
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to get top balances", e);
+            return Map.of();
+        }
+    }
+
 
     @Override
     public CompletableFuture<Boolean> hasAccount(UUID uuid) {

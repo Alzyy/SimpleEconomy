@@ -1,5 +1,5 @@
 # ───────────────────────────────────────────────
-# SimpleEconomy by AlzyIT v1.1
+# SimpleEconomy by AlzyIT v1.7
 # Configuration file for balance system, formatting, storage, and vouchers.
 # ───────────────────────────────────────────────
 
@@ -21,6 +21,12 @@ settings:
 
   # Enable or disable cheque (voucher) system
   enable-vouchers: true
+
+  # Interval (in minutes) to automatically refresh baltop
+  baltop-refresh-interval: 20
+
+  # Bal top limit (max number of players shown in /baltop)
+  baltop-limit: 10
 
   # Check for plugin updates on startup
   check-for-updates: true

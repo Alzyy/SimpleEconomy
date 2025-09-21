@@ -95,6 +95,14 @@ public class SettingsConfig extends LightConfig {
         return this.fileConfiguration.getInt("database.max-connection-pool", 10);
     }
 
+    public int getBalTopInterval() {
+        return this.fileConfiguration.getInt("settings.baltop-update-interval", 20);
+    }
+
+    public int getTopPlayersShown() {
+        return this.fileConfiguration.getInt("settings.baltop-limit", 10);
+    }
+
     public boolean registerPlaceholderAPI() {
         return this.fileConfiguration.getBoolean("settings.use-placeholderapi", true);
     }

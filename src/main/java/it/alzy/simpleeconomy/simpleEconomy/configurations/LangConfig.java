@@ -74,6 +74,14 @@ public class LangConfig extends BaseConfig {
     @Path("messages.voucher-checked")
     public String VOUCHER_CHECKED = "%prefix% &#22C55Eℹ &#6B7280You have checked a voucher worth &#F9FAFB%amount%";
 
+    @Path("messages.baltop.header")
+    public String BALTOP_HEADER = "&#22C55E💰 &#6B7280Top &#F9FAFB%limit% &#6B7280richest players";
+    @Path("messages.baltop.entry")
+    public String BALTOP_ENTRY = "&#6B7280#%position% &#F9FAFB%player% &#6B7280- &#22C55E%balance%";
+    @Path("messages.baltop.refreshed")
+    public String BALTOP_REFRESHED = "%prefix% &#22C55E✔ &#6B7280Top balances list refreshed";
+
+
     public static LangConfig getInstance() {
         if (instance == null)
             instance = new LangConfig();

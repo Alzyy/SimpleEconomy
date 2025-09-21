@@ -4,9 +4,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -133,5 +136,26 @@ public class MySQLStorage implements Storage {
                 return false;
             }
         }, executor);
+    }
+
+    @Override
+    public Map<String, Double> getTopBalances(int limit) {
+        Map<String, Double> topBalances = new LinkedHashMap<>();
+        String sql = "SELECT uuid, balance FROM users ORDER BY balance DESC LIMIT ?";
+
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                double balance = rs.getDouble("balance");
+                topBalances.put(uuid, balance);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to retrieve top balances", e);
+        }
+
+        return topBalances;
     }
 }
