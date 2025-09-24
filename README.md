@@ -1,89 +1,104 @@
+## **SimpleEconomy**
+**SimpleEconomy** is a lightweight, high-performance economy plugin for **Spigot 1.21**.
+It supports data storage via **MySQL**, **SQLite**, or **flat file**, and fully integrates with **Vault** for compatibility with other economy-based plugins.
 
-# SimpleEconomy
+Enjoying the plugin? Leave a review! It only takes a moment, but it means the world to me.
 
-**SimpleEconomy** is a lightweight, high-performance economy plugin for **Spigot 1.21**.  
-It supports data storage via **MySQL**, **SQLite** or **flat file** and integrates fully with **Vault**, ensuring compatibility with other economy-based plugins.
+## **✅ Features**
 
----
+* ✅ Vault-compatible economy system
 
-## 🔧 Features
 
-- Vault-compatible economy system
-- Lightweight and optimized for performance
-- Configurable data storage (MYSQL, SQLite or flat file)
-- Core economy commands (`/eco`, `/pay`, `/balance`)
-- Permission-based command access
+* ⚡ Lightweight and optimized for performance
 
----
 
-## 📦 Installation
+* Configurable data storage (MySQL, SQLite, or flat file)
 
-1. Download the plugin `.jar` and place it in your server’s `/plugins` folder.
-2. Start or reload the server to generate the configuration files.
-3. Configure the plugin in `config.yml` to choose the preferred storage method (`sqlite` or `file`).
-4. Make sure you have **Vault** installed and a compatible permissions plugin (e.g., LuckPerms).
 
----
+* Core economy commands: /eco, /pay, /balance, /withdraw
 
-## 💬 Commands
 
-### `/eco <set|give|remove> <player> <amount>`
-Admin command to manage a player's balance.
+* Permission-based command access
 
-- `/eco set Alzy 100`
-- `/eco give Steve 50`
-- `/eco remove Alex 25`
+## ** Installation**
 
-### `/pay <player> <amount>`
-Allows players to send money to each other.
+1. Download the plugin .jar file
 
-- `/pay Steve 10`
 
-### `/balance` or `/bal`
-Shows the player's current balance.
+1. Place it in your server’s /plugins folder
 
-- `/balance`
 
----
+1. Start or reload the server to generate configuration files
 
-## 🔐 Permissions
 
-| Permission                        | Description                                |
-|----------------------------------|--------------------------------------------|
-| `simpleconomy.balance.others`    | View other players' balances               |
-| `simpleconomy.eco.set`           | Use `/eco set`                             |
-| `simpleconomy.eco.give`          | Use `/eco give`                            |
-| `simpleconomy.eco.remove`        | Use `/eco remove`                          |
-| `simpleconomy.command.reload`    | Reload the plugin                          |
+1. Open config.yml and set your preferred storage method: mysql, sqlite or file
 
----
 
-## 📁 Configuration
+1. Make sure **Vault** is installed, along with a permissions plugin like **LuckPerms**
 
-Choose between `sqlite` or `file` storage in the plugin's `settings.yml`.  
-Example:
+## ** Commands**
+## **/eco <set|give|remove> <player> <amount>**
+Admin command to manage a player’s balance
+**Examples:**
 
-```yaml
+/eco set Alzy 100
+/eco give Steve 50
+/eco remove Alex 25
+
+## **/pay <player> <amount>**
+Allows players to send money to each other
+**Example:**
+
+/pay Steve 10
+
+## **/balance or /bal**
+Displays the player’s current balance
+**Example:**
+
+/balance
+
+## ** Permissions**
+** 
+ Permission** **Description**
+simpleconomy.balance.others View other players' balances
+simpleconomy.eco.set Use /eco set
+simpleconomy.eco.give Use /eco give
+simpleconomy.eco.remove Use /eco remove
+simpleconomy.command.reload Reload the plugin
+## **⚙️ Configuration**
+Inside config.yml, choose your preferred storage system and auto-save interval:
+
 storage-system: sqlite
 auto-save-time: 5 # In minutes
-````
 
----
+## ** Dependencies**
 
-## ✅ Dependencies
+* [Vault]('https://www.spigotmc.org/resources/vault.34315/') – **Required**
 
-* [Vault](https://www.spigotmc.org/resources/vault.34315/) (required)
-* [LuckPerms](https://luckperms.net/) or another permissions plugin (recommended)
 
----
+* [LuckPerms]('https://www.spigotmc.org/resources/luckperms.28140/') – Or any permissions plugin (**Recommended**)
 
-## 📄 License
 
-GNU GPLv3 License
+* [PlaceholderAPI]('https://www.spigotmc.org/resources/placeholderapi.6245/') – For placeholder support
 
----
+## **️ Placeholders**
+If you use **[PlaceholderAPI]('https://www.spigotmc.org/resources/placeholderapi.6245/')**, SimpleEconomy provides the following placeholders:
 
-Made with ❤️ by [Alzy](https://github.com/Alzyy)
+** 
+ Placeholder** **Description**
+%seco_balance_normal% - Returns the player’s balance as a raw double
+%seco_balance_formatted% - Returns the player’s balance in a formatted string (e.g. 10k, 1.2M)
+%seco_top_position% - For player position in baltop
+%seco_baltop_$number% - For name of $number player in baltop
+%seco_baltop_$number_balance% - For balance of $number player in baltop
+Run /papi reload after installing to load the placeholders.
 
----
+## ** License**
+This plugin is licensed under the **GNU GPLv3 License**.
 
+## **❤️ Credits**
+Made with love by [Alzy]('https://github.com/Alzyy/SimpleEconomy')
+
+## **❗ IMPORTANT!**
+This is my first plugin, and while it may not be perfect, I’ve put a lot of care into making it simple, stable, and easy to use.
+I welcome suggestions, bug reports, and feature requests — feel free to open an issue or pull request on GitHub.
