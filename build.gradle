@@ -5,7 +5,7 @@ plugins {
 
 description = 'SimpleEconomy'
 group = 'it.alzy.simpleeconomy'
-version = '1.7'
+version = '1.8'
 
 repositories {
     mavenCentral()
@@ -32,9 +32,8 @@ dependencies {
     implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
     compileOnly "com.github.kaepsis:VaultAPI:ennamo"
     implementation "com.zaxxer:HikariCP:7.0.0"
-    dependencies {
-        compileOnly 'me.clip:placeholderapi:2.11.6'
-    }
+    compileOnly 'me.clip:placeholderapi:2.11.6'
+
 }
  
 def targetJavaVersion = 21

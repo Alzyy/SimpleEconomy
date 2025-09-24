@@ -17,6 +17,7 @@ import it.alzy.simpleeconomy.simpleEconomy.utils.ChatUtils;
 import it.alzy.simpleeconomy.simpleEconomy.utils.VaultHook;
 
 import net.milkbowl.vault.economy.EconomyResponse;
+import org.bukkit.entity.Player;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -51,27 +52,26 @@ public class ECOCommand extends BaseCommand {
         return target;
     }
 
-
     private Collection<? extends OfflinePlayer> resolveTargets(CommandSender sender, String targetName) {
         if (targetName.equalsIgnoreCase("@a")) { // all players
             return Bukkit.getOnlinePlayers();
         }
 
-        if (targetName.equalsIgnoreCase("@p")) { //nearest or self
+        if (targetName.equalsIgnoreCase("@p")) { // nearest or self
             if (sender instanceof OfflinePlayer p) {
                 return List.of(p);
             }
             return List.of();
         }
 
-        if (targetName.equalsIgnoreCase("@r")) { //random player
+        if (targetName.equalsIgnoreCase("@r")) { // random player
             var online = Bukkit.getOnlinePlayers();
             if (online.isEmpty()) return List.of();
             int idx = new Random().nextInt(online.size());
             return List.of(online.stream().toList().get(idx));
         }
 
-        OfflinePlayer target = getOfflinePlayerOrSendNotFound(sender, targetName); //fallback
+        OfflinePlayer target = getOfflinePlayerOrSendNotFound(sender, targetName); // fallback
         if (target == null) return List.of();
         return List.of(target);
     }
@@ -110,10 +110,6 @@ public class ECOCommand extends BaseCommand {
         }
 
         var targets = resolveTargets(player, targetName);
-        if (targets.isEmpty()) {
-            ChatUtils.send(player, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
-            return;
-        }
 
         for (OfflinePlayer target : targets) {
             executor.execute(() -> {
@@ -144,7 +140,6 @@ public class ECOCommand extends BaseCommand {
                     return;
                 }
 
-                plugin.getCacheMap().put(target.getUniqueId(), amount);
                 plugin.getStorage().save(target.getUniqueId(), amount);
 
                 String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
@@ -155,6 +150,11 @@ public class ECOCommand extends BaseCommand {
                             "%amount%", formattedAmount,
                             "%target%", target.getName());
                 });
+
+                Player online = Bukkit.getPlayer(target.getUniqueId());
+                if (online != null && online.isOnline()) {
+                    plugin.getCacheMap().put(target.getUniqueId(), amount);
+                }
             });
         }
     }
@@ -170,10 +170,6 @@ public class ECOCommand extends BaseCommand {
             return;
 
         var targets = resolveTargets(player, targetName);
-        if (targets.isEmpty()) {
-            ChatUtils.send(player, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
-            return;
-        }
 
         for (OfflinePlayer target : targets) {
             executor.execute(() -> {
@@ -188,7 +184,6 @@ public class ECOCommand extends BaseCommand {
                 }
 
                 double newBalance = economy.getBalance(target);
-                plugin.getCacheMap().put(target.getUniqueId(), newBalance);
                 plugin.getStorage().save(target.getUniqueId(), newBalance);
 
                 String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
@@ -199,11 +194,15 @@ public class ECOCommand extends BaseCommand {
                             "%amount%", formattedAmount,
                             "%target%", target.getName());
 
-                    if (target.isOnline()) {
+                    if (target.getPlayer() != null && target.getPlayer().isOnline()) {
                         ChatUtils.send(target.getPlayer(), config.RECEIVED_MONEY,
                                 "%prefix%", config.PREFIX,
                                 "%amount%", formattedAmount,
                                 "%source%", player.getName());
+                        Player online = Bukkit.getPlayer(target.getUniqueId());
+                        if (online != null && online.isOnline()) {
+                            plugin.getCacheMap().put(target.getUniqueId(), amount);
+                        }
                     }
                 });
             });
@@ -221,10 +220,6 @@ public class ECOCommand extends BaseCommand {
             return;
 
         var targets = resolveTargets(player, targetName);
-        if (targets.isEmpty()) {
-            ChatUtils.send(player, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
-            return;
-        }
 
         for (OfflinePlayer target : targets) {
             executor.execute(() -> {
@@ -247,7 +242,6 @@ public class ECOCommand extends BaseCommand {
                 }
 
                 double newBalance = economy.getBalance(target);
-                plugin.getCacheMap().put(target.getUniqueId(), newBalance);
                 plugin.getStorage().save(target.getUniqueId(), newBalance);
 
                 String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
@@ -258,11 +252,15 @@ public class ECOCommand extends BaseCommand {
                             "%amount%", formattedAmount,
                             "%target%", target.getName());
 
-                    if (target.isOnline()) {
+                    if (target.getPlayer() != null && target.getPlayer().isOnline()) {
                         ChatUtils.send(target.getPlayer(), config.MONEY_REMOVED,
                                 "%prefix%", config.PREFIX,
                                 "%amount%", formattedAmount,
                                 "%source%", player.getName());
+                        Player online = Bukkit.getPlayer(target.getUniqueId());
+                        if (online != null && online.isOnline()) {
+                            plugin.getCacheMap().put(target.getUniqueId(), amount);
+                        }
                     }
                 });
             });

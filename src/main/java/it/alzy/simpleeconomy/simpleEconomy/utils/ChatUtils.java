@@ -1,5 +1,6 @@
 package it.alzy.simpleeconomy.simpleEconomy.utils;
 
+import it.alzy.simpleeconomy.simpleEconomy.SimpleEconomy;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -72,7 +73,13 @@ public class ChatUtils {
         }
 
         String processedMessage = applyPlaceholders(message, placeholders);
-        sender.sendMessage(parse(processedMessage));
+        if(Bukkit.isPrimaryThread()) {
+            sender.sendMessage(parse(processedMessage));
+            return;
+        } else {
+            Bukkit.getScheduler().runTask(SimpleEconomy.getInstance(), () -> sender.sendMessage(parse(processedMessage)));
+            return;
+        }
     }
 
     public static void send(CommandSender sender, String message) {

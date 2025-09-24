@@ -1,10 +1,7 @@
 package it.alzy.simpleeconomy.simpleEconomy.commands;
 
 import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.CommandAlias;
-import co.aikar.commands.annotation.Default;
-import co.aikar.commands.annotation.Description;
-import co.aikar.commands.annotation.Subcommand;
+import co.aikar.commands.annotation.*;
 import it.alzy.simpleeconomy.simpleEconomy.SimpleEconomy;
 import it.alzy.simpleeconomy.simpleEconomy.configurations.LangConfig;
 import it.alzy.simpleeconomy.simpleEconomy.utils.ChatUtils;
@@ -29,13 +26,14 @@ public class SECommand extends BaseCommand {
     }
 
     @Subcommand("reload")
+    @Description("Reloads the plugin configurations")
     public void reload(Player player) {
         if (!player.hasPermission("simpleconomy.command.reload")) {
             ChatUtils.send(player, config.NO_PERMISSION, "%prefix%", config.PREFIX);
             return;
         }
-
         plugin.reloadConfigurations();
         ChatUtils.send(player, config.RELOAD_SUCCESS, "%prefix%", config.PREFIX);
     }
+
 }

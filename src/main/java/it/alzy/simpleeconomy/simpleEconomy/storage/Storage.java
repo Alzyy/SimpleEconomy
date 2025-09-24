@@ -12,6 +12,7 @@ public interface Storage {
     CompletableFuture<Double> load(UUID player);
     void create(UUID player);
     CompletableFuture<Boolean> hasAccount(UUID uuid);
+    CompletableFuture<Double> getBalance(UUID uuid);
     Map<String, Double> getTopBalances(int limit);
     void bulkSave();
     void close();

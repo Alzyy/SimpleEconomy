@@ -16,6 +16,7 @@ import it.alzy.simpleeconomy.simpleEconomy.storage.impl.MySQLStorage;
 import it.alzy.simpleeconomy.simpleEconomy.storage.impl.SQLiteStorage;
 import it.alzy.simpleeconomy.simpleEconomy.tasks.AutoSaveTask;
 import it.alzy.simpleeconomy.simpleEconomy.tasks.BalTopRefreshTask;
+import it.alzy.simpleeconomy.simpleEconomy.tasks.CheckUpdateTask;
 import it.alzy.simpleeconomy.simpleEconomy.utils.*;
 
 import lombok.Getter;
@@ -131,6 +132,7 @@ public final class SimpleEconomy extends JavaPlugin {
 
         if (settings.checkForUpdates()) {
             new UpdateUtils().checkForUpdates();
+            new CheckUpdateTask(this).register();
         }
     }
 

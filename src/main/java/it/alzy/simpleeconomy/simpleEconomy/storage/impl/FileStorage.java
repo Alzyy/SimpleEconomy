@@ -58,10 +58,6 @@ public class FileStorage implements Storage {
         writeBalanceToFile(uuid, balance);
     }
 
-    public CompletableFuture<Void> saveAsync(UUID uuid, double balance) {
-        return CompletableFuture.runAsync(() -> writeBalanceToFile(uuid, balance), executor);
-    }
-
     @Override
     public CompletableFuture<Double> load(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
@@ -82,6 +78,26 @@ public class FileStorage implements Storage {
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Failed to load balance for " + uuid, e);
                 plugin.getCacheMap().put(uuid, 0d);
+                return 0d;
+            }
+        }, executor);
+    }
+
+    @Override
+    public CompletableFuture<Double> getBalance(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            File file = new File(folder, uuid.toString() + ".yml");
+            double startingBalance = SettingsConfig.getInstance().startingBalance();
+
+            if (!file.exists()) {
+                return startingBalance;
+            }
+
+            try {
+                YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+                return config.getDouble("balance", startingBalance);
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to get balance for " + uuid, e);
                 return 0d;
             }
         }, executor);

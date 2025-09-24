@@ -31,7 +31,7 @@ settings:
   # Check for plugin updates on startup
   check-for-updates: true
   
-  #Register PlaceholderAPI expansion
+  # Register PlaceholderAPI expansion
   use-placeholderapi: true
 
 database:

@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import it.alzy.simpleeconomy.simpleEconomy.SimpleEconomy;
+import org.jetbrains.annotations.NotNull;
 
 public class UpdateUtils {
 
@@ -22,33 +23,7 @@ public class UpdateUtils {
 
     public void checkForUpdates() {
         try {
-            URI uri = new URI(API_URL);
-            URL url = uri.toURL();
-
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            int status = con.getResponseCode();
-            InputStream inputStream;
-
-            if (status >= 200 && status < 300) {
-                inputStream = con.getInputStream();
-            } else {
-                inputStream = con.getErrorStream();
-            }
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
-            StringBuilder response = new StringBuilder();
-            String line;
-
-            while ((line = in.readLine()) != null) {
-                response.append(line);
-            }
-
-            in.close();
-            con.disconnect();
-
-            String responseBody = response.toString();
+            String responseBody = getString();
             String latestVersion = extractValue(responseBody, "name");
 
             if (latestVersion == null) {
@@ -75,6 +50,49 @@ public class UpdateUtils {
         } catch (IOException | URISyntaxException e) {
             plugin.getLogger().warning("⚠️ Error checking for updates: " + e.getMessage());
         }
+    }
+
+    private static @NotNull String getString() throws URISyntaxException, IOException {
+        URI uri = new URI(API_URL);
+        URL url = uri.toURL();
+
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod("GET");
+
+        int status = con.getResponseCode();
+        InputStream inputStream;
+
+        if (status >= 200 && status < 300) {
+            inputStream = con.getInputStream();
+        } else {
+            inputStream = con.getErrorStream();
+        }
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+        StringBuilder response = new StringBuilder();
+        String line;
+
+        while ((line = in.readLine()) != null) {
+            response.append(line);
+        }
+
+        in.close();
+        con.disconnect();
+
+        String responseBody = response.toString();
+        return responseBody;
+    }
+
+
+    public static String getLatestVersion() {
+        String responseBody = null;
+        try {
+            responseBody = getString();
+        } catch (IOException | URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        String latestVersion = extractValue(responseBody, "name");
+        return latestVersion;
     }
 
     public static String extractValue(String json, String key) {

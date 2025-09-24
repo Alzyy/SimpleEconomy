@@ -25,7 +25,6 @@ public class PlayerListener implements Listener {
             if(hasAccount) return;
             plugin.getStorage().create(uuid);
             plugin.getLogger().info("Created account for " + name + " (" + uuid + ")");
-            return;
         });
 
         plugin.getStorage().load(uuid).thenAccept(balance -> {

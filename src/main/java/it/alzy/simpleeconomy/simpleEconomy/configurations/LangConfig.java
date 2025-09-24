@@ -41,14 +41,8 @@ public class LangConfig extends BaseConfig {
     @Path("messages.balance_check_other")
     public String BALANCE_CHECK_OTHER = "%prefix% &#6B7280%target%'s Balance &#374151| &#22C55E%balance%";
 
-    @Path("messages.eco.give_success")
-    public String GIVE_SUCCESS = "%prefix% &#A7F3D0✔ &#6B7280Gave &#22C55E%amount% &#6B7280to &#F9FAFB%target%";
-
     @Path("messages.eco.set_success")
     public String SET_SUCCESS = "%prefix% &#86EFAC✔ &#6B7280Set &#F9FAFB%target%'s &#6B7280balance to &#22C55E%amount%";
-
-    @Path("messages.eco.remove_success")
-    public String REMOVE_SUCCESS = "%prefix% &#FCA5A5✔ &#6B7280Removed &#F9FAFB%amount% &#6B7280from &#F9FAFB%target%'s balance";
 
     @Path("messages.eco.usage")
     public String USAGE_ECO = "%prefix% &#6B7280Usage &#374151| &#F9FAFB/eco &#6B7280<give|set|remove> <player> <amount>";
@@ -76,10 +70,13 @@ public class LangConfig extends BaseConfig {
 
     @Path("messages.baltop.header")
     public String BALTOP_HEADER = "&#22C55E💰 &#6B7280Top &#F9FAFB%limit% &#6B7280richest players";
+
     @Path("messages.baltop.entry")
     public String BALTOP_ENTRY = "&#6B7280#%position% &#F9FAFB%player% &#6B7280- &#22C55E%balance%";
+
     @Path("messages.baltop.refreshed")
     public String BALTOP_REFRESHED = "%prefix% &#22C55E✔ &#6B7280Top balances list refreshed";
+
 
 
     public static LangConfig getInstance() {

@@ -50,9 +50,9 @@ public class PayCommand extends BaseCommand {
         plugin.getExecutor().execute(() -> {
             double senderBalance = economy.getBalance(sender);
             if (senderBalance < amount) {
-                Bukkit.getScheduler().runTask(plugin, () -> ChatUtils.send(sender, config.NOT_ENOUGH_MONEY,
+                ChatUtils.send(sender, config.NOT_ENOUGH_MONEY,
                         "%prefix%", config.PREFIX,
-                        "%balance%", plugin.getFormatUtils().formatBalance(senderBalance)));
+                        "%balance%", plugin.getFormatUtils().formatBalance(senderBalance));
                 return;
             }
 

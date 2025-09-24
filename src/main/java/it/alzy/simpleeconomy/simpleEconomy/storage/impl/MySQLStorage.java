@@ -78,7 +78,7 @@ public class MySQLStorage implements Storage {
     }
 
     @Override
-    public CompletableFuture<Double> load(UUID uuid) {
+    public CompletableFuture<Double> getBalance(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
             String sql = "SELECT balance FROM `" + tableName + "` WHERE uuid = ?";
             try (Connection conn = dataSource.getConnection();
@@ -87,6 +87,29 @@ public class MySQLStorage implements Storage {
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         return rs.getDouble("balance");
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to load data for UUID " + uuid + ": " + e.getMessage());
+            }
+            return 0.0;
+        }, executor);
+    }
+
+
+
+    @Override
+    public CompletableFuture<Double> load(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT balance FROM `" + tableName + "` WHERE uuid = ?";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, uuid.toString());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        double balance = rs.getDouble("balance");
+                        plugin.getCacheMap().put(uuid, balance);
+                        return balance;
                     }
                 }
             } catch (SQLException e) {

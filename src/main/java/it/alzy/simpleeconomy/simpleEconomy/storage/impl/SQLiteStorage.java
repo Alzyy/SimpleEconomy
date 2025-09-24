@@ -98,10 +98,6 @@ public class SQLiteStorage implements Storage {
         saveToDatabase(uuid, balance);
     }
 
-    public CompletableFuture<Void> saveAsync(UUID uuid, double balance) {
-        return CompletableFuture.runAsync(() -> saveToDatabase(uuid, balance), executor);
-    }
-
     @Override
     public CompletableFuture<Double> load(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
@@ -123,6 +119,28 @@ public class SQLiteStorage implements Storage {
             double defaultBalance = SettingsConfig.getInstance().startingBalance();
             plugin.getCacheMap().put(uuid, defaultBalance);
             saveToDatabase(uuid, defaultBalance);
+            return defaultBalance;
+        }, executor);
+    }
+
+    @Override
+    public CompletableFuture<Double> getBalance(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT balance FROM users WHERE uuid = ?";
+
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, uuid.toString());
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    double balance = rs.getDouble("balance");
+                    return balance;
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to load balance for UUID " + uuid, e);
+            }
+
+            double defaultBalance = SettingsConfig.getInstance().startingBalance();
             return defaultBalance;
         }, executor);
     }

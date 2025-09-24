@@ -40,16 +40,17 @@ public class BalanceCommand extends BaseCommand {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
                 if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
-                    ChatUtils.send(player, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
+                    ChatUtils.send(player, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX, "%target%", targetName);
                     return;
                 }
 
-                double balance = plugin.getCacheMap().getOrDefault(target.getUniqueId(), 0d);
-                String formattedBalance = plugin.getFormatUtils().formatBalance(balance);
-                ChatUtils.send(player, config.BALANCE_CHECK_OTHER,
-                        "%prefix%", config.PREFIX,
-                        "%balance%", formattedBalance,
-                        "%target%", targetName);
+                plugin.getStorage().getBalance(target.getUniqueId()).thenAccept(dbBalance ->  {;
+                    String formattedBalance = plugin.getFormatUtils().formatBalance(dbBalance);
+                    ChatUtils.send(player, config.BALANCE_CHECK_OTHER,
+                            "%prefix%", config.PREFIX,
+                            "%balance%", formattedBalance,
+                            "%target%", targetName);
+                });
             });
         }
     }
