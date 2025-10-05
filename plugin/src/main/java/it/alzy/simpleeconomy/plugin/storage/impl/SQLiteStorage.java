@@ -1,0 +1,230 @@
+package it.alzy.simpleeconomy.plugin.storage.impl;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+import java.io.File;
+import java.sql.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
+
+import org.bukkit.Bukkit;
+
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.storage.Storage;
+
+public class SQLiteStorage implements Storage {
+
+    private final SimpleEconomy plugin;
+    private final ExecutorService executor;
+    private final HikariDataSource dataSource;
+
+    public SQLiteStorage(SimpleEconomy plugin) {
+        this.plugin = plugin;
+        this.executor = plugin.getExecutor();
+
+        File dataFolder = plugin.getDataFolder();
+        if (!dataFolder.exists()) {
+            dataFolder.mkdirs();
+        }
+
+        File dbFile = new File(dataFolder, "players.db");
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:sqlite:" + dbFile.getPath());
+        config.setMaximumPoolSize(10);
+        config.setConnectionTestQuery("SELECT 1");
+        config.setPoolName("SimpleEconomy-SQLite-Pool");
+        config.setConnectionTimeout(5000);
+
+        this.dataSource = new HikariDataSource(config);
+    }
+
+    private Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
+    }
+
+    public void init() {
+        plugin.getLogger().info("Using SQLITE with HikariCP as storage system!\nCreating table!");
+
+        executor.execute(() -> {
+            String sql = """
+                        CREATE TABLE IF NOT EXISTS users (
+                            uuid TEXT PRIMARY KEY,
+                            balance REAL DEFAULT 0
+                        );
+                    """;
+
+            try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
+                stmt.execute(sql);
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Couldn't create users table. Disabling plugin.", e);
+                Bukkit.getPluginManager().disablePlugin(plugin);
+            }
+        });
+    }
+
+    private void saveToDatabase(UUID uuid, double balance) {
+        String sql = """
+                    INSERT INTO users(uuid, balance) VALUES (?, ?)
+                    ON CONFLICT(uuid) DO UPDATE SET balance = ?;
+                """;
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, uuid.toString());
+            ps.setDouble(2, balance);
+            ps.setDouble(3, balance);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to save balance for UUID: " + uuid, e);
+        }
+    }
+
+    @Override
+    public void save(UUID uuid, double balance) {
+        executor.execute(() -> saveToDatabase(uuid, balance));
+    }
+
+    @Override
+    public void saveSync(UUID uuid, double balance) {
+        if (Bukkit.isPrimaryThread()) {
+            plugin.getLogger().severe("[WARNING] saveSync() was called on the main thread! UUID: " + uuid);
+        }
+        saveToDatabase(uuid, balance);
+    }
+
+    @Override
+    public CompletableFuture<Double> load(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT balance FROM users WHERE uuid = ?";
+
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, uuid.toString());
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    double balance = rs.getDouble("balance");
+                    plugin.getCacheMap().put(uuid, balance);
+                    return balance;
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to load balance for UUID " + uuid, e);
+            }
+
+            double defaultBalance = SettingsConfig.getInstance().startingBalance();
+            plugin.getCacheMap().put(uuid, defaultBalance);
+            saveToDatabase(uuid, defaultBalance);
+            return defaultBalance;
+        }, executor);
+    }
+
+    @Override
+    public CompletableFuture<Double> getBalance(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT balance FROM users WHERE uuid = ?";
+
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, uuid.toString());
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    double balance = rs.getDouble("balance");
+                    return balance;
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to load balance for UUID " + uuid, e);
+            }
+
+            double defaultBalance = SettingsConfig.getInstance().startingBalance();
+            return defaultBalance;
+        }, executor);
+    }
+
+    @Override
+    public void create(UUID uuid) {
+        executor.execute(() -> {
+            double balance = SettingsConfig.getInstance().startingBalance();
+            plugin.getCacheMap().put(uuid, balance);
+            saveToDatabase(uuid, balance);
+        });
+    }
+
+    @Override
+    public void bulkSave() {
+        var futures = plugin.getCacheMap().entrySet().stream()
+            .map(entry -> CompletableFuture.runAsync(() -> saveSync(entry.getKey(), entry.getValue()), executor))
+            .toList();
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    }
+
+    @Override
+    public void close() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+        }
+    }
+    
+    @Override
+    public CompletableFuture<Boolean> hasAccount(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (Connection conn = dataSource.getConnection();
+                    PreparedStatement stmt = conn.prepareStatement("SELECT balance FROM users WHERE uuid = ?")) {
+                stmt.setString(1, uuid.toString());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    return rs.next();
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to load data for UUID " + uuid + ": " + e.getMessage());
+                return false;
+            }
+        }, plugin.getExecutor());
+    }
+
+    @Override
+    public Map<String, Double> getTopBalances(int limit) {
+        Map<String, Double> topBalances = new LinkedHashMap<>();
+        String sql = "SELECT uuid, balance FROM users ORDER BY balance DESC LIMIT ?";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                double balance = rs.getDouble("balance");
+                topBalances.put(uuid, balance);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to retrieve top balances", e);
+        }
+
+        return topBalances;
+    }
+    @Override
+    public Map<String, Double> getAllBalances() {
+        Map<String, Double> allBalances = new LinkedHashMap<>();
+        String sql = "SELECT uuid, balance FROM users";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                double balance = rs.getDouble("balance");
+                allBalances.put(uuid, balance);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to retrieve all balances", e);
+        }
+
+        return allBalances;
+    }
+
+    
+}

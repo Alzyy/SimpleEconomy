@@ -1,4 +1,3 @@
-build/
 .gradle/
 .git/
 .vscode/
@@ -6,4 +5,4 @@ bin/
 .idea/
 gradle/
 bin
-build
+build/

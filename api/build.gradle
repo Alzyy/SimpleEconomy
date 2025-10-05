@@ -1,0 +1,143 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'signing'
+}
+
+group = 'io.github.alzyy'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.named('sourcesJar') {
+    archiveBaseName.set('simpleeconomy-api')
+}
+
+tasks.named('javadocJar') {
+    archiveBaseName.set('simpleeconomy-api')
+}
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    archiveBaseName.set('simpleeconomy-api')
+    from(sourceSets.main.output)
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            groupId = 'io.github.alzyy'
+            artifactId = 'simpleeconomy-api'
+            version = project.version
+
+            pom {
+                name.set('SimpleEconomy API')
+                description.set('API module for SimpleEconomy plugin')
+                url.set('https://github.com/alzyy/SimpleEconomy')
+                licenses {
+                    license {
+                        name.set('MIT License')
+                        url.set('https://opensource.org/licenses/MIT')
+                    }
+                }
+                developers {
+                    developer {
+                        id.set('alzyy')
+                        name.set('Alzy')
+                        email.set('callmealzy@gmail.com')
+                    }
+                }
+                scm {
+                    connection.set('scm:git:git://github.com/alzyy/SimpleEconomy.git')
+                    developerConnection.set('scm:git:ssh://github.com:alzyy/SimpleEconomy.git')
+                    url.set('https://github.com/alzyy/SimpleEconomy')
+                }
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.mavenJava
+}
+
+tasks.register('generateChecksums') {
+    dependsOn tasks.build, tasks.named('signMavenJavaPublication')
+
+    doLast {
+        def filesToHash = [
+                file("$buildDir/libs/simpleeconomy-api-${version}.jar"),
+                file("$buildDir/libs/simpleeconomy-api-${version}-sources.jar"),
+                file("$buildDir/libs/simpleeconomy-api-${version}-javadoc.jar"),
+                file("$buildDir/publications/mavenJava/pom-default.xml")
+        ]
+
+        filesToHash.each { f ->
+            if (f.exists()) {
+                def md5 = java.security.MessageDigest.getInstance('MD5')
+                f.eachByte(4096) { bytes, size ->
+                    md5.update(bytes, 0, size)
+                }
+                new File("${f}.md5").text = md5.digest().encodeHex().toString()
+
+                def sha1 = java.security.MessageDigest.getInstance('SHA-1')
+                f.eachByte(4096) { bytes, size ->
+                    sha1.update(bytes, 0, size)
+                }
+                new File("${f}.sha1").text = sha1.digest().encodeHex().toString()
+            }
+        }
+    }
+}
+
+tasks.register('buildBundle', Zip) {
+    group = 'build'
+    description = 'Create a ZIP ready for Maven Central upload'
+    dependsOn tasks.build, tasks.named('signMavenJavaPublication'), tasks.named('generateChecksums')
+
+    archiveBaseName.set('simpleeconomy-api')
+    archiveVersion.set(version)
+    destinationDirectory.set(file("$buildDir/bundle"))
+
+    def mavenPath = "io/github/alzyy/simpleeconomy-api/${version}"
+
+    from("$buildDir/libs") {
+        include "simpleeconomy-api-${version}.jar"
+        include "simpleeconomy-api-${version}.jar.asc"
+        include "simpleeconomy-api-${version}.jar.md5"
+        include "simpleeconomy-api-${version}.jar.sha1"
+        include "simpleeconomy-api-${version}-sources.jar"
+        include "simpleeconomy-api-${version}-sources.jar.asc"
+        include "simpleeconomy-api-${version}-sources.jar.md5"
+        include "simpleeconomy-api-${version}-sources.jar.sha1"
+        include "simpleeconomy-api-${version}-javadoc.jar"
+        include "simpleeconomy-api-${version}-javadoc.jar.asc"
+        include "simpleeconomy-api-${version}-javadoc.jar.md5"
+        include "simpleeconomy-api-${version}-javadoc.jar.sha1"
+        into mavenPath
+    }
+
+    from("$buildDir/publications/mavenJava") {
+        include "pom-default.xml"
+        include "pom-default.xml.asc"
+        include "pom-default.xml.md5"
+        include "pom-default.xml.sha1"
+        into mavenPath
+        rename 'pom-default.xml', "simpleeconomy-api-${version}.pom"
+        rename 'pom-default.xml.asc', "simpleeconomy-api-${version}.pom.asc"
+        rename 'pom-default.xml.md5', "simpleeconomy-api-${version}.pom.md5"
+        rename 'pom-default.xml.sha1', "simpleeconomy-api-${version}.pom.sha1"
+    }
+}
