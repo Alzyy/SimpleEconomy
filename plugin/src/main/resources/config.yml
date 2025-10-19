@@ -1,5 +1,5 @@
 # ───────────────────────────────────────────────
-# SimpleEconomy by AlzyIT v1.7
+# SimpleEconomy by AlzyIT v2.0
 # Configuration file for balance system, formatting, storage, and vouchers.
 # ───────────────────────────────────────────────
 
@@ -33,6 +33,9 @@ settings:
   
   # Register PlaceholderAPI expansion
   use-placeholderapi: true
+
+  # Enable format for balances
+  enable-balance-formatting: true
 
 database:
   host: "localhost"

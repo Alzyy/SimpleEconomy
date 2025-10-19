@@ -9,7 +9,6 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 public class PAPIExpansion extends PlaceholderExpansion {
 
@@ -76,13 +75,13 @@ public class PAPIExpansion extends PlaceholderExpansion {
             List<UUID> sorted = topMap.entrySet().stream()
                     .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                     .map(e -> UUID.fromString(e.getKey()))
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (position < 1 || position > sorted.size()) return "N/A";
 
             UUID uuid = sorted.get(position - 1);
             OfflinePlayer offline = Bukkit.getOfflinePlayer(uuid);
-            return (offline != null && offline.getName() != null) ? offline.getName() : "Unknown";
+            return offline.getName() != null ? offline.getName() : "Unknown";
         });
     }
 
@@ -91,7 +90,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
             List<Double> sorted = topMap.entrySet().stream()
                     .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                     .map(Map.Entry::getValue)
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (position < 1 || position > sorted.size()) return "N/A";
             return plugin.getFormatUtils().formatBalance(sorted.get(position - 1));
@@ -103,7 +102,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
             List<UUID> sorted = topMap.entrySet().stream()
                     .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                     .map(e -> UUID.fromString(e.getKey()))
-                    .collect(Collectors.toList());
+                    .toList();
 
             int index = sorted.indexOf(player.getUniqueId());
             return (index == -1) ? -1 : index + 1;

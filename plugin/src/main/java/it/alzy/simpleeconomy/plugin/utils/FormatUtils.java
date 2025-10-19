@@ -21,6 +21,8 @@ public class FormatUtils {
         SettingsConfig config = SettingsConfig.getInstance();
         String currencySymbol = config.currencySymbol();
 
+        if(!(config.isFormattingEnabled())) return formatDecimal(balance);
+
         if (balance < 1_000) {
             return currencySymbol + formatDecimal(balance);
         }

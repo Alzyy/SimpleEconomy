@@ -24,7 +24,7 @@ public class CheckUpdateTask extends BukkitRunnable {
         String currentVersion = plugin.getPluginMeta().getVersion();
         if (!currentVersion.equals(latestVersion)) {
             plugin.getLogger().info("A new version of SimpleEconomy is available! (Current: " + currentVersion + ", Latest: " + latestVersion + ")");
-            plugin.getLogger().info("Download it from: https://www.spigotmc.org/resources/simpleeconomy.103182/");
+            plugin.getLogger().info("Download it from: https://www.spigotmc.org/resources/simpleeconomy.127423/");
         } else {
             plugin.getLogger().info("You are using the latest version of SimpleEconomy (" + currentVersion + ").");
         }

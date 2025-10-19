@@ -33,10 +33,8 @@ public class UpdateUtils {
 
             if (!plugin.getPluginMeta().getVersion().equalsIgnoreCase(latestVersion)) {
                 plugin.getLogger().info("A new version of SimpleEconomy is available! (Current: " + plugin.getPluginMeta().getVersion() + ", Latest: " + latestVersion + ")");
-
             } else {
                 plugin.getLogger().info("You are using the latest version of SimpleEconomy (" + plugin.getPluginMeta().getVersion() + ").");
-
             }
         } catch (IOException | URISyntaxException e) {
             plugin.getLogger().warning("⚠️ Error checking for updates: " + e.getMessage());

@@ -103,16 +103,15 @@ public class SettingsConfig extends LightConfig {
         return this.fileConfiguration.getInt("settings.baltop-limit", 10);
     }
 
-    public boolean registerPlaceholderAPI() {
-        return this.fileConfiguration.getBoolean("settings.use-placeholderapi", true);
-    }
+    public boolean isFormattingEnabled() { return this.fileConfiguration.getBoolean("settings.enable-balance-formatting", true); }
+
+    public boolean registerPlaceholderAPI() { return this.fileConfiguration.getBoolean("settings.use-placeholderapi", true); }
 
     public String getDBPrefixTable() {
         return this.fileConfiguration.getString("database.table-prefix", "se_");
     }
 
     private SettingsConfig() {}
-
 
     public static SettingsConfig getInstance() {
         if(instance == null) instance = new SettingsConfig();
