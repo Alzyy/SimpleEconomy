@@ -2,9 +2,14 @@ package it.alzy.simpleeconomy.plugin.events;
 
 import java.util.UUID;
 
+import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
+import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
+import it.alzy.simpleeconomy.plugin.utils.UpdateUtils;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
@@ -17,11 +22,11 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerJoin(AsyncPlayerPreLoginEvent event) {
+    public void onPlayerLogin(AsyncPlayerPreLoginEvent event) {
         if(!event.getLoginResult().equals(AsyncPlayerPreLoginEvent.Result.ALLOWED)) return;
 
-        UUID uuid = event.getPlayerProfile().getId();
-        String name = event.getPlayerProfile().getName();
+        UUID uuid = event.getUniqueId();
+        String name = event.getName();
 
         plugin.getStorage().hasAccount(uuid).thenAccept(hasAccount -> {
             if(hasAccount) return;
@@ -34,6 +39,24 @@ public class PlayerListener implements Listener {
         });
     }
 
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        if(player.hasPermission("simpleeconomy.notify.update")) {
+            plugin.getExecutor().submit(() -> {
+                if(UpdateUtils.isUpdateAvailable()) {
+                    ChatUtils.send(player, LangConfig.getInstance().UPDATES_AVAILABLE,
+                            "%prefix%", LangConfig.getInstance().PREFIX,
+                            "%version%", UpdateUtils.getNewVersion(),
+                            "%updateNote%", UpdateUtils.getUpdateNotes());
+                } else {
+                    ChatUtils.send(player, LangConfig.getInstance().UPDATES_LATEST,
+                            "%prefix%", LangConfig.getInstance().PREFIX);
+                }
+            });
+        }
+    }
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();

@@ -4,4 +4,11 @@ main: it.alzy.simpleeconomy.plugin.SimpleEconomy
 api-version: '1.21'
 author: 'Alzy'
 prefix: SE
-softdepend: ["Vault", "PlaceholderAPI"]
+depend: ["Vault"]
+softdepend: ["PlaceholderAPI"]
+libraries:
+  - net.kyori:adventure-api:4.25.0
+  - net.kyori:adventure-text-serializer-legacy:jar:4.25.0
+  - net.kyori:adventure-text-minimessage:4.25.0
+  - net.kyori:adventure-text-serializer-plain:4.25.0
+  - net.kyori:adventure-platform-bukkit:4.4.1

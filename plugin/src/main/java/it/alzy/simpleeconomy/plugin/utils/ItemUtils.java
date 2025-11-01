@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -49,19 +50,31 @@ public class ItemUtils {
             return;
         }
 
-        meta.displayName(ChatUtils.createComponent(
-                SETTINGS.getVoucherItemName(),
-                "%playerName%", player.getName()));
-
         List<String> preLore = SETTINGS.getVoucherLore();
-        List<Component> loreComponents = preLore.stream()
-                .map(line -> ChatUtils.createComponent(
-                        line,
-                        "%amount%", plugin.getFormatUtils().formatBalance(amount),
-                        "%creationDate%", today()))
-                .toList();
+        if (plugin.isPaper()) {
+            meta.displayName(ChatUtils.createComponent(
+                    SETTINGS.getVoucherItemName(),
+                    "%playerName%", player.getName()));
+            List<Component> loreComponents = preLore.stream()
+                    .map(line -> ChatUtils.createComponent(
+                            line,
+                            "%amount%", plugin.getFormatUtils().formatBalance(amount),
+                            "%creationDate%", today()))
+                    .toList();
+            meta.lore(loreComponents);
+        } else {
+            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&',
+                    SETTINGS.getVoucherItemName().replace("%playerName%", player.getName())
+            ));
 
-        meta.lore(loreComponents);
+            List<String> lore = preLore.stream()
+                    .map(line -> ChatColor.translateAlternateColorCodes('&',
+                            line.replace("%amount%", plugin.getFormatUtils().formatBalance(amount))
+                                    .replace("%creationDate%", today())))
+                    .toList();
+            meta.setLore(lore);
+        }
+
 
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(plugin.getAmountKey(), PersistentDataType.DOUBLE, amount);

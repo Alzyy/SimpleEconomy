@@ -6,7 +6,7 @@ plugins {
 
 description = 'SimpleEconomy'
 group = 'it.alzy.simpleeconomy'
-version = '2.0'
+version = '2.1'
 
 repositories {
     mavenCentral()
@@ -35,7 +35,7 @@ dependencies {
     compileOnly "com.github.kaepsis:VaultAPI:ennamo"
     implementation "com.zaxxer:HikariCP:7.0.0"
     compileOnly 'me.clip:placeholderapi:2.11.6'
-
+    compileOnly("net.kyori:adventure-platform-bukkit:4.4.1")
 }
 
 def targetJavaVersion = 21

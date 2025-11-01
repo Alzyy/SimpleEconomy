@@ -1,5 +1,5 @@
 # ───────────────────────────────────────────────
-# SimpleEconomy by AlzyIT v2.0
+# SimpleEconomy by AlzyIT v2.1
 # Configuration file for balance system, formatting, storage, and vouchers.
 # ───────────────────────────────────────────────
 
@@ -30,6 +30,9 @@ settings:
 
   # Check for plugin updates on startup
   check-for-updates: true
+
+  # Interval (in minutes) to automatically check for updates
+  update-check-interval: 1440
   
   # Register PlaceholderAPI expansion
   use-placeholderapi: true

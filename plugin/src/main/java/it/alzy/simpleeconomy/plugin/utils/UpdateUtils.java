@@ -1,52 +1,72 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import lombok.Getter;
+
 import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import org.jetbrains.annotations.NotNull;
-
 public class UpdateUtils {
 
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
 
+    private static final String API_URL = "https://ministats.alzy.site/api/v1/updates/check/3";
+
+    @Getter
+    private static boolean isUpdateAvailable = false;
+    @Getter
+    private static String updateNotes = "";
+    @Getter
+    private static String newVersion = "";
+
     public UpdateUtils() {
     }
-
-    private static final String API_URL = "https://api.spiget.org/v2/resources/127423/versions/latest";
 
     public void checkForUpdates() {
         try {
             String responseBody = getString();
-            String latestVersion = extractValue(responseBody, "name");
+
+            String latestVersion = extractValue(responseBody, "version");
 
             if (latestVersion == null) {
-                plugin.getLogger().warning("⚠️ Could not parse latest version from Spiget API.");
+                plugin.getLogger().warning("⚠️ Could not parse latest version from API.");
                 return;
             }
 
-            if (!plugin.getPluginMeta().getVersion().equalsIgnoreCase(latestVersion)) {
-                plugin.getLogger().info("A new version of SimpleEconomy is available! (Current: " + plugin.getPluginMeta().getVersion() + ", Latest: " + latestVersion + ")");
+            String currentVersion = plugin.getDescription().getVersion();
+            if (!currentVersion.equalsIgnoreCase(latestVersion)) {
+                UpdateUtils.isUpdateAvailable = true;
+                UpdateUtils.newVersion = latestVersion;
+
+                plugin.getLogger().info("A new version of SimpleEconomy is available! (Current: " + currentVersion + ", Latest: " + latestVersion + ")");
+
+                String updateMessage = extractValue(responseBody, "messageUpdate");
+                if (updateMessage != null && !updateMessage.isEmpty()) {
+                    UpdateUtils.updateNotes = updateMessage.replace("\\n", "\n");
+                    plugin.getLogger().info("Update notes: " + updateMessage.replace("\\n", " "));
+                }
+
             } else {
-                plugin.getLogger().info("You are using the latest version of SimpleEconomy (" + plugin.getPluginMeta().getVersion() + ").");
+                plugin.getLogger().info("You are using the latest version of SimpleEconomy (" + currentVersion + ").");
             }
         } catch (IOException | URISyntaxException e) {
             plugin.getLogger().warning("⚠️ Error checking for updates: " + e.getMessage());
         }
     }
 
-    private static @NotNull String getString() throws URISyntaxException, IOException {
+    private static String getString() throws URISyntaxException, IOException {
         URI uri = new URI(API_URL);
         URL url = uri.toURL();
 
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("GET");
+        con.setRequestProperty("User-Agent", "SimpleExecutables-Plugin");
 
         int status = con.getResponseCode();
         InputStream inputStream;
@@ -72,16 +92,6 @@ public class UpdateUtils {
     }
 
 
-    public static String getLatestVersion() {
-        String responseBody;
-        try {
-            responseBody = getString();
-        } catch (IOException | URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-        return extractValue(responseBody, "name");
-    }
-
     public static String extractValue(String json, String key) {
         String searchKey = "\"" + key + "\"";
         int keyIndex = json.indexOf(searchKey);
@@ -89,6 +99,8 @@ public class UpdateUtils {
             return null;
 
         int colonIndex = json.indexOf(":", keyIndex);
+        if (colonIndex == -1) return null;
+
         int firstQuote = json.indexOf("\"", colonIndex + 1);
         int secondQuote = json.indexOf("\"", firstQuote + 1);
 

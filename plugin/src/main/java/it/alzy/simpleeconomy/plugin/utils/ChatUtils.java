@@ -126,11 +126,13 @@ public class ChatUtils {
         }
 
         String processedMessage = applyPlaceholders(message, placeholders);
-        if (Bukkit.isPrimaryThread()) {
-            sender.sendMessage(parse(processedMessage));
-        } else {
-            Bukkit.getScheduler().runTask(SimpleEconomy.getInstance(), () -> sender.sendMessage(parse(processedMessage)));
-        }
+        Bukkit.getScheduler().runTask(SimpleEconomy.getInstance(), () -> {
+            if(!SimpleEconomy.getInstance().isPaper()) {
+                SimpleEconomy.getInstance().getBukkitAudiences().player((Player) sender).sendMessage(parse(processedMessage));
+            } else {
+                sender.sendMessage(parse(processedMessage));
+            }
+        });
     }
 
     public static void send(CommandSender sender, String message) {

@@ -99,6 +99,10 @@ public class SettingsConfig extends LightConfig {
         return this.fileConfiguration.getInt("settings.baltop-update-interval", 20);
     }
 
+    public int getUpdateCheckInterval() {
+        return this.fileConfiguration.getInt("settings. update-check-interval", 1440);
+    }
+
     public int getTopPlayersShown() {
         return this.fileConfiguration.getInt("settings.baltop-limit", 10);
     }

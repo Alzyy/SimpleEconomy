@@ -15,13 +15,13 @@ public class CheckUpdateTask extends BukkitRunnable {
 
     @Override
     public void run() {
-        String latestVersion = UpdateUtils.getLatestVersion();
+        String latestVersion = UpdateUtils.getNewVersion();
         if (latestVersion == null) {
             plugin.getLogger().warning("Could not fetch the latest version information.");
             return;
         }
 
-        String currentVersion = plugin.getPluginMeta().getVersion();
+        String currentVersion = plugin.getDescription().getVersion();;
         if (!currentVersion.equals(latestVersion)) {
             plugin.getLogger().info("A new version of SimpleEconomy is available! (Current: " + currentVersion + ", Latest: " + latestVersion + ")");
             plugin.getLogger().info("Download it from: https://www.spigotmc.org/resources/simpleeconomy.127423/");
@@ -32,7 +32,7 @@ public class CheckUpdateTask extends BukkitRunnable {
 
 
     public void register() {
-        runTaskTimerAsynchronously(plugin, 0L, SettingsConfig.getInstance().getBalTopInterval() * 20L * 60L);
+        runTaskTimerAsynchronously(plugin, 0L, SettingsConfig.getInstance().getUpdateCheckInterval() * 20L * 60L);
     }
 
 }

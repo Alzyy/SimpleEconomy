@@ -20,12 +20,11 @@ import it.alzy.simpleeconomy.plugin.tasks.AutoSaveTask;
 import it.alzy.simpleeconomy.plugin.tasks.BalTopRefreshTask;
 import it.alzy.simpleeconomy.plugin.tasks.CheckUpdateTask;
 import it.alzy.simpleeconomy.plugin.utils.*;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
-
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import java.util.UUID;
 import java.util.concurrent.*;
 
@@ -51,9 +50,25 @@ public final class SimpleEconomy extends JavaPlugin {
     @Getter
     private NamespacedKey uuidKey;
 
+    @Getter
+    private BukkitAudiences bukkitAudiences;
+
+    @Getter
+    private UpdateUtils updateUtils;
+
+    @Getter
+    private boolean isPaper;
+
     @Override
     public void onEnable() {
         instance = this;
+        try {
+            Class.forName("com.destroystokyo.paper.PaperConfig");
+            isPaper = true;
+        } catch (ClassNotFoundException e) {
+            getLogger().info("Paper API not detected, running in Spigot/Bukkit mode.");
+            isPaper = false;
+        }
 
         try {
             loadConfigurations();
@@ -118,7 +133,9 @@ public final class SimpleEconomy extends JavaPlugin {
 
     private void initializeCore() {
         SettingsConfig settings = SettingsConfig.getInstance();
-
+        if(!isPaper) {
+            this.bukkitAudiences = BukkitAudiences.create(this);
+        }
         executor = Executors.newFixedThreadPool(settings.getThreadPoolSize());
         cacheMap = Maps.newConcurrentMap();
         topMap = Maps.newConcurrentMap();
@@ -131,7 +148,8 @@ public final class SimpleEconomy extends JavaPlugin {
         new VaultHook();
 
         if (settings.checkForUpdates()) {
-            new UpdateUtils().checkForUpdates();
+            updateUtils = new UpdateUtils();
+            updateUtils.checkForUpdates();
             new CheckUpdateTask(this).register();
         }
     }

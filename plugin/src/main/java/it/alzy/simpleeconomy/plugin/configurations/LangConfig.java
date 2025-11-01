@@ -83,6 +83,11 @@ public class LangConfig extends BaseConfig {
     @Path("messages.baltop.footer")
     public String BALTOP_FOOTER = "&#6B7280You are on page &#F9FAFB%currentPage%&#6B7280/&#F9FAFB%maxPage%";
 
+    @Path("messages.updates.available")
+    public String UPDATES_AVAILABLE = "%prefix% <color:#ffaa00>A new update is available!</color> <color:#eeeeee>Latest: </color><color:#6ea8ff>%version%</color> <color:#eeeeee>| Notes: </color><color:#6ea8ff>%updateNote%</color>";
+
+    @Path("messages.updates.latest")
+    public String UPDATES_LATEST = "%prefix% &#22C55E✔ &#6B7280You are using the latest version";
 
     public static LangConfig getInstance() {
         if (instance == null)
