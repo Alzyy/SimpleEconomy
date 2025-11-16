@@ -32,6 +32,7 @@ public class VoucherCommand extends BaseCommand {
             ChatUtils.send(player, config.NOT_ENOUGH_MONEY, "%prefix%", config.PREFIX);
             return;
         }
+        VaultHook.getEconomy().withdrawPlayer(player, amount);
         SimpleEconomy.getInstance().getItemUtils().createVoucherAndGive(player, amount);
     } 
 

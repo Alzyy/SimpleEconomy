@@ -205,6 +205,7 @@ public final class SimpleEconomy extends JavaPlugin {
         SimpleEconomyAPI.setProvider(economyProvider);
         getLogger().info("SimpleEconomy's external API loaded successfully.");
     }
+
     private void registerListeners() {
         var pm = getServer().getPluginManager();
         pm.registerEvents(new PlayerListener(this), this);

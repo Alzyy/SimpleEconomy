@@ -128,7 +128,7 @@ public class ChatUtils {
         String processedMessage = applyPlaceholders(message, placeholders);
         Bukkit.getScheduler().runTask(SimpleEconomy.getInstance(), () -> {
             if(!SimpleEconomy.getInstance().isPaper()) {
-                SimpleEconomy.getInstance().getBukkitAudiences().player((Player) sender).sendMessage(parse(processedMessage));
+                SimpleEconomy.getInstance().getBukkitAudiences().sender(sender).sendMessage(parse(processedMessage));
             } else {
                 sender.sendMessage(parse(processedMessage));
             }
