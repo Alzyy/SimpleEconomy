@@ -40,12 +40,11 @@ public class ECOCommand extends BaseCommand {
     @Default
     public void root(CommandSender player) {
         ChatUtils.send(player, config.USAGE_ECO, "%prefix%", config.PREFIX);
-        return;
     }
 
     private OfflinePlayer getOfflinePlayerOrSendNotFound(CommandSender sender, String targetName) {
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-        if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
             ChatUtils.send(sender, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
             return null;
         }
@@ -120,12 +119,10 @@ public class ECOCommand extends BaseCommand {
 
                 double currentBalance = economy.getBalance(target);
                 if (currentBalance == amount) {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        ChatUtils.send(player, config.SET_SUCCESS,
-                                "%prefix%", config.PREFIX,
-                                "%amount%", plugin.getFormatUtils().formatBalance(amount),
-                                "%target%", target.getName());
-                    });
+                    Bukkit.getScheduler().runTask(plugin, () -> ChatUtils.send(player, config.SET_SUCCESS,
+                            "%prefix%", config.PREFIX,
+                            "%amount%", plugin.getFormatUtils().formatBalance(amount),
+                            "%target%", target.getName()));
                     return;
                 }
 
@@ -201,7 +198,7 @@ public class ECOCommand extends BaseCommand {
                                 "%source%", player.getName());
                         Player online = Bukkit.getPlayer(target.getUniqueId());
                         if (online != null && online.isOnline()) {
-                            plugin.getCacheMap().put(target.getUniqueId(), amount);
+                            plugin.getCacheMap().put(target.getUniqueId(), newBalance);
                         }
                     }
                 });
@@ -259,7 +256,7 @@ public class ECOCommand extends BaseCommand {
                                 "%source%", player.getName());
                         Player online = Bukkit.getPlayer(target.getUniqueId());
                         if (online != null && online.isOnline()) {
-                            plugin.getCacheMap().put(target.getUniqueId(), amount);
+                            plugin.getCacheMap().put(target.getUniqueId(), newBalance);
                         }
                     }
                 });
