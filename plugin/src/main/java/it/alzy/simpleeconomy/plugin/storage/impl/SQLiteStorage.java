@@ -133,15 +133,13 @@ public class SQLiteStorage implements Storage {
                 ResultSet rs = ps.executeQuery();
 
                 if (rs.next()) {
-                    double balance = rs.getDouble("balance");
-                    return balance;
+                    return rs.getDouble("balance");
                 }
             } catch (SQLException e) {
                 plugin.getLogger().log(Level.WARNING, "Failed to load balance for UUID " + uuid, e);
             }
 
-            double defaultBalance = SettingsConfig.getInstance().startingBalance();
-            return defaultBalance;
+            return SettingsConfig.getInstance().startingBalance();
         }, executor);
     }
 

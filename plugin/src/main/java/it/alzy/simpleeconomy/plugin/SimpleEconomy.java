@@ -83,7 +83,7 @@ public final class SimpleEconomy extends JavaPlugin {
             initializeFeatures();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            getLogger().severe("An error occurred during plugin initialization: " + e.getMessage());
             disableSelf();
         }
     }
@@ -96,7 +96,6 @@ public final class SimpleEconomy extends JavaPlugin {
                 storage.close();
             } catch (Exception e) {
                 getLogger().severe("Error while shutting down storage: " + e.getMessage());
-                e.printStackTrace();
             }
         }
 
@@ -208,7 +207,7 @@ public final class SimpleEconomy extends JavaPlugin {
 
     private void registerListeners() {
         var pm = getServer().getPluginManager();
-        pm.registerEvents(new PlayerListener(this), this);
+        pm.registerEvents(new PlayerListener(), this);
 
         if (SettingsConfig.getInstance().areVoucherEnabled()) {
             pm.registerEvents(new VoucherEvents(), this);

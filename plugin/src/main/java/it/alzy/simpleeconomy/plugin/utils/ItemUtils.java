@@ -1,10 +1,9 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.UUID;
-
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -13,19 +12,24 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
-import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import net.kyori.adventure.text.Component;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class ItemUtils {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    private static final LangConfig config = LangConfig.getInstance();
-    private static final SettingsConfig SETTINGS = SettingsConfig.getInstance();
-    private static final SimpleEconomy plugin = SimpleEconomy.getInstance();
+    private final SimpleEconomy plugin;
+    private final LangConfig config;
+    private final SettingsConfig settings;
 
     public ItemUtils() {
+        this.plugin = SimpleEconomy.getInstance();
+        this.config = LangConfig.getInstance();
+        this.settings = SettingsConfig.getInstance();
     }
 
     public void createVoucherAndGive(Player player, double amount) {
@@ -34,63 +38,61 @@ public class ItemUtils {
             return;
         }
 
-        if (isInventoryFull(player)) {
+        if (player.getInventory().firstEmpty() == -1) {
             ChatUtils.send(player, config.INVENTORY_FULL, "%prefix%", config.PREFIX);
             return;
         }
 
-        Material material = Material.getMaterial(SETTINGS.getVoucherMaterial());
-        if (material == null)
-            material = Material.PAPER;
+        Material material = Optional.ofNullable(Material.getMaterial(settings.getVoucherMaterial().toUpperCase()))
+                .orElse(Material.PAPER);
 
-        ItemStack voucher = new ItemStack(material, 1);
+        ItemStack voucher = new ItemStack(material);
         ItemMeta meta = voucher.getItemMeta();
+
         if (meta == null) {
-            ChatUtils.send(player, config.INVALID_AMOUNT);
             return;
         }
 
-        List<String> preLore = SETTINGS.getVoucherLore();
-        if (plugin.isPaper()) {
-            meta.displayName(ChatUtils.createComponent(
-                    SETTINGS.getVoucherItemName(),
-                    "%playerName%", player.getName()));
-            List<Component> loreComponents = preLore.stream()
-                    .map(line -> ChatUtils.createComponent(
-                            line,
-                            "%amount%", plugin.getFormatUtils().formatBalance(amount),
-                            "%creationDate%", today()))
-                    .toList();
-            meta.lore(loreComponents);
-        } else {
-            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&',
-                    SETTINGS.getVoucherItemName().replace("%playerName%", player.getName())
-            ));
+        String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
+        String date = LocalDateTime.now().format(DATE_FORMATTER);
+        List<String> rawLore = settings.getVoucherLore();
 
-            List<String> lore = preLore.stream()
-                    .map(line -> ChatColor.translateAlternateColorCodes('&',
-                            line.replace("%amount%", plugin.getFormatUtils().formatBalance(amount))
-                                    .replace("%creationDate%", today())))
-                    .toList();
+        if (plugin.isPaper()) {
+            meta.displayName(ChatUtils.createComponent(settings.getVoucherItemName(), "%playerName%", player.getName()));
+
+            List<Component> lore = rawLore.stream()
+                    .map(line -> ChatUtils.createComponent(line,
+                            "%amount%", formattedAmount,
+                            "%creationDate%", date))
+                    .collect(Collectors.toList());
+
+            meta.lore(lore);
+        } else {
+            meta.setDisplayName(formatString(settings.getVoucherItemName(), player.getName(), formattedAmount, date));
+
+            List<String> lore = rawLore.stream()
+                    .map(line -> formatString(line, player.getName(), formattedAmount, date))
+                    .collect(Collectors.toList());
+
             meta.setLore(lore);
         }
-
 
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(plugin.getAmountKey(), PersistentDataType.DOUBLE, amount);
         pdc.set(plugin.getUuidKey(), PersistentDataType.STRING, UUID.randomUUID().toString());
 
         voucher.setItemMeta(meta);
-
         player.getInventory().addItem(voucher);
-        ChatUtils.send(player, config.VOUCHER_CREATED, "%prefix%" ,config.PREFIX, "%amount%", plugin.getFormatUtils().formatBalance(amount));
+
+        ChatUtils.send(player, config.VOUCHER_CREATED,
+                "%prefix%", config.PREFIX,
+                "%amount%", formattedAmount);
     }
 
-    public boolean isInventoryFull(Player player) {
-        return player.getInventory().firstEmpty() == -1;
-    }
-
-    public String today() {
-        return LocalDateTime.now().format(DATE_FORMATTER);
+    private String formatString(String text, String playerName, String amount, String date) {
+        return ChatColor.translateAlternateColorCodes('&', text
+                .replace("%playerName%", playerName)
+                .replace("%amount%", amount)
+                .replace("%creationDate%", date));
     }
 }

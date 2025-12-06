@@ -44,7 +44,7 @@ public class BalanceCommand extends BaseCommand {
                     return;
                 }
 
-                plugin.getStorage().getBalance(target.getUniqueId()).thenAccept(dbBalance ->  {;
+                plugin.getStorage().getBalance(target.getUniqueId()).thenAccept(dbBalance ->  {
                     String formattedBalance = plugin.getFormatUtils().formatBalance(dbBalance);
                     ChatUtils.send(player, config.BALANCE_CHECK_OTHER,
                             "%prefix%", config.PREFIX,

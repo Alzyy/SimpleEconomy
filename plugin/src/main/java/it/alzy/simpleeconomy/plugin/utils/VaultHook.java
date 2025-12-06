@@ -99,13 +99,19 @@ public class VaultHook implements Economy {
 
     @Override
     public EconomyResponse withdrawPlayer(OfflinePlayer offlinePlayer, double amount) {
+        if (amount < 0) {
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Cannot withdraw negative amount");
+        }
+        SimpleEconomy plugin = SimpleEconomy.getInstance();
         UUID uuid = offlinePlayer.getUniqueId();
-        double newBalance = SimpleEconomy.getInstance().getCacheMap().compute(uuid, (key, oldBalance) -> {
-            double current = (oldBalance == null ? 0.0 : oldBalance);
-            return Math.max(0.0, current - amount);
-        });
-
-        return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, "Success");
+        double currentBalance = plugin.getCacheMap().getOrDefault(uuid, 0.0);
+        if (currentBalance < amount) {
+            return new EconomyResponse(0, currentBalance, EconomyResponse.ResponseType.FAILURE, "Not enough money");
+        }
+        double newBalance = currentBalance - amount;
+        plugin.getCacheMap().put(uuid, newBalance);
+        plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, newBalance));
+        return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, null);
     }
 
     @Override
@@ -115,11 +121,14 @@ public class VaultHook implements Economy {
 
     @Override
     public EconomyResponse depositPlayer(OfflinePlayer offlinePlayer, double amount) {
+        if (amount < 0) {
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Cannot deposit negative amount");
+        }
+        SimpleEconomy plugin = SimpleEconomy.getInstance();
         UUID uuid = offlinePlayer.getUniqueId();
-        double newBalance = SimpleEconomy.getInstance().getCacheMap().compute(uuid, (key, oldBalance) -> {
-            return (oldBalance == null ? 0.0 : oldBalance) + amount;
-        });
-        return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, "Success");
+        double newBalance = plugin.getCacheMap().merge(uuid, amount, Double::sum);
+        plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, newBalance));
+        return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, null);
     }
 
     @Override

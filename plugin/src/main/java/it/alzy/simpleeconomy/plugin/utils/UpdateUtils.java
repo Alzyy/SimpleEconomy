@@ -5,108 +5,88 @@ import lombok.Getter;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UpdateUtils {
 
-    private final SimpleEconomy plugin = SimpleEconomy.getInstance();
-
+    private static final SimpleEconomy plugin = SimpleEconomy.getInstance();
     private static final String API_URL = "https://ministats.alzy.site/api/v1/updates/check/3";
 
-    @Getter
-    private static boolean isUpdateAvailable = false;
-    @Getter
-    private static String updateNotes = "";
-    @Getter
-    private static String newVersion = "";
+    private static final Pattern VERSION_PATTERN = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern MESSAGE_PATTERN = Pattern.compile("\"messageUpdate\"\\s*:\\s*\"([^\"]+)\"");
 
-    public UpdateUtils() {
-    }
+    @Getter private static volatile boolean isUpdateAvailable = false;
+    @Getter private static volatile String updateNotes = "";
+    @Getter private static volatile String newVersion = "";
 
     public void checkForUpdates() {
-        try {
-            String responseBody = getString();
+        CompletableFuture.runAsync(() -> {
+            try {
+                String responseBody = fetchJson();
+                if (responseBody == null) return;
 
-            String latestVersion = extractValue(responseBody, "version");
-
-            if (latestVersion == null) {
-                plugin.getLogger().warning("⚠️ Could not parse latest version from API.");
-                return;
-            }
-
-            String currentVersion = plugin.getDescription().getVersion();
-            if (!currentVersion.equalsIgnoreCase(latestVersion)) {
-                UpdateUtils.isUpdateAvailable = true;
-                UpdateUtils.newVersion = latestVersion;
-
-                plugin.getLogger().info("A new version of SimpleEconomy is available! (Current: " + currentVersion + ", Latest: " + latestVersion + ")");
-
-                String updateMessage = extractValue(responseBody, "messageUpdate");
-                if (updateMessage != null && !updateMessage.isEmpty()) {
-                    UpdateUtils.updateNotes = updateMessage.replace("\\n", "\n");
-                    plugin.getLogger().info("Update notes: " + updateMessage.replace("\\n", " "));
+                String latestVersion = extractValue(responseBody, VERSION_PATTERN);
+                if (latestVersion == null) {
+                    plugin.getLogger().warning("⚠️ Could not parse latest version from API.");
+                    return;
                 }
 
-            } else {
-                plugin.getLogger().info("You are using the latest version of SimpleEconomy (" + currentVersion + ").");
+                String currentVersion = plugin.getDescription().getVersion();
+
+                if (!currentVersion.equalsIgnoreCase(latestVersion)) {
+                    isUpdateAvailable = true;
+                    newVersion = latestVersion;
+
+                    plugin.getLogger().info("A new version of SimpleEconomy is available! (Current: " + currentVersion + ", Latest: " + latestVersion + ")");
+
+                    String updateMessage = extractValue(responseBody, MESSAGE_PATTERN);
+                    if (updateMessage != null && !updateMessage.isEmpty()) {
+                        updateNotes = updateMessage.replace("\\n", "\n");
+                        plugin.getLogger().info("Update notes: " + updateMessage.replace("\\n", " "));
+                    }
+                } else {
+                    plugin.getLogger().info("You are using the latest version of SimpleEconomy (" + currentVersion + ").");
+                }
+
+            } catch (Exception e) {
+                plugin.getLogger().warning("⚠️ Error checking for updates: " + e.getMessage());
             }
-        } catch (IOException | URISyntaxException e) {
-            plugin.getLogger().warning("⚠️ Error checking for updates: " + e.getMessage());
-        }
+        }, plugin.getExecutor());
     }
 
-    private static String getString() throws URISyntaxException, IOException {
-        URI uri = new URI(API_URL);
-        URL url = uri.toURL();
-
+    private String fetchJson() throws Exception {
+        URL url = new URI(API_URL).toURL();
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
+
         con.setRequestMethod("GET");
-        con.setRequestProperty("User-Agent", "SimpleExecutables-Plugin");
+        con.setRequestProperty("User-Agent", "SimpleEconomy-Plugin");
+        con.setConnectTimeout(5000);
+        con.setReadTimeout(5000);
 
-        int status = con.getResponseCode();
-        InputStream inputStream;
-
-        if (status >= 200 && status < 300) {
-            inputStream = con.getInputStream();
-        } else {
-            inputStream = con.getErrorStream();
+        if (con.getResponseCode() != 200) {
+            return null;
         }
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
-        StringBuilder response = new StringBuilder();
-        String line;
-
-        while ((line = in.readLine()) != null) {
-            response.append(line);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                response.append(line);
+            }
+            return response.toString();
+        } finally {
+            con.disconnect();
         }
-
-        in.close();
-        con.disconnect();
-
-        return response.toString();
     }
 
-
-    public static String extractValue(String json, String key) {
-        String searchKey = "\"" + key + "\"";
-        int keyIndex = json.indexOf(searchKey);
-        if (keyIndex == -1)
-            return null;
-
-        int colonIndex = json.indexOf(":", keyIndex);
-        if (colonIndex == -1) return null;
-
-        int firstQuote = json.indexOf("\"", colonIndex + 1);
-        int secondQuote = json.indexOf("\"", firstQuote + 1);
-
-        if (firstQuote == -1 || secondQuote == -1)
-            return null;
-
-        return json.substring(firstQuote + 1, secondQuote);
+    private static String extractValue(String json, Pattern pattern) {
+        Matcher matcher = pattern.matcher(json);
+        return matcher.find() ? matcher.group(1) : null;
     }
 }
