@@ -89,6 +89,12 @@ public class LangConfig extends BaseConfig {
     @Path("messages.updates.latest")
     public String UPDATES_LATEST = "%prefix% &#22C55E✔ &#6B7280You are using the latest version";
 
+    @Path("messages.pay.usage")
+    public String USAGE_PAY = "%prefix% &#6B7280Usage &#374151| &#F9FAFB/pay <player> <amount>";
+
+    @Path("messages.voucher.usage")
+    public String USAGE_VOUCHER = "%prefix% &#6B7280Usage &#374151| &#F9FAFB/voucher <amount>";
+
     public static LangConfig getInstance() {
         if (instance == null)
             instance = new LangConfig();

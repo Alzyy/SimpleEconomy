@@ -2,6 +2,7 @@ package it.alzy.simpleeconomy.plugin.commands;
 
 import java.math.BigDecimal;
 
+import co.aikar.commands.annotation.Optional;
 import org.bukkit.entity.Player;
 
 import co.aikar.commands.BaseCommand;
@@ -23,7 +24,11 @@ public class VoucherCommand extends BaseCommand {
     private final LangConfig config = LangConfig.getInstance();
 
     @Default
-    public void root(Player player, double amount) {
+    public void root(Player player, @Optional Double amount) {
+        if(amount == null) {
+            ChatUtils.send(player, config.USAGE_VOUCHER, "%prefix%", config.PREFIX);
+            return;
+        }
         if(!validateAmount(amount)) {
             ChatUtils.send(player, config.NEGATIVE_AMOUNT, "%prefix%", config.PREFIX);
             return;

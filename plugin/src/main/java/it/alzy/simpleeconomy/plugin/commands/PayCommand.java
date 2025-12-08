@@ -1,10 +1,7 @@
 package it.alzy.simpleeconomy.plugin.commands;
 
 import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.CommandAlias;
-import co.aikar.commands.annotation.CommandCompletion;
-import co.aikar.commands.annotation.Default;
-import co.aikar.commands.annotation.Description;
+import co.aikar.commands.annotation.*;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
 import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
@@ -25,7 +22,12 @@ public class PayCommand extends BaseCommand {
 
     @Default
     @CommandCompletion("@players")
-    public void root(Player sender, String targetName, double amount) {
+    public void root(Player sender, @Optional String targetName, @Optional double amount) {
+        if (targetName == null || targetName.isEmpty() || amount == 0) {
+            ChatUtils.send(sender, config.USAGE_PAY, "%prefix%", config.PREFIX);
+            return;
+        }
+
         if (!Double.isFinite(amount) || amount <= 0 || BigDecimal.valueOf(amount).scale() > 2) {
             ChatUtils.send(sender, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
             return;

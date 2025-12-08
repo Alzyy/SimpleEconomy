@@ -8,7 +8,7 @@ import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 
-@CommandAlias("simpleconomy|se")
+@CommandAlias("simpleconomy|se|simpleeconomy")
 @Description("Main command for SimpleEconomy")
 public class SECommand extends BaseCommand {
 

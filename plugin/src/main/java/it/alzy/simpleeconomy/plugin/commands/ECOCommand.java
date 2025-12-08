@@ -2,6 +2,7 @@ package it.alzy.simpleeconomy.plugin.commands;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
+import co.aikar.commands.annotation.Optional;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
 import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
@@ -38,19 +39,32 @@ public class ECOCommand extends BaseCommand {
 
     @Subcommand("set")
     @CommandCompletion("@players|@a|@p|@r")
-    public void set(CommandSender sender, String targetName, double amount) {
+    public void set(CommandSender sender, @Optional String targetName, @Optional Double amount) {
+        if(targetName.isEmpty() || amount == null) {
+            ChatUtils.send(sender, config.USAGE_ECO, "%prefix%", config.PREFIX);
+            return;
+        }
+
         execute(sender, targetName, amount, EcoAction.SET);
     }
 
     @Subcommand("give")
     @CommandCompletion("@players|@a|@p|@r")
-    public void give(CommandSender sender, String targetName, double amount) {
+    public void give(CommandSender sender, @Optional String targetName, @Optional Double amount) {
+        if(targetName.isEmpty() || amount == null) {
+            ChatUtils.send(sender, config.USAGE_ECO, "%prefix%", config.PREFIX);
+            return;
+        }
         execute(sender, targetName, amount, EcoAction.GIVE);
     }
 
     @Subcommand("remove")
     @CommandCompletion("@players|@a|@p|@r")
-    public void remove(CommandSender sender, String targetName, double amount) {
+    public void remove(CommandSender sender, @Optional String targetName, @Optional Double amount) {
+        if(targetName.isEmpty() || amount == null) {
+            ChatUtils.send(sender, config.USAGE_ECO, "%prefix%", config.PREFIX);
+            return;
+        }
         execute(sender, targetName, amount, EcoAction.REMOVE);
     }
 
