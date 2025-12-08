@@ -164,7 +164,7 @@ public class MySQLStorage implements Storage {
     @Override
     public Map<String, Double> getTopBalances(int limit) {
         Map<String, Double> topBalances = new LinkedHashMap<>();
-        String sql = "SELECT uuid, balance FROM users ORDER BY balance DESC LIMIT ?";
+        String sql = "SELECT uuid, balance FROM " + tableName + " ORDER BY balance DESC LIMIT ?";
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, limit);
@@ -185,7 +185,7 @@ public class MySQLStorage implements Storage {
     @Override
     public Map<String, Double> getAllBalances() {
         Map<String, Double> allBalances = new LinkedHashMap<>();
-        String sql = "SELECT uuid, balance FROM users";
+        String sql = "SELECT uuid, balance FROM " + tableName;
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ResultSet rs = ps.executeQuery();
