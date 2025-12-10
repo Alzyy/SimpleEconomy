@@ -51,6 +51,12 @@ Allows players to send money to each other
 
 /pay Steve 10
 
+## **/withdraw <amount>**
+Allows players to create vouncher
+**Example:**
+
+/withdraw 10
+
 ## **/balance or /bal**
 Displays the player’s current balance
 **Example:**
