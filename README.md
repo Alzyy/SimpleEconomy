@@ -51,6 +51,12 @@ Allows players to send money to each other
 
 /pay Steve 10
 
+## **/withdraw <amount>**
+Allows players to create vouncher
+**Example:**
+
+/withdraw 10
+
 ## **/balance or /bal**
 Displays the player’s current balance
 **Example:**
@@ -58,13 +64,15 @@ Displays the player’s current balance
 /balance
 
 ## ** Permissions**
-** 
- Permission** **Description**
-simpleconomy.balance.others View other players' balances
-simpleconomy.eco.set Use /eco set
-simpleconomy.eco.give Use /eco give
-simpleconomy.eco.remove Use /eco remove
-simpleconomy.command.reload Reload the plugin
+
+| Permission                  | Description                  |
+|-----------------------------|------------------------------|
+| simpleconomy.balance.others | View other players' balances |
+| simpleconomy.eco.set        | Use /eco set                 |
+| simpleconomy.eco.give       | Use /eco give                |
+| simpleconomy.eco.remove     | Use /eco remove              |
+| simpleconomy.command.reload | Reload the plugin            |
+
 ## **⚙️ Configuration**
 Inside config.yml, choose your preferred storage system and auto-save interval:
 
@@ -84,13 +92,14 @@ auto-save-time: 5 # In minutes
 ## **️ Placeholders**
 If you use **[PlaceholderAPI]('https://www.spigotmc.org/resources/placeholderapi.6245/')**, SimpleEconomy provides the following placeholders:
 
-** 
- Placeholder** **Description**
-%seco_balance_normal% - Returns the player’s balance as a raw double
-%seco_balance_formatted% - Returns the player’s balance in a formatted string (e.g. 10k, 1.2M)
-%seco_top_position% - For player position in baltop
-%seco_baltop_$number% - For name of $number player in baltop
-%seco_baltop_$number_balance% - For balance of $number player in baltop
+| Placeholder                   | Description                                                         |
+|-------------------------------|---------------------------------------------------------------------|
+| %seco_balance_normal%         | Returns the player’s balance as a raw double                        |
+| %seco_balance_formatted%      | Returns the player’s balance in a formatted string (e.g. 10k, 1.2M) |
+| %seco_top_position%           | For player position in baltop                                       |
+| %seco_baltop_$number%         | For name of $number player in baltop                                |
+| %seco_baltop_$number_balance% | For balance of $number player in baltop                             |
+
 Run /papi reload after installing to load the placeholders.
 
 ## ** License**
