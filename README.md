@@ -94,6 +94,8 @@ If you use **[PlaceholderAPI]('https://www.spigotmc.org/resources/placeholderapi
 | %seco_baltop_$number%         | For name of $number player in baltop                                |
 | %seco_baltop_$number_balance% | For balance of $number player in baltop                             |
 
+Run /papi reload after installing to load the placeholders.
+
 ## ** License**
 This plugin is licensed under the **GNU GPLv3 License**.
 
