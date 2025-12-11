@@ -1,0 +1,36 @@
+# Traduzione italiana per SimpleEconomy
+# Tradotto da AlzyIT
+prefix: '&#22C55Eѕᴇ ● &#9CA3AF'
+messages:
+  gave_money: '%prefix% &#A7F3D0✔ &#6B7280Hai inviato &#22C55E%amount% &#6B7280a &#F9FAFB%target%'
+  received_money: '%prefix% &#A7F3D0✔ &#6B7280Hai ricevuto &#22C55E%amount% &#6B7280da &#F9FAFB%source%'
+  invalid_amount: '%prefix% &#F87171✘ &#EF4444Importo non valido &#6B7280| &#FBBF24Inserisci un numero valido'
+  negative_amount: '%prefix% &#F87171✘ &#EF4444L''importo deve essere positivo &#6B7280| &#FBBF24Usa un numero sopra lo zero'
+  reload_success: '%prefix% &#86EFAC✔ &#0d7e44Configurazione ricaricata &#6B7280| Impostazioni applicate'
+  no_permission: '%prefix% &#F87171✘ &#EF4444Non hai il permesso &#6B7280per usare questo comando'
+  player_not_found: '%prefix% &#F87171✘ &#EF4444Giocatore non trovato &#6B7280| &#FBBF24Controlla il nome e riprova'
+  balance_check_self: '%prefix% &#6B7280Saldo &#374151| &#22C55E%balance%'
+  balance_check_other: '%prefix% &#6B7280Saldo di %target% &#374151| &#22C55E%balance%'
+  eco:
+    set_success: '%prefix% &#86EFAC✔ &#6B7280Impostato il saldo di &#F9FAFB%target% &#6B7280a &#22C55E%amount%'
+    usage: '%prefix% &#6B7280Uso &#374151| &#F9FAFB/eco &#6B7280<give|set|remove> <giocatore> <importo>'
+  not_enough_money: '%prefix% &#EF4444✘ &#6B7280Fondi insufficienti &#374151| &#FBBF24Saldo troppo basso'
+  removed_money: '%prefix% &#FCA5A5✔ &#6B7280Hai rimosso &#F9FAFB%amount% &#6B7280a &#F9FAFB%target%'
+  money_removed: '%prefix% &#FCA5A5✔ &#F9FAFB%amount% &#6B7280sono stati rimossi dal tuo conto da &#F9FAFB%source%'
+  self-command: '%prefix% &#F97316✘ &#EF4444Non puoi usare questo comando su te stesso'
+  inventory-full: '%prefix% &#F97316✘ &#EF4444Il tuo inventario è pieno!'
+  voucher-created: '%prefix% &#22C55E✔ &#6B7280Voucher creato con successo per &#F9FAFB%amount%'
+  voucher-checked: '%prefix% &#22C55Eℹ &#6B7280Hai controllato un voucher del valore di &#F9FAFB%amount%'
+  baltop:
+    header: '&#22C55E💰 &#6B7280Top &#F9FAFB%limit% &#6B7280giocatori più ricchi'
+    entry: '&#6B7280#%position% &#F9FAFB%player% &#6B7280- &#22C55E%balance%'
+    refreshed: '%prefix% &#22C55E✔ &#6B7280Classifica bilanci aggiornata'
+    invalid_page: '%prefix% &#F87171✘ &#EF4444Numero pagina non valido &#6B7280| &#FBBF24Inserisci una pagina valida'
+    footer: '&#6B7280Sei a pagina &#F9FAFB%currentPage%&#6B7280/&#F9FAFB%maxPage%'
+  updates:
+    available: '%prefix% <color:#ffaa00>È disponibile un aggiornamento!</color> <color:#eeeeee>Ultimo: </color><color:#6ea8ff>%version%</color> <color:#eeeeee>| Note: </color><color:#6ea8ff>%updateNote%</color>'
+    latest: '%prefix% &#22C55E✔ &#6B7280Stai usando l''ultima versione'
+  pay:
+    usage: '%prefix% &#6B7280Uso &#374151| &#F9FAFB/pay <giocatore> <importo>'
+  voucher:
+    usage: '%prefix% &#6B7280Uso &#374151| &#F9FAFB/voucher <importo>'

@@ -1,9 +1,12 @@
 # ───────────────────────────────────────────────
-# SimpleEconomy by AlzyIT v2.1
+# SimpleEconomy by AlzyIT v2.7
 # Configuration file for balance system, formatting, storage, and vouchers.
 # ───────────────────────────────────────────────
 
 settings:
+  # Locale for messages (e.g., it, en, tr, etc.)
+  locale: "en"
+
   # Default balance assigned to a new player
   starting-balance: 1000
 

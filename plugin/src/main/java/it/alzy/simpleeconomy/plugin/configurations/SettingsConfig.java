@@ -9,7 +9,10 @@ import net.pino.simpleconfig.annotations.ConfigFile;
 @Config
 @ConfigFile("config.yml")
 public class SettingsConfig extends LightConfig {
+
     private static SettingsConfig instance = null;
+
+    public String locale() { return this.fileConfiguration.getString("settings.locale", "en"); }
 
     public double startingBalance() {
         return this.fileConfiguration.getDouble("settings.starting-balance", 1000d);

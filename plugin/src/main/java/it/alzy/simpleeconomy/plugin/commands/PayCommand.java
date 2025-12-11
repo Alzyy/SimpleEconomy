@@ -3,8 +3,8 @@ package it.alzy.simpleeconomy.plugin.commands;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
-import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -18,29 +18,29 @@ import java.math.BigDecimal;
 public class PayCommand extends BaseCommand {
 
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
-    private final LangConfig config = LangConfig.getInstance();
+    private final LanguageManager languageManager = plugin.getLanguageManager();
 
     @Default
     @CommandCompletion("@players")
-    public void root(Player sender, @Optional String targetName, @Optional double amount) {
-        if (targetName == null || targetName.isEmpty() || amount == 0) {
-            ChatUtils.send(sender, config.USAGE_PAY, "%prefix%", config.PREFIX);
+    public void root(Player sender, @Optional String targetName, @Optional Double amount) {
+        if (targetName == null || targetName.isEmpty() || amount == null || amount == 0) {
+            languageManager.send(sender, LanguageKeys.PAY_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
         if (!Double.isFinite(amount) || amount <= 0 || BigDecimal.valueOf(amount).scale() > 2) {
-            ChatUtils.send(sender, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.INVALID_AMOUNT, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
         if (sender.getName().equalsIgnoreCase(targetName)) {
-            ChatUtils.send(sender, config.SELF, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.SELF_COMMAND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
-            ChatUtils.send(sender, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.PLAYER_NOT_FOUND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
@@ -52,8 +52,8 @@ public class PayCommand extends BaseCommand {
         plugin.getExecutor().execute(() -> {
             double senderBalance = economy.getBalance(sender);
             if (senderBalance < amount) {
-                ChatUtils.send(sender, config.NOT_ENOUGH_MONEY,
-                        "%prefix%", config.PREFIX,
+                languageManager.send(sender, LanguageKeys.NOT_ENOUGH_MONEY,
+                        "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX),
                         "%balance%", plugin.getFormatUtils().formatBalance(senderBalance));
                 return;
             }
@@ -80,14 +80,14 @@ public class PayCommand extends BaseCommand {
             String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
 
             Bukkit.getScheduler().runTask(plugin, () -> {
-                ChatUtils.send(sender, config.GAVE_MONEY,
-                        "%prefix%", config.PREFIX,
+                languageManager.send(sender, LanguageKeys.GAVE_MONEY,
+                        "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX),
                         "%amount%", formattedAmount,
                         "%target%", target.getName());
 
                 if (target.isOnline()) {
-                    ChatUtils.send(target, config.RECEIVED_MONEY,
-                            "%prefix%", config.PREFIX,
+                    languageManager.send(sender, LanguageKeys.RECEIVED_MONEY,
+                            "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX),
                             "%amount%", formattedAmount,
                             "%source%", sender.getName());
                 }

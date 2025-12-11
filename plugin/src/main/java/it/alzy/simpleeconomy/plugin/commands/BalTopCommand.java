@@ -3,9 +3,9 @@ package it.alzy.simpleeconomy.plugin.commands;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Description("Displays the top balances in the server.")
 public class BalTopCommand extends BaseCommand {
 
-    SimpleEconomy plugin = SimpleEconomy.getInstance();
+    private final SimpleEconomy plugin = SimpleEconomy.getInstance();
+    private final LanguageManager languageManager = plugin.getLanguageManager();
     @Default
     @Syntax("[page]")
     public void onBaltop(Player player, @Default("1") int page) {
@@ -31,11 +32,11 @@ public class BalTopCommand extends BaseCommand {
             Map<String, Double> topMap = plugin.getStorage().getAllBalances();
             int totalPages = (topMap.size() + limit - 1 ) / limit;
             if (page < 1 || page > totalPages) {
-                ChatUtils.send(player, LangConfig.getInstance().INVALID_BALTOP_PAGE, "%prefix%", LangConfig.getInstance().PREFIX, "%total_pages%", totalPages);
+                languageManager.send(player, LanguageKeys.BALTOP_INVALID_PAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%total_pages%", totalPages);
                 return;
             }
 
-            ChatUtils.send(player, LangConfig.getInstance().BALTOP_HEADER, "%limit%", limit);
+            languageManager.send(player, LanguageKeys.BALTOP_HEADER, "%limit%", limit);
 
             int start = (page - 1) * limit;
             AtomicInteger rank = new AtomicInteger(start + 1);
@@ -47,14 +48,14 @@ public class BalTopCommand extends BaseCommand {
                     String playerName = entry.getKey();
                     double balance = entry.getValue();
                     OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(playerName));
-                    String displayName = offlinePlayer != null && offlinePlayer.getName() != null ? offlinePlayer.getName() : playerName;
+                    String displayName = offlinePlayer.getName() != null ? offlinePlayer.getName() : playerName;
                     String formattedBalance = plugin.getFormatUtils().formatBalance(balance);
-                    ChatUtils.send(player, LangConfig.getInstance().BALTOP_ENTRY,
+                    languageManager.send(player, LanguageKeys.BALTOP_ENTRY,
                             "%position%", String.valueOf(rank.getAndIncrement()),
                             "%player%", displayName,
                             "%balance%", formattedBalance);
                 });
-            ChatUtils.send(player, LangConfig.getInstance().BALTOP_FOOTER,  "%currentPage%", String.valueOf(page), "%maxPage%", String.valueOf(totalPages));
+            languageManager.send(player, LanguageKeys.BALTOP_FOOTER,  "%currentPage%", String.valueOf(page), "%maxPage%", String.valueOf(totalPages));
         });
     }
 
@@ -69,7 +70,7 @@ public class BalTopCommand extends BaseCommand {
                     SettingsConfig.getInstance().getTopPlayersShown()
             ));
             plugin.setTopMap(topMap);
-            ChatUtils.send(player, LangConfig.getInstance().BALTOP_REFRESHED, "%prefix%", LangConfig.getInstance().PREFIX);
+            languageManager.send(player, LanguageKeys.BALTOP_REFRESHED, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
         });
     }
 }

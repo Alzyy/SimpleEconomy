@@ -1,8 +1,9 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -21,30 +22,29 @@ import java.util.stream.Collectors;
 
 public class ItemUtils {
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private final SimpleEconomy plugin;
-    private final LangConfig config;
     private final SettingsConfig settings;
+    private final LanguageManager languageManager;
 
     public ItemUtils() {
         this.plugin = SimpleEconomy.getInstance();
-        this.config = LangConfig.getInstance();
         this.settings = SettingsConfig.getInstance();
+        this.languageManager = plugin.getLanguageManager();
     }
 
     public void createVoucherAndGive(Player player, double amount) {
         if (amount <= 0) {
-            ChatUtils.send(player, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
+            languageManager.send(player, LanguageKeys.INVALID_AMOUNT, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
         if (player.getInventory().firstEmpty() == -1) {
-            ChatUtils.send(player, config.INVENTORY_FULL, "%prefix%", config.PREFIX);
+            languageManager.send(player, LanguageKeys.INVENTORY_FULL, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
-        Material material = Optional.ofNullable(Material.getMaterial(settings.getVoucherMaterial().toUpperCase()))
-                .orElse(Material.PAPER);
+        Material material = Optional.ofNullable(Material.getMaterial(settings.getVoucherMaterial().toUpperCase())).orElse(Material.PAPER);
 
         ItemStack voucher = new ItemStack(material);
         ItemMeta meta = voucher.getItemMeta();
@@ -61,11 +61,7 @@ public class ItemUtils {
             meta.displayName(ChatUtils.createComponent(settings.getVoucherItemName(), "%playerName%", player.getName()));
 
             List<Component> lore = rawLore.stream()
-                    .map(line -> ChatUtils.createComponent(line,
-                            "%amount%", formattedAmount,
-                            "%creationDate%", date))
-                    .collect(Collectors.toList());
-
+                    .map(line -> ChatUtils.createComponent(line, "%amount%", formattedAmount, "%creationDate%", date)).collect(Collectors.toList());
             meta.lore(lore);
         } else {
             meta.setDisplayName(formatString(settings.getVoucherItemName(), player.getName(), formattedAmount, date));
@@ -84,9 +80,7 @@ public class ItemUtils {
         voucher.setItemMeta(meta);
         player.getInventory().addItem(voucher);
 
-        ChatUtils.send(player, config.VOUCHER_CREATED,
-                "%prefix%", config.PREFIX,
-                "%amount%", formattedAmount);
+        languageManager.send(player, LanguageKeys.VOUCHER_CREATED, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount);
     }
 
     private String formatString(String text, String playerName, String amount, String date) {

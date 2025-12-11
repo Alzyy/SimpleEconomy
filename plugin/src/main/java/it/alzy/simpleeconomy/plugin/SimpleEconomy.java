@@ -7,10 +7,10 @@ import it.alzy.simpleeconomy.api.SimpleEconomyAPI;
 import it.alzy.simpleeconomy.plugin.api.PAPIExpansion;
 import it.alzy.simpleeconomy.plugin.api.internal.EconomyProviderImpl;
 import it.alzy.simpleeconomy.plugin.commands.*;
-import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.events.PlayerListener;
 import it.alzy.simpleeconomy.plugin.events.VoucherEvents;
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.records.DatabaseInfo;
 import it.alzy.simpleeconomy.plugin.storage.Storage;
 import it.alzy.simpleeconomy.plugin.storage.impl.FileStorage;
@@ -55,6 +55,8 @@ public final class SimpleEconomy extends JavaPlugin {
 
     @Getter
     private UpdateUtils updateUtils;
+    @Getter
+    private LanguageManager languageManager;
 
     @Getter
     private boolean isPaper;
@@ -107,6 +109,13 @@ public final class SimpleEconomy extends JavaPlugin {
             cacheMap.clear();
         }
 
+        if(topMap != null) {
+            topMap.clear();
+        }
+        if(languageManager != null) {
+            languageManager.unloadLanguages();
+        }
+
         instance = null;
         getLogger().info("🛑 SimpleEconomy disabled.");
     }
@@ -140,7 +149,7 @@ public final class SimpleEconomy extends JavaPlugin {
         topMap = Maps.newConcurrentMap();
         formatUtils = new FormatUtils();
         itemUtils = new ItemUtils();
-
+        languageManager = new LanguageManager(this, SettingsConfig.getInstance().locale());
         amountKey = new NamespacedKey(this, getName() + "_voucheramount");
         uuidKey = new NamespacedKey(this, getName() + "_voucheruuid");
 
@@ -230,11 +239,6 @@ public final class SimpleEconomy extends JavaPlugin {
 
     private void loadConfigurations() {
         SettingsConfig.getInstance().registerLightConfig(this);
-        LangConfig.getInstance().registerConfig(this);
     }
 
-    public void reloadConfigurations() {
-        SettingsConfig.getInstance().reload();
-        LangConfig.getInstance().reload();
-    }
 }

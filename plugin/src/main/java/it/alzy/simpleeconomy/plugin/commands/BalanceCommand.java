@@ -1,5 +1,7 @@
 package it.alzy.simpleeconomy.plugin.commands;
 
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -10,46 +12,37 @@ import co.aikar.commands.annotation.Default;
 import co.aikar.commands.annotation.Description;
 import co.aikar.commands.annotation.Optional;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
-import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
 
 @CommandAlias("balance|bal|money")
-@Description("Displays the balance of a player. Shows your own balance if no player is specified. " +
-        "Viewing others' balances requires permission.")
+@Description("Displays the balance of a player. Shows your own balance if no player is specified. Viewing others' balances requires permission.")
 public class BalanceCommand extends BaseCommand {
 
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
-    private final LangConfig config = LangConfig.getInstance();
-
+    private final LanguageManager languageManager = plugin.getLanguageManager();
     @Default
     public void onBalance(Player player, @Optional String targetName) {
         if (targetName == null || targetName.isEmpty()) {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 double balance = plugin.getCacheMap().getOrDefault(player.getUniqueId(), 0d);
                 String formattedBalance = plugin.getFormatUtils().formatBalance(balance);
-                ChatUtils.send(player, config.BALANCE_CHECK_SELF,
-                        "%prefix%", config.PREFIX,
-                        "%balance%", formattedBalance);
+                languageManager.send(player, LanguageKeys.BALANCE_CHECK_SELF, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%balance%", formattedBalance);
             });
         } else {
             if (!player.hasPermission("simpleconomy.balance.others")) {
-                ChatUtils.send(player, config.NO_PERMISSION, "%prefix%", config.PREFIX);
+                languageManager.send(player, LanguageKeys.NO_PERMISSION, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
                 return;
             }
 
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-                if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
-                    ChatUtils.send(player, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX, "%target%", targetName);
+                if (!target.hasPlayedBefore()) {
+                    languageManager.send(player, LanguageKeys.PLAYER_NOT_FOUND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%target%", targetName);
                     return;
                 }
 
                 plugin.getStorage().getBalance(target.getUniqueId()).thenAccept(dbBalance ->  {
                     String formattedBalance = plugin.getFormatUtils().formatBalance(dbBalance);
-                    ChatUtils.send(player, config.BALANCE_CHECK_OTHER,
-                            "%prefix%", config.PREFIX,
-                            "%balance%", formattedBalance,
-                            "%target%", targetName);
+                    languageManager.send(player, LanguageKeys.BALANCE_CHECK_OTHER, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%balance%", formattedBalance, "%target%", targetName);
                 });
             });
         }

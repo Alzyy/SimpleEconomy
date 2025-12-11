@@ -1,8 +1,8 @@
 package it.alzy.simpleeconomy.plugin.events;
 
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
-import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.utils.UpdateUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,11 +16,11 @@ import java.util.UUID;
 public class PlayerListener implements Listener {
 
     private final SimpleEconomy plugin;
-    private final LangConfig config;
+    private final LanguageManager languageManager;
 
     public PlayerListener() {
         this.plugin = SimpleEconomy.getInstance();
-        this.config = LangConfig.getInstance();
+        this.languageManager = plugin.getLanguageManager();
     }
 
     @EventHandler
@@ -49,13 +49,9 @@ public class PlayerListener implements Listener {
         if (!player.hasPermission("simpleeconomy.notify.update")) return;
 
         if (UpdateUtils.isUpdateAvailable()) {
-            ChatUtils.send(player, config.UPDATES_AVAILABLE,
-                    "%prefix%", config.PREFIX,
-                    "%version%", UpdateUtils.getNewVersion(),
-                    "%updateNote%", UpdateUtils.getUpdateNotes());
+            languageManager.send(player, LanguageKeys.UPDATE_AVAILABLE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%version%", UpdateUtils.getNewVersion(), "%updateNote%", UpdateUtils.getUpdateNotes());
         } else {
-            ChatUtils.send(player, config.UPDATES_LATEST,
-                    "%prefix%", config.PREFIX);
+            languageManager.send(player, LanguageKeys.UPDATE_LATEST, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
         }
     }
 

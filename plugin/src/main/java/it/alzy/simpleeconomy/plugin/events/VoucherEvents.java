@@ -1,5 +1,7 @@
 package it.alzy.simpleeconomy.plugin.events;
 
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,14 +14,13 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
 import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 
 public class VoucherEvents implements Listener {
 
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
+    private final LanguageManager languageManager = plugin.getLanguageManager();
 
     @EventHandler
     public void playerInteract(PlayerInteractEvent ev) {
@@ -51,7 +52,7 @@ public class VoucherEvents implements Listener {
         VaultHook.getEconomy().depositPlayer(player, amount);
 
         String formattedBalance = plugin.getFormatUtils().formatBalance(amount);
-        ChatUtils.send(player, LangConfig.getInstance().VOUCHER_CHECKED, "%prefix%", LangConfig.getInstance().PREFIX, "%amount%", formattedBalance);
+        languageManager.send(player, LanguageKeys.VOUCHER_CHECKED, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedBalance);
 
 
         if (playerItem.getAmount() > 1) {

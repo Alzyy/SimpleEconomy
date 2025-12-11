@@ -4,7 +4,8 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import co.aikar.commands.annotation.Optional;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.LangConfig;
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
 import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import net.milkbowl.vault.economy.Economy;
@@ -23,25 +24,25 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ECOCommand extends BaseCommand {
 
     private final SimpleEconomy plugin;
-    private final LangConfig config;
+    private final LanguageManager languageManager;
 
     public ECOCommand() {
         this.plugin = SimpleEconomy.getInstance();
-        this.config = LangConfig.getInstance();
+        this.languageManager = plugin.getLanguageManager();
     }
 
     private enum EcoAction { GIVE, SET, REMOVE }
 
     @Default
     public void root(CommandSender player) {
-        ChatUtils.send(player, config.USAGE_ECO, "%prefix%", config.PREFIX);
+        languageManager.send(player, LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
     }
 
     @Subcommand("set")
     @CommandCompletion("@players|@a|@p|@r")
     public void set(CommandSender sender, @Optional String targetName, @Optional Double amount) {
         if(targetName.isEmpty() || amount == null) {
-            ChatUtils.send(sender, config.USAGE_ECO, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
@@ -52,7 +53,7 @@ public class ECOCommand extends BaseCommand {
     @CommandCompletion("@players|@a|@p|@r")
     public void give(CommandSender sender, @Optional String targetName, @Optional Double amount) {
         if(targetName.isEmpty() || amount == null) {
-            ChatUtils.send(sender, config.USAGE_ECO, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
         execute(sender, targetName, amount, EcoAction.GIVE);
@@ -62,7 +63,7 @@ public class ECOCommand extends BaseCommand {
     @CommandCompletion("@players|@a|@p|@r")
     public void remove(CommandSender sender, @Optional String targetName, @Optional Double amount) {
         if(targetName.isEmpty() || amount == null) {
-            ChatUtils.send(sender, config.USAGE_ECO, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
         execute(sender, targetName, amount, EcoAction.REMOVE);
@@ -70,7 +71,7 @@ public class ECOCommand extends BaseCommand {
 
     private void execute(CommandSender sender, String targetName, double amount, EcoAction action) {
         if (!sender.hasPermission("simpleconomy.eco." + action.name().toLowerCase())) {
-            ChatUtils.send(sender, config.NO_PERMISSION, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.NO_PERMISSION, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
@@ -94,7 +95,7 @@ public class ECOCommand extends BaseCommand {
 
                 case REMOVE -> {
                     if (!economy.has(target, amount)) {
-                        ChatUtils.send(sender, config.NOT_ENOUGH_MONEY, "%prefix%", config.PREFIX);
+                        languageManager.send(sender, LanguageKeys.NOT_ENOUGH_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
                         continue;
                     }
                     response = economy.withdrawPlayer(target, amount);
@@ -116,7 +117,7 @@ public class ECOCommand extends BaseCommand {
             if (response.transactionSuccess()) {
                 handleSuccess(sender, target, response.balance, formattedAmount, action);
             } else {
-                ChatUtils.send(sender, "&cError: " + response.errorMessage, "%prefix%", config.PREFIX);
+                ChatUtils.send(sender, "&cError: " + response.errorMessage, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             }
         }
     }
@@ -125,35 +126,35 @@ public class ECOCommand extends BaseCommand {
         plugin.getCacheMap().put(target.getUniqueId(), newBalance);
         plugin.getExecutor().execute(() -> plugin.getStorage().save(target.getUniqueId(), newBalance));
 
-        String senderMsg = switch (action) {
-            case GIVE -> config.GAVE_MONEY;
-            case REMOVE -> config.REMOVED_MONEY;
-            case SET -> config.SET_SUCCESS;
+        LanguageKeys senderMsg = switch (action) {
+            case GIVE -> LanguageKeys.GAVE_MONEY;
+            case REMOVE -> LanguageKeys.REMOVED_MONEY;
+            case SET -> LanguageKeys.ECO_SET_SUCCESS;
         };
 
-        ChatUtils.send(sender, senderMsg, "%prefix%", config.PREFIX, "%amount%", formattedAmount, "%target%", target.getName());
+        languageManager.send(sender, senderMsg, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%target%", target.getName());
 
         if (action != EcoAction.SET && target.isOnline() && target.getPlayer() != null) {
-            String targetMsg = (action == EcoAction.GIVE) ? config.RECEIVED_MONEY : config.MONEY_REMOVED;
-            ChatUtils.send(target.getPlayer(), targetMsg, "%prefix%", config.PREFIX, "%amount%", formattedAmount, "%source%", sender.getName());
+            LanguageKeys targetMsg = (action == EcoAction.GIVE) ? LanguageKeys.RECEIVED_MONEY: LanguageKeys.MONEY_REMOVED;
+            languageManager.send(target.getPlayer(), targetMsg,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%source%", sender.getName());
         }
     }
 
     private boolean isValidAmount(CommandSender sender, double amount, EcoAction action) {
         if (!Double.isFinite(amount)) {
-            ChatUtils.send(sender, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.INVALID_AMOUNT,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return false;
         }
 
         boolean isInvalid = (action == EcoAction.SET) ? (amount < 0) : (amount <= 0);
 
         if (isInvalid) {
-            ChatUtils.send(sender, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.INVALID_AMOUNT,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return false;
         }
 
         if (BigDecimal.valueOf(amount).scale() > 2) {
-            ChatUtils.send(sender, config.INVALID_AMOUNT, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.INVALID_AMOUNT,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return false;
         }
         return true;
@@ -181,7 +182,7 @@ public class ECOCommand extends BaseCommand {
     private Collection<OfflinePlayer> getOfflinePlayerFallback(CommandSender sender, String targetName) {
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
         if (!target.hasPlayedBefore() && !target.isOnline()) {
-            ChatUtils.send(sender, config.PLAYER_NOT_FOUND, "%prefix%", config.PREFIX);
+            languageManager.send(sender, LanguageKeys.PLAYER_NOT_FOUND,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return Collections.emptyList();
         }
         return Collections.singletonList(target);
