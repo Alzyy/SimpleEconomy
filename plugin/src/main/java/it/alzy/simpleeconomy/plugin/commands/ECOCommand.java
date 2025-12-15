@@ -19,12 +19,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static it.alzy.simpleeconomy.plugin.utils.TimeUtils.dateTime;
 
 @CommandAlias("eco")
 @Description("Manage players' economy balances.")
@@ -151,10 +148,7 @@ public class ECOCommand extends BaseCommand {
             double balanceBefore = switch (action) {
                 case GIVE -> newBalance - Double.parseDouble(formattedAmount.replaceAll("[^\\d.]", ""));
                 case REMOVE -> newBalance + Double.parseDouble(formattedAmount.replaceAll("[^\\d.]", ""));
-                case SET -> {
-                    double current = VaultHook.getEconomy().getBalance(target);
-                    yield current;
-                }
+                case SET -> VaultHook.getEconomy().getBalance(target);
             };
 
             double amountValue = Double.parseDouble(formattedAmount.replaceAll("[^\\d.]", ""));

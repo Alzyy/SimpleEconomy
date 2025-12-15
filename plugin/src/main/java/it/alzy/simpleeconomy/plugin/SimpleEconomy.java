@@ -1,8 +1,8 @@
 package it.alzy.simpleeconomy.plugin;
 
+import co.aikar.commands.InvalidCommandArgument;
 import co.aikar.commands.PaperCommandManager;
 import com.google.common.collect.Maps;
-
 import it.alzy.simpleeconomy.api.SimpleEconomyAPI;
 import it.alzy.simpleeconomy.plugin.api.PAPIExpansion;
 import it.alzy.simpleeconomy.plugin.api.internal.EconomyProviderImpl;
@@ -11,6 +11,7 @@ import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.events.PlayerListener;
 import it.alzy.simpleeconomy.plugin.events.VoucherEvents;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.logging.TransactionLogger;
 import it.alzy.simpleeconomy.plugin.records.DatabaseInfo;
 import it.alzy.simpleeconomy.plugin.storage.Storage;
@@ -21,14 +22,20 @@ import it.alzy.simpleeconomy.plugin.tasks.AutoPurgeTask;
 import it.alzy.simpleeconomy.plugin.tasks.AutoSaveTask;
 import it.alzy.simpleeconomy.plugin.tasks.BalTopRefreshTask;
 import it.alzy.simpleeconomy.plugin.tasks.CheckUpdateTask;
-import it.alzy.simpleeconomy.plugin.utils.*;
+import it.alzy.simpleeconomy.plugin.utils.FormatUtils;
+import it.alzy.simpleeconomy.plugin.utils.ItemUtils;
+import it.alzy.simpleeconomy.plugin.utils.UpdateUtils;
+import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
+
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public final class SimpleEconomy extends JavaPlugin {
 
@@ -240,7 +247,16 @@ public final class SimpleEconomy extends JavaPlugin {
 
     private void registerCommands() {
         PaperCommandManager commandManager = new PaperCommandManager(this);
+        commandManager.getCommandContexts().registerContext(Double.class, c -> {
+            String arg = c.popFirstArg();
 
+            try {
+                return Double.parseDouble(arg);
+            } catch (NumberFormatException e) {
+                languageManager.send(c.getSender(), LanguageKeys.INVALID_AMOUNT, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%arg%", arg);
+                throw new InvalidCommandArgument(false);
+            }
+        });
         commandManager.registerCommand(new SECommand());
         commandManager.registerCommand(new ECOCommand());
         commandManager.registerCommand(new BalanceCommand());
@@ -255,6 +271,7 @@ public final class SimpleEconomy extends JavaPlugin {
             commandManager.registerCommand(new ECOHistoryCommand());
         }
     }
+
 
     private void loadConfigurations() {
         SettingsConfig.getInstance().registerLightConfig(this);

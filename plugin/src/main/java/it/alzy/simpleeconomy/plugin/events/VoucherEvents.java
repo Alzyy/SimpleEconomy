@@ -45,6 +45,7 @@ public class VoucherEvents implements Listener {
         if (!pdc.has(plugin.getUuidKey(), PersistentDataType.STRING)) return;
         if (!pdc.has(plugin.getAmountKey(), PersistentDataType.DOUBLE)) return;
 
+        //noinspection DataFlowIssue
         double amount = pdc.get(plugin.getAmountKey(), PersistentDataType.DOUBLE);
         if (amount <= 0) return;
 

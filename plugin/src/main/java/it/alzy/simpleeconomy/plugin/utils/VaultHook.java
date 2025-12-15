@@ -132,9 +132,7 @@ public class VaultHook implements Economy {
             if(SettingsConfig.getInstance().enableActionBarMessages()) {
                 ChatUtils.createComponentAsync(plugin.getLanguageManager().getMessage(
                                 LanguageKeys.ACTION_BAR_DETRACT),
-                        "%amount%", plugin.getFormatUtils().formatBalance(amount)).thenAccept(comp -> {
-                    ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp);
-                });
+                        "%amount%", plugin.getFormatUtils().formatBalance(amount)).thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
             }
         }
         plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, newBalance));
@@ -162,9 +160,7 @@ public class VaultHook implements Economy {
             if(SettingsConfig.getInstance().enableActionBarMessages()) {
                 ChatUtils.createComponentAsync(plugin.getLanguageManager().getMessage(
                         LanguageKeys.ACTION_BAR_ADD),
-                        "%amount%", plugin.getFormatUtils().formatBalance(amount)).thenAccept(comp -> {
-                    ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp);
-                });
+                        "%amount%", plugin.getFormatUtils().formatBalance(amount)).thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
             }
         }
         plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, newBalance));

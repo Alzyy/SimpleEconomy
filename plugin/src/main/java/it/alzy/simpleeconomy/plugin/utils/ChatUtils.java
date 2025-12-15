@@ -4,10 +4,11 @@ import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -151,6 +152,17 @@ public class ChatUtils {
         return result;
     }
 
+    public static void sendActionBar(Player player, Component component) {
+        if (player == null || component == null) {
+            return;
+        }
+        if (!SimpleEconomy.getInstance().isPaper()) {
+            SimpleEconomy.getInstance().getBukkitAudiences().player(player).sendActionBar(component);
+        } else {
+            player.sendActionBar(component);
+        }
+    }
+
     public static Component createComponent(String message, Object... placeholders) {
         if (message == null || message.isEmpty()) {
             return EMPTY_COMPONENT;
@@ -164,6 +176,25 @@ public class ChatUtils {
         }
 
         return parse(message);
+    }
+
+    public static CompletableFuture<Component> createComponentAsync(String message, Object... placeholders) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (message == null || message.isEmpty()) {
+                return EMPTY_COMPONENT;
+            }
+
+            String processedMessage = message;
+
+            if (placeholders.length > 0) {
+                if (placeholders.length % 2 != 0) {
+                    throw new IllegalArgumentException("Placeholders must be key-value pairs");
+                }
+                processedMessage = applyPlaceholders(processedMessage, placeholders);
+            }
+
+            return parse(processedMessage);
+        });
     }
 
 }
