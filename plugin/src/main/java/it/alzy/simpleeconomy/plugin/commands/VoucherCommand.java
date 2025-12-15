@@ -1,10 +1,13 @@
 package it.alzy.simpleeconomy.plugin.commands;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import co.aikar.commands.annotation.Optional;
+import it.alzy.simpleeconomy.api.TransactionTypes;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import it.alzy.simpleeconomy.plugin.records.Transaction;
 import org.bukkit.entity.Player;
 
 import co.aikar.commands.BaseCommand;
@@ -38,7 +41,12 @@ public class VoucherCommand extends BaseCommand {
         }
         VaultHook.getEconomy().withdrawPlayer(player, amount);
         SimpleEconomy.getInstance().getItemUtils().createVoucherAndGive(player, amount);
-    } 
+        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
+            Transaction transaction = new Transaction(player.getUniqueId().toString(), player.getUniqueId().toString(), amount, VaultHook.getEconomy().getBalance(player)+amount,VaultHook.getEconomy().getBalance(player), TransactionTypes.WITHDRAW, System.currentTimeMillis());
+            plugin.getTransactionLogger().appendLog(transaction);
+        }
+
+    }
 
     public boolean validateAmount(double amount) {
         if (!Double.isFinite(amount))

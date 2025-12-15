@@ -1,16 +1,23 @@
 package it.alzy.simpleeconomy.plugin.configurations;
 
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import net.pino.simpleconfig.LightConfig;
 import net.pino.simpleconfig.annotations.Config;
 import net.pino.simpleconfig.annotations.ConfigFile;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 @Config
 @ConfigFile("config.yml")
 public class SettingsConfig extends LightConfig {
 
     private static SettingsConfig instance = null;
+
 
     public String locale() { return this.fileConfiguration.getString("settings.locale", "en"); }
 
@@ -116,6 +123,45 @@ public class SettingsConfig extends LightConfig {
 
     public String getDBPrefixTable() {
         return this.fileConfiguration.getString("database.table-prefix", "se_");
+    }
+
+    public boolean isTransactionLoggingEnabled() { return this.fileConfiguration.getBoolean("transaction-logger.enable-logger", true); }
+
+    public int getTransactionLoggingMaxFileSize() { return this.fileConfiguration.getInt("transaction-logger.file-size-limit-mb", 10); }
+
+    public int getMaxTransactionLimit() {
+        return this.fileConfiguration.getInt("settings.max-transaction-amount", 0);
+    }
+
+    public int getPurgeInactiveAccountsDays() {
+        return this.fileConfiguration.getInt("storage.auto-purge-days", 30);
+    }
+
+    public boolean isAutoPurgeEnabled() {
+        return this.fileConfiguration.getBoolean("storage.enable-auto-purge", true);
+    }
+
+    public boolean enableActionBarMessages() {
+        return this.fileConfiguration.getBoolean("settings.enable-action-bar-messages", false);
+    }
+
+    public void checkMissingKeys() {
+        InputStream resourceStream = SimpleEconomy.getInstance().getResource("config.yml");
+        if (resourceStream != null) {
+            YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(resourceStream, StandardCharsets.UTF_8));
+            boolean changed = false;
+            for (String key : defaultConfig.getKeys(true)) {
+                if (!this.fileConfiguration.contains(key)) {
+                    fileConfiguration.set(key, defaultConfig.get(key));
+                    fileConfiguration.setComments(key, defaultConfig.getComments(key));
+                    fileConfiguration.setInlineComments(key, defaultConfig.getInlineComments(key));
+                    changed = true;
+                }
+            }
+            if (changed) {
+                this.saveAndReload();
+            }
+        }
     }
 
     private SettingsConfig() {}

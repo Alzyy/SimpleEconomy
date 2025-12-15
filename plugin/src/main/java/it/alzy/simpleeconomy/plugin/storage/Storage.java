@@ -16,5 +16,6 @@ public interface Storage {
     Map<String, Double> getTopBalances(int limit);
     void bulkSave();
     void close();
+    void purge(int days);
     Map<String, Double> getAllBalances();
 }

@@ -1,9 +1,11 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
+import it.alzy.simpleeconomy.api.SimpleEconomyAPI;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import it.alzy.simpleeconomy.plugin.records.Transaction;
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;

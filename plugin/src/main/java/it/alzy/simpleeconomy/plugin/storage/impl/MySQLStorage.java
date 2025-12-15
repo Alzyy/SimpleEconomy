@@ -1,9 +1,6 @@
 package it.alzy.simpleeconomy.plugin.storage.impl;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -47,9 +44,11 @@ public class MySQLStorage implements Storage {
 
     private void createTableIfNotExists() {
         String sql = "CREATE TABLE IF NOT EXISTS `" + tableName + "` (" +
-                     "uuid VARCHAR(36) PRIMARY KEY, " +
-                     "balance DOUBLE NOT NULL" +
-                     ")";
+                "uuid VARCHAR(36) PRIMARY KEY, " +
+                "balance DOUBLE NOT NULL, " +
+                "last_seen BIGINT NOT NULL" +
+                ")";
+
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.executeUpdate();
@@ -65,12 +64,13 @@ public class MySQLStorage implements Storage {
 
     @Override
     public void saveSync(UUID uuid, double balance) {
-        String sql = "INSERT INTO `" + tableName + "` (uuid, balance) VALUES (?, ?) " +
-                     "ON DUPLICATE KEY UPDATE balance = VALUES(balance)";
+        String sql = "INSERT INTO `" + tableName + "` (uuid, balance, last_seen) VALUES (?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE balance = VALUES(balance), last_seen = VALUES(last_seen)";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, uuid.toString());
             stmt.setDouble(2, balance);
+            stmt.setLong(3, System.currentTimeMillis());
             stmt.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().warning("Failed to save data for UUID " + uuid + ": " + e.getMessage());
@@ -92,11 +92,9 @@ public class MySQLStorage implements Storage {
             } catch (SQLException e) {
                 plugin.getLogger().warning("Failed to load data for UUID " + uuid + ": " + e.getMessage());
             }
-            return 0.0;
+            return SettingsConfig.getInstance().startingBalance();
         }, executor);
     }
-
-
 
     @Override
     public CompletableFuture<Double> load(UUID uuid) {
@@ -115,7 +113,11 @@ public class MySQLStorage implements Storage {
             } catch (SQLException e) {
                 plugin.getLogger().warning("Failed to load data for UUID " + uuid + ": " + e.getMessage());
             }
-            return 0.0;
+
+            double defaultBalance = SettingsConfig.getInstance().startingBalance();
+            plugin.getCacheMap().put(uuid, defaultBalance);
+            saveSync(uuid, defaultBalance);
+            return defaultBalance;
         }, executor);
     }
 
@@ -124,15 +126,15 @@ public class MySQLStorage implements Storage {
         executor.execute(() -> {
             double balance = SettingsConfig.getInstance().startingBalance();
             plugin.getCacheMap().put(uuid, balance);
-            save(uuid, balance);
+            saveSync(uuid, balance);
         });
     }
 
     @Override
     public void bulkSave() {
         var futures = plugin.getCacheMap().entrySet().stream()
-            .map(entry -> CompletableFuture.runAsync(() -> saveSync(entry.getKey(), entry.getValue()), executor))
-            .toList();
+                .map(entry -> CompletableFuture.runAsync(() -> saveSync(entry.getKey(), entry.getValue()), executor))
+                .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
     }
@@ -180,6 +182,23 @@ public class MySQLStorage implements Storage {
         }
 
         return topBalances;
+    }
+
+    @Override
+    public void purge(int days) {
+        plugin.getExecutor().execute(() -> {
+            String sql = "DELETE FROM `" + tableName + "` WHERE last_seen < ?";
+            long cutoff = System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L);
+
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setLong(1, cutoff);
+                int deletedRows = stmt.executeUpdate();
+                plugin.getLogger().info("Purged " + deletedRows + " accounts inactive for more than " + days + " days.");
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Failed to purge inactive accounts: " + e.getMessage());
+            }
+        });
     }
 
     @Override

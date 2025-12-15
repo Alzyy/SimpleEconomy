@@ -1,49 +1,72 @@
 # ───────────────────────────────────────────────
-# SimpleEconomy by AlzyIT v2.7
-# Configuration file for balance system, formatting, storage, and vouchers.
+# SimpleEconomy by AlzyIT v2.8
+# Main configuration file.
 # ───────────────────────────────────────────────
 
 settings:
-  # Locale for messages (e.g., it, en, tr, etc.)
+  # Language code. Matches the filename in the /languages/ folder (e.g., 'en' -> lang_en.yml).
   locale: "en"
 
-  # Default balance assigned to a new player
+  # The amount of money a player receives upon joining for the first time.
   starting-balance: 1000
 
-  # Symbol displayed after the currency amount
+  # The symbol shown with the balance (e.g., $100 or 100€).
   currency-symbol: "$"
 
-  # Storage system: choose between SQLITE, FILE or MYSQL
+  # Data persistence method.
+  # Options: SQLITE (local .db file), FILE (YAML files), MYSQL (external database).
   storage-system: SQLITE
 
-  # Interval (in minutes) to auto-save all cached player data
+  # How often (in minutes) player data is saved to the disk/database to prevent data loss.
   auto-save-time: 30
 
-  # Maximum number of threads used for asynchronous tasks
+  # Performance setting: Max number of concurrent threads for async operations.
   max-thread-pool-size: 2
 
-  # Enable or disable cheque (voucher) system
+  # Toggle the voucher/cheque system (/voucher command).
   enable-vouchers: true
 
-  # Interval (in minutes) to automatically refresh baltop
+  # How often (in minutes) the /baltop leaderboard is recalculated.
+  # Higher values improve server performance.
   baltop-refresh-interval: 20
 
-  # Bal top limit (max number of players shown in /baltop)
+  # Number of players to display in the /baltop command.
   baltop-limit: 10
 
-  # Check for plugin updates on startup
+  # Should the plugin check for new versions on server startup?
   check-for-updates: true
 
-  # Interval (in minutes) to automatically check for updates
+  # How often (in minutes) to check for updates while the server is running.
   update-check-interval: 1440
-  
-  # Register PlaceholderAPI expansion
+
+  # Hook into PlaceholderAPI to provide %simpleeconomy_balance% placeholders.
   use-placeholderapi: true
 
-  # Enable format for balances
+  # If true, large numbers will be formatted using the suffixes defined in the 'format' section below.
   enable-balance-formatting: true
 
+  # Maximum amount a player can send via /pay. Set to 0 to disable.
+  max-transaction-amount: 0
+
+  # Enable action bar messages for transactions (pay, withdraw, etc.).
+  enable-action-bar-messages: false
+
+storage:
+  # If enabled, data of players who haven't joined in a long time will be deleted.
+  enable-auto-purge: true
+
+  # Days of inactivity required before an account is purged.
+  auto-purge-days: 30
+
+transaction-logger:
+  # Records every transaction (pay, withdraw, etc.) to a separate database/file for history.
+  enable-logger: true
+
+  # Maximum size of the log database (in MB) before it rotates and archives the old one.
+  file-size-limit-mb: 10
+
 database:
+  # These settings are only used if 'storage-system' is set to MYSQL.
   host: "localhost"
   username: "root"
   password: "CHANGEME"
@@ -53,22 +76,22 @@ database:
   port: 3306
 
 vouchers:
-  # Material used to represent a voucher item
+  # The Minecraft material used for the voucher item.
   item: PAPER
 
-  # Display name of the voucher (does NOT support PlaceholderAPI)
+  # Display name of the voucher item. Supports color codes (&).
   name: "&cCHECK &7(%playerName%)"
 
-  # Maximum withdrawable amount per voucher (set to 0 to disable limit)
+  # Maximum value a player can create a voucher for. 0 = unlimited.
   max-check-amount: 1000000
 
-  # Lore shown on the voucher (does NOT support PlaceholderAPI)
+  # The item lore description. Supports %amount% and %creationDate%.
   lore:
     - "&eAmount: %amount%"
     - "&cCreated: %creationDate%"
 
 format:
-  # Short number formatting for large balances
+  # Suffixes used if 'enable-balance-formatting' is true.
   thousand: "k"     # e.g. 1,200 -> 1.2k
   million: "M"      # e.g. 2,000,000 -> 2M
   billion: "B"      # e.g. 3,000,000,000 -> 3B

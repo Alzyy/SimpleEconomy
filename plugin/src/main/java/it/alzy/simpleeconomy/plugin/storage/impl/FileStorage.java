@@ -38,6 +38,7 @@ public class FileStorage implements Storage {
         File file = new File(folder, uuid.toString() + ".yml");
         YamlConfiguration config = new YamlConfiguration();
         config.set("balance", balance);
+        config.set("last_seen", System.currentTimeMillis());
         try {
             config.save(file);
         } catch (IOException e) {
@@ -83,6 +84,29 @@ public class FileStorage implements Storage {
         }, executor);
     }
 
+    public void purge(int days) {
+        plugin.getExecutor().execute(() -> {
+           File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml"));
+              if (files != null) {
+                  for (File file : files) {
+                        try {
+                            YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+                            long lastSeen = config.getLong("last_seen", System.currentTimeMillis());
+                            long cutoff = System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L);
+                            if (lastSeen < cutoff) {
+                                if (file.delete()) {
+                                    plugin.getLogger().info("Deleted inactive player data file: " + file.getName());
+                                } else {
+                                    plugin.getLogger().warning("Failed to delete inactive player data file: " + file.getName());
+                                }
+                            }
+                        } catch (Exception e) {
+                            plugin.getLogger().log(Level.WARNING, "Failed to purge file " + file.getName(), e);
+                        }
+                  }
+              }
+        });
+    }
     @Override
     public CompletableFuture<Double> getBalance(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {

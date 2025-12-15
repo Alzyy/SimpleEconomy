@@ -1,36 +1,49 @@
-# English translation for SimpleEconomy
+# English language file for SimpleEconomy
 # Translated by AlzyIT
 prefix: '&#22C55Eѕᴇ ● &#9CA3AF'
 messages:
-  gave_money: '%prefix% &#A7F3D0✔ &#6B7280You sent &#22C55E%amount% &#6B7280to &#F9FAFB%target%'
-  received_money: '%prefix% &#A7F3D0✔ &#6B7280You received &#22C55E%amount% &#6B7280from &#F9FAFB%source%'
-  invalid_amount: '%prefix% &#F87171✘ &#EF4444Invalid amount &#6B7280| &#FBBF24Enter a valid number'
-  negative_amount: '%prefix% &#F87171✘ &#EF4444Amount must be positive &#6B7280| &#FBBF24Use a number above zero'
-  reload_success: '%prefix% &#86EFAC✔ &#22C55ESuccessfully reloaded &#6B7280| Settings applied'
-  no_permission: '%prefix% &#F87171✘ &#EF4444You don''t have permission &#6B7280to use this command'
-  player_not_found: '%prefix% &#F87171✘ &#EF4444Player not found &#6B7280| &#FBBF24Check the name and try again'
-  balance_check_self: '%prefix% &#6B7280Balance &#374151| &#22C55E%balance%'
-  balance_check_other: '%prefix% &#6B7280%target%''s Balance &#374151| &#22C55E%balance%'
+  system:
+    reload_success: '%prefix% &#86EFAC✔ &#22C55ESuccessfully reloaded &#6B7280| Settings applied'
+    no_permission: '%prefix% &#F87171✘ &#EF4444You don''t have permission &#6B7280to use this command'
+    player_not_found: '%prefix% &#F87171✘ &#EF4444Player not found &#6B7280| &#FBBF24Check the name and try again'
+    inventory_full: '%prefix% &#F97316✘ &#EF4444Your inventory is full!'
+    self_command_error: '%prefix% &#F97316✘ &#EF4444You cannot use this command on yourself'
+  errors:
+    invalid_amount: '%prefix% &#F87171✘ &#EF4444Invalid amount &#6B7280| &#FBBF24Enter a valid number'
+    negative_amount: '%prefix% &#F87171✘ &#EF4444Amount must be positive &#6B7280| &#FBBF24Use a number above zero'
+    amount_exceeds_limit: '%prefix% &#F87171✘ &#EF4444Amount exceeds the maximum limit &#6B7280| &#FBBF24Set an amount below &#F9FAFB%max%'
+    not_enough_money: '%prefix% &#EF4444✘ &#6B7280Insufficient funds &#374151| &#FBBF24Balance too low'
+  balance:
+    self: '%prefix% &#6B7280Balance &#374151| &#22C55E%balance%'
+    other: '%prefix% &#6B7280%target%''s Balance &#374151| &#22C55E%balance%'
+  pay:
+    usage: '%prefix% &#6B7280Usage &#374151| &#F9FAFB/pay <player> <amount>'
+    sent: '%prefix% &#A7F3D0✔ &#6B7280You sent &#22C55E%amount% &#6B7280to &#F9FAFB%target%'
+    received: '%prefix% &#A7F3D0✔ &#6B7280You received &#22C55E%amount% &#6B7280from &#F9FAFB%source%'
   eco:
+    usage: '%prefix% &#6B7280Usage &#374151| &#F9FAFB/eco <give|set|remove> <player> <amount>'
     set_success: '%prefix% &#86EFAC✔ &#6B7280Set &#F9FAFB%target%''s &#6B7280balance to &#22C55E%amount%'
-    usage: '%prefix% &#6B7280Usage &#374151| &#F9FAFB/eco &#6B7280<give|set|remove> <player> <amount>'
-  not_enough_money: '%prefix% &#EF4444✘ &#6B7280Insufficient funds &#374151| &#FBBF24Balance too low'
-  removed_money: '%prefix% &#FCA5A5✔ &#6B7280You removed &#F9FAFB%amount% &#6B7280from &#F9FAFB%target%'
-  money_removed: '%prefix% &#FCA5A5✔ &#F9FAFB%amount% &#6B7280was removed from your account by &#F9FAFB%source%'
-  self-command: '%prefix% &#F97316✘ &#EF4444You cannot use this command on yourself'
-  inventory-full: '%prefix% &#F97316✘ &#EF4444Your inventory is full!'
-  voucher-created: '%prefix% &#22C55E✔ &#6B7280Voucher created successfully for &#F9FAFB%amount%'
-  voucher-checked: '%prefix% &#22C55Eℹ &#6B7280You have checked a voucher worth &#F9FAFB%amount%'
+    removed_admin: '%prefix% &#FCA5A5✔ &#6B7280You removed &#F9FAFB%amount% &#6B7280from &#F9FAFB%target%'
+    removed_target: '%prefix% &#FCA5A5✔ &#F9FAFB%amount% &#6B7280was removed from your account by &#F9FAFB%source%'
+    history:
+      usage: '%prefix% &#6B7280Usage &#374151| &#F9FAFB/eco history <player> <limit>'
+      fetching: "%prefix% &#22C55Eℹ &#6B7280Fetching transaction history for &#F9FAFB%player%&#6B7280..."
+      header: "&#22C55E📜 &#6B7280Transaction history for &#F9FAFB%player%"
+      entry: "&#F9FAFB%type% &#6B7280of &#22C55E%amount% &#6B7280on &#F9FAFB%date% &#374151( &#6B7280%balance_before% &#374151➜ &#F9FAFB%balance_after% &#374151) &#F9FAFBto/from &#22C55E%target%"
+      no_entries: '%prefix% &#F87171✘ &#EF4444No transaction history found for &#F9FAFB%player%'
+  voucher:
+    usage: '%prefix% &#6B7280Usage &#374151| &#F9FAFB/voucher <amount>'
+    created: '%prefix% &#22C55E✔ &#6B7280Voucher created successfully for &#F9FAFB%amount%'
+    checked: '%prefix% &#22C55Eℹ &#6B7280You have checked a voucher worth &#F9FAFB%amount%'
   baltop:
     header: '&#22C55E💰 &#6B7280Top &#F9FAFB%limit% &#6B7280richest players'
     entry: '&#6B7280#%position% &#F9FAFB%player% &#6B7280- &#22C55E%balance%'
+    footer: '&#6B7280You are on page &#F9FAFB%currentPage%&#6B7280/&#F9FAFB%maxPage%'
     refreshed: '%prefix% &#22C55E✔ &#6B7280Top balances list refreshed'
     invalid_page: '%prefix% &#F87171✘ &#EF4444Invalid page number &#6B7280| &#FBBF24Enter a valid page'
-    footer: '&#6B7280You are on page &#F9FAFB%currentPage%&#6B7280/&#F9FAFB%maxPage%'
   updates:
     available: '%prefix% <color:#ffaa00>A new update is available!</color> <color:#eeeeee>Latest: </color><color:#6ea8ff>%version%</color> <color:#eeeeee>| Notes: </color><color:#6ea8ff>%updateNote%</color>'
     latest: '%prefix% &#22C55E✔ &#6B7280You are using the latest version'
-  pay:
-    usage: '%prefix% &#6B7280Usage &#374151| &#F9FAFB/pay <player> <amount>'
-  voucher:
-    usage: '%prefix% &#6B7280Usage &#374151| &#F9FAFB/voucher <amount>'
+  action_bar:
+    detract: "<gradient:#AA0000:#FF5555>- %amount%</gradient>"
+    add: "<gradient:#00AA00:#55FF55>+ %amount%</gradient>"

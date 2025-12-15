@@ -11,11 +11,13 @@ import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.events.PlayerListener;
 import it.alzy.simpleeconomy.plugin.events.VoucherEvents;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.logging.TransactionLogger;
 import it.alzy.simpleeconomy.plugin.records.DatabaseInfo;
 import it.alzy.simpleeconomy.plugin.storage.Storage;
 import it.alzy.simpleeconomy.plugin.storage.impl.FileStorage;
 import it.alzy.simpleeconomy.plugin.storage.impl.MySQLStorage;
 import it.alzy.simpleeconomy.plugin.storage.impl.SQLiteStorage;
+import it.alzy.simpleeconomy.plugin.tasks.AutoPurgeTask;
 import it.alzy.simpleeconomy.plugin.tasks.AutoSaveTask;
 import it.alzy.simpleeconomy.plugin.tasks.BalTopRefreshTask;
 import it.alzy.simpleeconomy.plugin.tasks.CheckUpdateTask;
@@ -57,6 +59,8 @@ public final class SimpleEconomy extends JavaPlugin {
     private UpdateUtils updateUtils;
     @Getter
     private LanguageManager languageManager;
+
+    @Getter private TransactionLogger transactionLogger;
 
     @Getter
     private boolean isPaper;
@@ -116,6 +120,10 @@ public final class SimpleEconomy extends JavaPlugin {
             languageManager.unloadLanguages();
         }
 
+        if(transactionLogger != null) {
+            transactionLogger.close();
+        }
+
         instance = null;
         getLogger().info("🛑 SimpleEconomy disabled.");
     }
@@ -147,9 +155,9 @@ public final class SimpleEconomy extends JavaPlugin {
         executor = Executors.newFixedThreadPool(settings.getThreadPoolSize());
         cacheMap = Maps.newConcurrentMap();
         topMap = Maps.newConcurrentMap();
+        languageManager = new LanguageManager(this, SettingsConfig.getInstance().locale());
         formatUtils = new FormatUtils();
         itemUtils = new ItemUtils();
-        languageManager = new LanguageManager(this, SettingsConfig.getInstance().locale());
         amountKey = new NamespacedKey(this, getName() + "_voucheramount");
         uuidKey = new NamespacedKey(this, getName() + "_voucheruuid");
 
@@ -205,6 +213,13 @@ public final class SimpleEconomy extends JavaPlugin {
                 new PAPIExpansion().register();
             }
         }
+        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
+            transactionLogger = new TransactionLogger(this);
+            transactionLogger.init();
+        }
+        if(SettingsConfig.getInstance().isAutoPurgeEnabled()) {
+            new AutoPurgeTask(this).register();
+        }
         loadApis();
     }
 
@@ -235,10 +250,16 @@ public final class SimpleEconomy extends JavaPlugin {
         if (SettingsConfig.getInstance().areVoucherEnabled()) {
             commandManager.registerCommand(new VoucherCommand());
         }
+
+        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
+            commandManager.registerCommand(new ECOHistoryCommand());
+        }
     }
 
     private void loadConfigurations() {
         SettingsConfig.getInstance().registerLightConfig(this);
+        SettingsConfig.getInstance().checkMissingKeys();
+
     }
 
 }

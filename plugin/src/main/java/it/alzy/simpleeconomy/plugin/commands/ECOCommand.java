@@ -3,9 +3,12 @@ package it.alzy.simpleeconomy.plugin.commands;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import co.aikar.commands.annotation.Optional;
+import it.alzy.simpleeconomy.api.TransactionTypes;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import it.alzy.simpleeconomy.plugin.records.Transaction;
 import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
 import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import net.milkbowl.vault.economy.Economy;
@@ -16,8 +19,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static it.alzy.simpleeconomy.plugin.utils.TimeUtils.dateTime;
 
 @CommandAlias("eco")
 @Description("Manage players' economy balances.")
@@ -37,6 +44,7 @@ public class ECOCommand extends BaseCommand {
     public void root(CommandSender player) {
         languageManager.send(player, LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
     }
+
 
     @Subcommand("set")
     @CommandCompletion("@players|@a|@p|@r")
@@ -137,6 +145,31 @@ public class ECOCommand extends BaseCommand {
         if (action != EcoAction.SET && target.isOnline() && target.getPlayer() != null) {
             LanguageKeys targetMsg = (action == EcoAction.GIVE) ? LanguageKeys.RECEIVED_MONEY: LanguageKeys.MONEY_REMOVED;
             languageManager.send(target.getPlayer(), targetMsg,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%source%", sender.getName());
+        }
+
+        if(SettingsConfig.getInstance().isFormattingEnabled()) {
+            double balanceBefore = switch (action) {
+                case GIVE -> newBalance - Double.parseDouble(formattedAmount.replaceAll("[^\\d.]", ""));
+                case REMOVE -> newBalance + Double.parseDouble(formattedAmount.replaceAll("[^\\d.]", ""));
+                case SET -> {
+                    double current = VaultHook.getEconomy().getBalance(target);
+                    yield current;
+                }
+            };
+
+            double amountValue = Double.parseDouble(formattedAmount.replaceAll("[^\\d.]", ""));
+
+            Transaction transaction = new Transaction(
+                    sender instanceof Player ? ((Player) sender).getUniqueId().toString() : "Console",
+                    target.getUniqueId().toString(),
+                    amountValue,
+                    balanceBefore,
+                    newBalance,
+                    TransactionTypes.ADMIN_ADJUSTMENT,
+                    System.currentTimeMillis()
+            );
+
+            plugin.getTransactionLogger().appendLog(transaction);
         }
     }
 

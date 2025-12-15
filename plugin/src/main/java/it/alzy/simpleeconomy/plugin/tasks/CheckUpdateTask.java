@@ -16,10 +16,7 @@ public class CheckUpdateTask extends BukkitRunnable {
     @Override
     public void run() {
         String latestVersion = UpdateUtils.getNewVersion();
-        if (latestVersion == null) {
-            plugin.getLogger().warning("Could not fetch the latest version information.");
-            return;
-        }
+        if (latestVersion == null || latestVersion.isEmpty()) {return;}
 
         String currentVersion = plugin.getDescription().getVersion();
         if (!currentVersion.equals(latestVersion)) {

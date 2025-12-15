@@ -56,7 +56,8 @@ public class SQLiteStorage implements Storage {
             String sql = """
                         CREATE TABLE IF NOT EXISTS users (
                             uuid TEXT PRIMARY KEY,
-                            balance REAL DEFAULT 0
+                            balance REAL DEFAULT 0,
+                            last_seen BIGINT NOT NULL
                         );
                     """;
 
@@ -71,14 +72,19 @@ public class SQLiteStorage implements Storage {
 
     private void saveToDatabase(UUID uuid, double balance) {
         String sql = """
-                    INSERT INTO users(uuid, balance) VALUES (?, ?)
-                    ON CONFLICT(uuid) DO UPDATE SET balance = ?;
-                """;
+                INSERT INTO users(uuid, balance, last_seen) VALUES (?, ?, ?)
+                ON CONFLICT(uuid) DO UPDATE SET balance = ?, last_seen = ?;
+            """;
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            long timestamp = System.currentTimeMillis();
+
             ps.setString(1, uuid.toString());
             ps.setDouble(2, balance);
-            ps.setDouble(3, balance);
+            ps.setLong(3, timestamp);
+
+            ps.setDouble(4, balance);
+            ps.setLong(5, timestamp);
             ps.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to save balance for UUID: " + uuid, e);
@@ -203,6 +209,26 @@ public class SQLiteStorage implements Storage {
         }
 
         return topBalances;
+    }
+
+    @Override
+    public void purge(int days) {
+        executor.execute(() -> {
+            String sql = "DELETE FROM users WHERE last_seen < ?";
+
+            long cutoff = System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L);
+
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setLong(1, cutoff);
+                int rowsDeleted = ps.executeUpdate();
+
+                if (rowsDeleted > 0) {
+                    plugin.getLogger().info("Purged " + rowsDeleted + " accounts inactive for more than " + days + " days.");
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to purge inactive accounts", e);
+            }
+        });
     }
     @Override
     public Map<String, Double> getAllBalances() {

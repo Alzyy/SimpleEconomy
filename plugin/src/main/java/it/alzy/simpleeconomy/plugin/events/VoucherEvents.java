@@ -1,7 +1,9 @@
 package it.alzy.simpleeconomy.plugin.events;
 
+import it.alzy.simpleeconomy.api.TransactionTypes;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import it.alzy.simpleeconomy.plugin.records.Transaction;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -63,6 +65,20 @@ public class VoucherEvents implements Listener {
             } else if (ev.getHand() == EquipmentSlot.OFF_HAND) {
                 player.getInventory().setItemInOffHand(null);
             }
+        }
+
+        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
+            plugin.getTransactionLogger().appendLog(
+                new Transaction(
+                    player.getUniqueId().toString(),
+                    "VOUCHER",
+                    amount,
+                    VaultHook.getEconomy().getBalance(player),
+                    VaultHook.getEconomy().getBalance(player) + amount,
+                    TransactionTypes.DEPOSIT,
+                    System.currentTimeMillis()
+                )
+            );
         }
     }
 }
