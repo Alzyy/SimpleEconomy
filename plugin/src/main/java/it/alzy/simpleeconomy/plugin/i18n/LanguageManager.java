@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.InputStream;
@@ -105,13 +106,25 @@ public class LanguageManager {
         return config.getString(path, "Message " + path + " not found.");
     }
 
-    public void send(CommandSender player, LanguageKeys msg, Object... placeholders) {
-        plugin.getExecutor().execute(() -> {
-            YamlConfiguration config = languages.getOrDefault(activeLanguage, languages.get("en"));
-            if (config == null) return;
 
-            String message = config.getString(msg.path(), "Message " + msg.path() + " not found.");
-            Bukkit.getScheduler().runTask(plugin, () -> ChatUtils.send(player, message, placeholders));
+    public void send(CommandSender sender, LanguageKeys msg, Object... placeholders) {
+        plugin.getExecutor().execute(() -> {
+            YamlConfiguration config;
+            if (sender instanceof Player player) {
+                config = languages.getOrDefault(player.locale().getLanguage(), languages.get(activeLanguage));
+            } else {
+                config = languages.getOrDefault(activeLanguage, languages.get("en"));
+            }
+            if (config == null) {
+                plugin.getLogger().warning("Could not find any language configuration for " + sender.getName());
+                return;
+            }
+            String message = config.getString(msg.path());
+            if (message == null || message.isEmpty()) {
+                message = "§cMessage key missing: " + msg.path();
+            }
+            String finalMessage = message;
+            Bukkit.getScheduler().runTask(plugin, () -> ChatUtils.send(sender, finalMessage, placeholders));
         });
     }
 

@@ -106,7 +106,7 @@ public class MySQLStorage implements Storage {
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         double balance = rs.getDouble("balance");
-                        plugin.getCacheMap().put(uuid, balance);
+                        plugin.getCacheMap().putIfAbsent(uuid, balance);
                         return balance;
                     }
                 }
@@ -115,7 +115,7 @@ public class MySQLStorage implements Storage {
             }
 
             double defaultBalance = SettingsConfig.getInstance().startingBalance();
-            plugin.getCacheMap().put(uuid, defaultBalance);
+            plugin.getCacheMap().putIfAbsent(uuid, defaultBalance);
             saveSync(uuid, defaultBalance);
             return defaultBalance;
         }, executor);
@@ -125,7 +125,7 @@ public class MySQLStorage implements Storage {
     public void create(UUID uuid) {
         executor.execute(() -> {
             double balance = SettingsConfig.getInstance().startingBalance();
-            plugin.getCacheMap().put(uuid, balance);
+            plugin.getCacheMap().putIfAbsent(uuid, balance);
             saveSync(uuid, balance);
         });
     }

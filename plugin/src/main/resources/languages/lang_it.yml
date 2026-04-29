@@ -42,8 +42,10 @@ messages:
     refreshed: '%prefix% &#22C55E✔ &#6B7280Classifica bilanci aggiornata'
     invalid_page: '%prefix% &#F87171✘ &#EF4444Numero pagina non valido &#6B7280| &#FBBF24Inserisci una pagina valida'
   updates:
-    available: '%prefix% <color:#ffaa00>È disponibile un aggiornamento!</color> <color:#eeeeee>Ultimo: </color><color:#6ea8ff>%version%</color> <color:#eeeeee>| Note: </color><color:#6ea8ff>%updateNote%</color>'
+    available: '%prefix% <color:#ffaa00>È disponibile un aggiornamento!</color> <color:#eeeeee>Ultimo: </color><color:#6ea8ff>%version%</color> <color:#eeeeee>'
     latest: '%prefix% &#22C55E✔ &#6B7280Stai usando l''ultima versione'
   action_bar:
     detract: "<gradient:#AA0000:#FF5555>- %amount%</gradient>"
     add: "<gradient:#00AA00:#55FF55>+ %amount%</gradient>"
+  interests:
+    received: "%prefix% &#A7F3D0⚖ &#6B7280Interessi maturati &#374151| &#22C55E+%amount% &#6B7280aggiunti al tuo saldo"

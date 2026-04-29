@@ -13,15 +13,13 @@ import it.alzy.simpleeconomy.plugin.events.VoucherEvents;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.logging.TransactionLogger;
+import it.alzy.simpleeconomy.plugin.logging.WebhookLogger;
 import it.alzy.simpleeconomy.plugin.records.DatabaseInfo;
 import it.alzy.simpleeconomy.plugin.storage.Storage;
 import it.alzy.simpleeconomy.plugin.storage.impl.FileStorage;
 import it.alzy.simpleeconomy.plugin.storage.impl.MySQLStorage;
 import it.alzy.simpleeconomy.plugin.storage.impl.SQLiteStorage;
-import it.alzy.simpleeconomy.plugin.tasks.AutoPurgeTask;
-import it.alzy.simpleeconomy.plugin.tasks.AutoSaveTask;
-import it.alzy.simpleeconomy.plugin.tasks.BalTopRefreshTask;
-import it.alzy.simpleeconomy.plugin.tasks.CheckUpdateTask;
+import it.alzy.simpleeconomy.plugin.tasks.*;
 import it.alzy.simpleeconomy.plugin.utils.FormatUtils;
 import it.alzy.simpleeconomy.plugin.utils.ItemUtils;
 import it.alzy.simpleeconomy.plugin.utils.UpdateUtils;
@@ -68,6 +66,10 @@ public final class SimpleEconomy extends JavaPlugin {
     private LanguageManager languageManager;
 
     @Getter private TransactionLogger transactionLogger;
+
+    @Getter private WebhookLogger webhookLogger;
+
+
 
     @Getter
     private boolean isPaper;
@@ -211,7 +213,9 @@ public final class SimpleEconomy extends JavaPlugin {
         registerCommands();
         new AutoSaveTask(this).register();
         new BalTopRefreshTask(this).register();
-
+        if(SettingsConfig.getInstance().isInterestEnabled()) {
+            new InterestTask(this).register();
+        }
         if (SettingsConfig.getInstance().registerPlaceholderAPI()) {
             if (getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) {
                 getLogger().warning(
@@ -220,10 +224,16 @@ public final class SimpleEconomy extends JavaPlugin {
                 new PAPIExpansion().register();
             }
         }
+
         if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
             transactionLogger = new TransactionLogger(this);
             transactionLogger.init();
         }
+
+        if(SettingsConfig.getInstance().shouldLogToDiscord()) {
+            webhookLogger = new WebhookLogger();
+        }
+
         if(SettingsConfig.getInstance().isAutoPurgeEnabled()) {
             new AutoPurgeTask(this).register();
         }
@@ -251,7 +261,11 @@ public final class SimpleEconomy extends JavaPlugin {
             String arg = c.popFirstArg();
 
             try {
-                return Double.parseDouble(arg);
+                double val = Double.parseDouble(arg);
+                if (!Double.isFinite(val) || val < 0) {
+                    throw new NumberFormatException();
+                }
+                return Math.floor(val * 100) / 100;
             } catch (NumberFormatException e) {
                 languageManager.send(c.getSender(), LanguageKeys.INVALID_AMOUNT, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%arg%", arg);
                 throw new InvalidCommandArgument(false);

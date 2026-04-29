@@ -115,7 +115,7 @@ public class SQLiteStorage implements Storage {
 
                 if (rs.next()) {
                     double balance = rs.getDouble("balance");
-                    plugin.getCacheMap().put(uuid, balance);
+                    plugin.getCacheMap().putIfAbsent(uuid, balance);
                     return balance;
                 }
             } catch (SQLException e) {
@@ -123,7 +123,7 @@ public class SQLiteStorage implements Storage {
             }
 
             double defaultBalance = SettingsConfig.getInstance().startingBalance();
-            plugin.getCacheMap().put(uuid, defaultBalance);
+            plugin.getCacheMap().putIfAbsent(uuid, defaultBalance);
             saveToDatabase(uuid, defaultBalance);
             return defaultBalance;
         }, executor);
@@ -153,18 +153,41 @@ public class SQLiteStorage implements Storage {
     public void create(UUID uuid) {
         executor.execute(() -> {
             double balance = SettingsConfig.getInstance().startingBalance();
-            plugin.getCacheMap().put(uuid, balance);
+            plugin.getCacheMap().putIfAbsent(uuid, balance);
             saveToDatabase(uuid, balance);
         });
     }
 
     @Override
     public void bulkSave() {
-        var futures = plugin.getCacheMap().entrySet().stream()
-            .map(entry -> CompletableFuture.runAsync(() -> saveSync(entry.getKey(), entry.getValue()), executor))
-            .toList();
-
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        String sql = """
+                INSERT INTO users(uuid, balance, last_seen) VALUES (?, ?, ?)
+                ON CONFLICT(uuid) DO UPDATE SET balance = ?, last_seen = ?;
+            """;
+    
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false); 
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                long timestamp = System.currentTimeMillis();
+                
+                for (Map.Entry<UUID, Double> entry : plugin.getCacheMap().entrySet()) {
+                    ps.setString(1, entry.getKey().toString());
+                    ps.setDouble(2, entry.getValue());
+                    ps.setLong(3, timestamp);
+                    ps.setDouble(4, entry.getValue());
+                    ps.setLong(5, timestamp);
+                    ps.addBatch();
+                }
+                
+                ps.executeBatch();
+                conn.commit(); 
+            } catch (SQLException e) {
+                conn.rollback();
+                plugin.getLogger().log(Level.SEVERE, "Failed to execute bulk save", e);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Database connection error during bulk save", e);
+        }
     }
 
     @Override

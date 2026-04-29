@@ -9,6 +9,7 @@ import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.records.Transaction;
+import it.alzy.simpleeconomy.plugin.tasks.InterestTask;
 import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
 import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import net.milkbowl.vault.economy.Economy;
@@ -120,15 +121,15 @@ public class ECOCommand extends BaseCommand {
             }
 
             if (response.transactionSuccess()) {
-                handleSuccess(sender, target, response.balance, formattedAmount, action);
+                handleSuccess(sender, target, amount, response.balance, formattedAmount, action);
             } else {
                 ChatUtils.send(sender, "&cError: " + response.errorMessage, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             }
         }
     }
 
-    private void handleSuccess(CommandSender sender, OfflinePlayer target, double newBalance, String formattedAmount, EcoAction action) {
-        plugin.getCacheMap().put(target.getUniqueId(), newBalance);
+    private void handleSuccess(CommandSender sender, OfflinePlayer target, double amount, double newBalance, String formattedAmount, EcoAction action) {
+        plugin.getCacheMap().merge(target.getUniqueId(), newBalance, Double::sum);
         plugin.getExecutor().execute(() -> plugin.getStorage().save(target.getUniqueId(), newBalance));
 
         LanguageKeys senderMsg = switch (action) {
@@ -144,14 +145,15 @@ public class ECOCommand extends BaseCommand {
             languageManager.send(target.getPlayer(), targetMsg,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%source%", sender.getName());
         }
 
-        if(SettingsConfig.getInstance().isFormattingEnabled()) {
+
+        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
             double balanceBefore = switch (action) {
                 case GIVE -> newBalance - Double.parseDouble(formattedAmount.replaceAll("[^\\d.]", ""));
                 case REMOVE -> newBalance + Double.parseDouble(formattedAmount.replaceAll("[^\\d.]", ""));
                 case SET -> VaultHook.getEconomy().getBalance(target);
             };
-
             double amountValue = Double.parseDouble(formattedAmount.replaceAll("[^\\d.]", ""));
+
 
             Transaction transaction = new Transaction(
                     sender instanceof Player ? ((Player) sender).getUniqueId().toString() : "Console",
@@ -165,7 +167,12 @@ public class ECOCommand extends BaseCommand {
 
             plugin.getTransactionLogger().appendLog(transaction);
         }
-    }
+        if (plugin.getWebhookLogger() != null) {
+            try {
+                plugin.getWebhookLogger().send(action.name().toLowerCase(), target.getName(), sender.getName(), amount);
+            } catch (NumberFormatException ignored) {}
+        }
+     }
 
     private boolean isValidAmount(CommandSender sender, double amount, EcoAction action) {
         if (!Double.isFinite(amount)) {

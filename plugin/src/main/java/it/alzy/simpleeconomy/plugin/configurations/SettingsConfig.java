@@ -1,6 +1,5 @@
 package it.alzy.simpleeconomy.plugin.configurations;
 
-import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +16,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 public class SettingsConfig extends LightConfig {
 
     private static SettingsConfig instance = null;
-
 
     public String locale() { return this.fileConfiguration.getString("settings.locale", "en"); }
 
@@ -64,9 +62,9 @@ public class SettingsConfig extends LightConfig {
     public String getVoucherMaterial() {
         return this.fileConfiguration.getString("vouchers.item", "PAPER");
     }
-    
+
     public String getVoucherItemName() {
-        return this.fileConfiguration.getString("vouchers.name", "PAPER");
+        return this.fileConfiguration.getString("vouchers.name", "&cCHECK &7(%playerName%)");
     }
 
     public List<String> getVoucherLore() {
@@ -78,13 +76,13 @@ public class SettingsConfig extends LightConfig {
     }
 
     public int getMaxVoucherAmount() {
-        return this.fileConfiguration.getInt("max-check-amount", 1000000);
+        return this.fileConfiguration.getInt("vouchers.max-check-amount", 1000000);
     }
-    
+
     public String getDBHost() {
         return this.fileConfiguration.getString("database.host", "localhost");
     }
-    
+
     public String getDBUsername() {
         return this.fileConfiguration.getString("database.username", "root");
     }
@@ -92,13 +90,13 @@ public class SettingsConfig extends LightConfig {
     public String getDBPassword() {
         return this.fileConfiguration.getString("database.password", "CHANGEME");
     }
-    
+
     public String getDBName() {
         return this.fileConfiguration.getString("database.database", "simpleeconomy");
     }
-    
+
     public int getDBPort() {
-        return this.fileConfiguration.getInt("database.port",3306);
+        return this.fileConfiguration.getInt("database.port", 3306);
     }
 
     public int getDBMaxPool() {
@@ -106,11 +104,11 @@ public class SettingsConfig extends LightConfig {
     }
 
     public int getBalTopInterval() {
-        return this.fileConfiguration.getInt("settings.baltop-update-interval", 20);
+        return this.fileConfiguration.getInt("settings.baltop-refresh-interval", 20);
     }
 
     public int getUpdateCheckInterval() {
-        return this.fileConfiguration.getInt("settings. update-check-interval", 1440);
+        return this.fileConfiguration.getInt("settings.update-check-interval", 1440);
     }
 
     public int getTopPlayersShown() {
@@ -141,9 +139,38 @@ public class SettingsConfig extends LightConfig {
         return this.fileConfiguration.getBoolean("storage.enable-auto-purge", true);
     }
 
-    public boolean enableActionBarMessages() {
-        return this.fileConfiguration.getBoolean("settings.enable-action-bar-messages", false);
-    }
+    public boolean enableActionBarMessages() {return this.fileConfiguration.getBoolean("settings.enable-action-bar-messages", false);}
+
+    public boolean isInterestEnabled() {return this.fileConfiguration.getBoolean("interests.enabled", false);}
+
+    public double minBalanceForInterests() {return this.fileConfiguration.getDouble("interests.min-balance", 100);}
+
+    public double maxInterest() {return this.fileConfiguration.getDouble("interests.max-interest", 2000);}
+
+    public double getInterestRate() { return this.fileConfiguration.getDouble("interests.rate", 0.05);}
+
+    public int getInterestInterval() { return this.fileConfiguration.getInt("interests.interval", 60); }
+
+    // --- Discord Webhook Getters ---
+
+    public boolean shouldLogToDiscord() { return this.fileConfiguration.getBoolean("settings.enable-discord-logging", false);}
+
+    public String webhookURL() { return this.fileConfiguration.getString("webhook-settings.url", ""); }
+
+    public String username() { return this.fileConfiguration.getString("webhook-settings.username", "SimpleEconomy Logger"); }
+
+    public String avatarURL() { return this.fileConfiguration.getString("webhook-settings.avatar-url", "https://example.com/avatar.png"); }
+
+    public String webhookColor() { return this.fileConfiguration.getString("webhook-settings.color", "#22C55E"); }
+
+    public boolean logPayToDiscord() { return this.fileConfiguration.getBoolean("webhook-settings.log-payments", true); }
+
+    public boolean logWithdrawalsToDiscord() { return this.fileConfiguration.getBoolean("webhook-settings.log-withdrawals", true); }
+
+    public boolean logAdminToDiscord() { return this.fileConfiguration.getBoolean("webhook-settings.log-admin", true); }
+
+    public boolean logVoucherCreations() { return this.fileConfiguration.getBoolean("webhook-settings.log-voucher-creations", true); }
+
 
     public void checkMissingKeys() {
         InputStream resourceStream = SimpleEconomy.getInstance().getResource("config.yml");
@@ -170,5 +197,4 @@ public class SettingsConfig extends LightConfig {
         if(instance == null) instance = new SettingsConfig();
         return instance;
     }
-
 }

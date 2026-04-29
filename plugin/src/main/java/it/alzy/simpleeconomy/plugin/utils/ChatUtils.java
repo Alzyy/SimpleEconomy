@@ -8,8 +8,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,8 +24,22 @@ public class ChatUtils {
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
-    private static final ConcurrentHashMap<String, Component> COMPONENT_CACHE = new ConcurrentHashMap<>(256);
-    private static final ConcurrentHashMap<String, String> CONVERSION_CACHE = new ConcurrentHashMap<>(256);
+    private static final Map<String, Component> COMPONENT_CACHE = Collections.synchronizedMap(
+        new LinkedHashMap<String, Component>(128, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, Component> eldest) {
+                return size() > 512;
+            }
+        }
+    );   
+    private static final Map<String, String> CONVERSION_CACHE = Collections.synchronizedMap(
+        new LinkedHashMap<String, String>(128, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                return size() > 512;
+            }
+        }
+    );   
     private static final Component EMPTY_COMPONENT = Component.empty();
 
     private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9a-fA-F]{6})");
@@ -104,31 +120,27 @@ public class ChatUtils {
 
         return converted;
     }
-
     public static void send(CommandSender sender, String message, Object... placeholders) {
-        if (sender == null || message == null || message.isEmpty()) {
-            return;
+        if (sender == null || message == null || message.isEmpty()) return;
+    
+        final String processedMessage = applyPlaceholders(message, placeholders);
+    
+        if (Bukkit.isPrimaryThread()) {
+            deliverMessage(sender, processedMessage);
+        } else {
+            Bukkit.getScheduler().runTask(SimpleEconomy.getInstance(), () -> deliverMessage(sender, processedMessage));
         }
-
-        if (placeholders.length == 0) {
-            sender.sendMessage(parse(message));
-            return;
-        }
-
-        if (placeholders.length % 2 != 0) {
-            throw new IllegalArgumentException("Placeholders must be key-value pairs");
-        }
-
-        String processedMessage = applyPlaceholders(message, placeholders);
-        Bukkit.getScheduler().runTask(SimpleEconomy.getInstance(), () -> {
-            if(!SimpleEconomy.getInstance().isPaper()) {
-                SimpleEconomy.getInstance().getBukkitAudiences().sender(sender).sendMessage(parse(processedMessage));
-            } else {
-                sender.sendMessage(parse(processedMessage));
-            }
-        });
     }
 
+    private static void deliverMessage(CommandSender sender, String message) {
+        Component parsed = parse(message);
+        if (!SimpleEconomy.getInstance().isPaper()) {
+            SimpleEconomy.getInstance().getBukkitAudiences().sender(sender).sendMessage(parsed);
+        } else {
+            sender.sendMessage(parsed);
+        }
+    }
+    
     public static void send(CommandSender sender, String message) {
         if (sender == null || message == null || message.isEmpty()) {
             return;
@@ -141,15 +153,14 @@ public class ChatUtils {
     }
 
     private static String applyPlaceholders(String message, Object... placeholders) {
-        String result = message;
-
+        if (placeholders == null || placeholders.length == 0) return message;
+        
         for (int i = 0; i < placeholders.length; i += 2) {
             String key = String.valueOf(placeholders[i]);
             String value = String.valueOf(placeholders[i + 1]);
-            result = result.replace(key, value);
+            message = message.replace(key, value);
         }
-
-        return result;
+        return message;
     }
 
     public static void sendActionBar(Player player, Component component) {

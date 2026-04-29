@@ -35,7 +35,7 @@ public class PlayerListener implements Listener {
             }
 
             Double balance = plugin.getStorage().load(uuid).join();
-            plugin.getCacheMap().put(uuid, balance != null ? balance : 0.0);
+            plugin.getCacheMap().putIfAbsent(uuid, balance != null ? balance : 0.0);
 
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to load economy data for " + event.getName() + ": " + e.getMessage());
@@ -49,7 +49,7 @@ public class PlayerListener implements Listener {
         if (!player.hasPermission("simpleeconomy.notify.update")) return;
 
         if (UpdateUtils.isUpdateAvailable()) {
-            languageManager.send(player, LanguageKeys.UPDATE_AVAILABLE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%version%", UpdateUtils.getNewVersion(), "%updateNote%", UpdateUtils.getUpdateNotes());
+            languageManager.send(player, LanguageKeys.UPDATE_AVAILABLE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%version%", UpdateUtils.getNewVersion());
         } else {
             languageManager.send(player, LanguageKeys.UPDATE_LATEST, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
         }

@@ -43,6 +43,9 @@ public class VoucherCommand extends BaseCommand {
             Transaction transaction = new Transaction(player.getUniqueId().toString(), player.getUniqueId().toString(), amount, VaultHook.getEconomy().getBalance(player)+amount,VaultHook.getEconomy().getBalance(player), TransactionTypes.WITHDRAW, System.currentTimeMillis());
             plugin.getTransactionLogger().appendLog(transaction);
         }
+        if(plugin.getWebhookLogger() != null) {
+            plugin.getWebhookLogger().send("withdraw", player.getName(), null, amount);
+        }
 
     }
 

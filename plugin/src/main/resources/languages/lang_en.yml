@@ -42,8 +42,10 @@ messages:
     refreshed: '%prefix% &#22C55E✔ &#6B7280Top balances list refreshed'
     invalid_page: '%prefix% &#F87171✘ &#EF4444Invalid page number &#6B7280| &#FBBF24Enter a valid page'
   updates:
-    available: '%prefix% <color:#ffaa00>A new update is available!</color> <color:#eeeeee>Latest: </color><color:#6ea8ff>%version%</color> <color:#eeeeee>| Notes: </color><color:#6ea8ff>%updateNote%</color>'
+    available: '%prefix% <color:#ffaa00>A new update is available!</color> <color:#eeeeee>Latest: </color><color:#6ea8ff>%version%</color> <color:#eeeeee>'
     latest: '%prefix% &#22C55E✔ &#6B7280You are using the latest version'
   action_bar:
     detract: "<gradient:#AA0000:#FF5555>- %amount%</gradient>"
     add: "<gradient:#00AA00:#55FF55>+ %amount%</gradient>"
+  interests:
+    received: "%prefix% &#A7F3D0⚖ &#6B7280Interests received &#374151| &#22C55E+%amount% &#6B7280added to your balance"

@@ -17,11 +17,10 @@ import java.util.concurrent.CompletableFuture;
 public class UpdateUtils {
 
     private static final SimpleEconomy plugin = SimpleEconomy.getInstance();
-    private static final String API_URL = "https://ministats.alzy.site/api/v1/updates/check/3";
+    private static final String API_URL = "https://api.spiget.org/v2/resources/127423/versions/latest";
     private static final Gson gson = new Gson();
 
     @Getter private static volatile boolean isUpdateAvailable = false;
-    @Getter private static volatile String updateNotes = "";
     @Getter private static volatile String newVersion = "";
 
     public void checkForUpdates() {
@@ -31,27 +30,37 @@ public class UpdateUtils {
             } catch (Exception e) {
                 return null;
             }
-        }, plugin.getExecutor()).thenAccept(json -> plugin.getExecutor().execute(() -> {
-                if (json == null) return;
+        }, plugin.getExecutor()).thenAccept(json -> {
+            if (json == null) return;
+
+            try {
                 JsonObject obj = gson.fromJson(json, JsonObject.class);
-                String latest = obj.has("version") ? obj.get("version").getAsString() : "";
-                if (latest.isEmpty()) return;
 
-                String current = plugin.getDescription().getVersion();
+                if (!obj.has("name")) return;
 
-                if (!current.equalsIgnoreCase(latest)) {
+                String latestVersion = obj.get("name").getAsString();
+                String currentVersion = plugin.getDescription().getVersion();
+
+                if (!currentVersion.equalsIgnoreCase(latestVersion)) {
                     isUpdateAvailable = true;
-                    newVersion = latest;
-                    updateNotes = obj.has("messageUpdate") ? obj.get("messageUpdate").getAsString() : "";
+                    newVersion = latestVersion;
 
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        plugin.getLogger().info("A new version is available: " + latest);
-                        if (!updateNotes.isEmpty()) plugin.getLogger().info("Update notes: " + updateNotes.replace("\n", " "));
+                        plugin.getLogger().info(" ");
+                        plugin.getLogger().info("  A NEW UPDATE IS AVAILABLE!");
+                        plugin.getLogger().info("  Current version: " + currentVersion);
+                        plugin.getLogger().info("  Latest version: " + latestVersion);
+                        plugin.getLogger().info("  Download: https://www.spigotmc.org/resources/127423/");
+                        plugin.getLogger().info(" ");
                     });
                 } else {
-                    Bukkit.getScheduler().runTask(plugin, () -> plugin.getLogger().info("You are using the latest version (" + current + ")."));
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            plugin.getLogger().info("You are running the latest version (" + currentVersion + ")."));
                 }
-            }));
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to parse update data from Spiget.");
+            }
+        });
     }
 
     private String fetchJson() throws Exception {
@@ -59,16 +68,19 @@ public class UpdateUtils {
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
         con.setRequestMethod("GET");
-        con.setRequestProperty("User-Agent", "SimpleEconomy-Plugin");
+        con.setRequestProperty("User-Agent", "SimpleEconomy-Updater");
         con.setConnectTimeout(5000);
         con.setReadTimeout(5000);
 
-        if (con.getResponseCode() != 200) return null;
+        int responseCode = con.getResponseCode();
+        if (responseCode != 200) return null;
 
         try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
             StringBuilder response = new StringBuilder();
             String line;
-            while ((line = in.readLine()) != null) response.append(line);
+            while ((line = in.readLine()) != null) {
+                response.append(line);
+            }
             return response.toString();
         } finally {
             con.disconnect();

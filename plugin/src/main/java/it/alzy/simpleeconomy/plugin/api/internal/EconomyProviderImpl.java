@@ -34,7 +34,7 @@ public class EconomyProviderImpl implements EconomyProvider {
             .thenCompose(current -> {
                 double newBalance = current + amount;
                 if(Bukkit.getPlayer(uuid) != null) {
-                    plugin.getCacheMap().put(uuid, newBalance);
+                    plugin.getCacheMap().merge(uuid, newBalance, Double::sum);
                 }
                 plugin.getStorage().save(uuid, newBalance);
                 return CompletableFuture.completedFuture(null);
@@ -54,7 +54,7 @@ public class EconomyProviderImpl implements EconomyProvider {
                 return CompletableFuture.runAsync(() -> {
                     plugin.getStorage().save(uuid, newBalance);
                     if (Bukkit.getPlayer(uuid) != null) {
-                        plugin.getCacheMap().put(uuid, newBalance);
+                        plugin.getCacheMap().merge(uuid, newBalance,  Double::sum);
                     }
                 }).thenApply(v -> true);
         });

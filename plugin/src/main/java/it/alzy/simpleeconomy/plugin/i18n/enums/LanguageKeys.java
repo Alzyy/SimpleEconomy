@@ -47,7 +47,9 @@ public enum LanguageKeys {
     UPDATE_LATEST("messages.updates.latest"),
 
     ACTION_BAR_DETRACT("messages.action_bar.detract"),
-    ACTION_BAR_ADD("messages.action_bar.add");
+    ACTION_BAR_ADD("messages.action_bar.add"),
+
+    INTERESTS_RECEIVED("messages.interests.received");
 
     private final String path;
 

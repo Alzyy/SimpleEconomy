@@ -66,7 +66,7 @@ public class FileStorage implements Storage {
             double startingBalance = SettingsConfig.getInstance().startingBalance();
 
             if (!file.exists()) {
-                plugin.getCacheMap().put(uuid, startingBalance);
+                plugin.getCacheMap().putIfAbsent(uuid, startingBalance);
                 writeBalanceToFile(uuid, startingBalance);
                 return startingBalance;
             }
@@ -74,11 +74,11 @@ public class FileStorage implements Storage {
             try {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
                 double balance = config.getDouble("balance", startingBalance);
-                plugin.getCacheMap().put(uuid, balance);
+                plugin.getCacheMap().putIfAbsent(uuid, balance);
                 return balance;
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Failed to load balance for " + uuid, e);
-                plugin.getCacheMap().put(uuid, 0d);
+                plugin.getCacheMap().putIfAbsent(uuid, 0d);
                 return 0d;
             }
         }, executor);
@@ -130,7 +130,7 @@ public class FileStorage implements Storage {
     @Override
     public void create(UUID uuid) {
         double balance = SettingsConfig.getInstance().startingBalance();
-        plugin.getCacheMap().put(uuid, balance);
+        plugin.getCacheMap().putIfAbsent(uuid, balance);
         executor.execute(() -> writeBalanceToFile(uuid, balance));
     }
 

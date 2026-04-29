@@ -84,8 +84,8 @@ public class PayCommand extends BaseCommand {
         languageManager.send(target, LanguageKeys.RECEIVED_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%source%", sender.getName());
 
         plugin.getExecutor().execute(() -> {
-            plugin.getCacheMap().put(sender.getUniqueId(), senderBalanceAfter);
-            plugin.getCacheMap().put(target.getUniqueId(), targetBalanceAfter);
+            plugin.getCacheMap().merge(sender.getUniqueId(), senderBalanceAfter, Double::sum);
+            plugin.getCacheMap().merge(target.getUniqueId(), targetBalanceAfter, Double::sum);
 
             plugin.getStorage().save(sender.getUniqueId(), senderBalanceAfter);
             plugin.getStorage().save(target.getUniqueId(), targetBalanceAfter);
@@ -93,6 +93,9 @@ public class PayCommand extends BaseCommand {
             if (SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
                 Transaction transaction = new Transaction(sender.getUniqueId().toString(), target.getUniqueId().toString(), amount, senderBalanceAfter + amount, senderBalanceAfter, TransactionTypes.PAY, System.currentTimeMillis());
                 plugin.getTransactionLogger().appendLog(transaction);
+            }
+            if(plugin.getWebhookLogger() != null) {
+                plugin.getWebhookLogger().send("pay", target.getName(), sender.getName(), amount);
             }
         });
     }

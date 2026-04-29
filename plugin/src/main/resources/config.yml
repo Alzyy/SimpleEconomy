@@ -51,6 +51,11 @@ settings:
   # Enable action bar messages for transactions (pay, withdraw, etc.).
   enable-action-bar-messages: false
 
+  # Enable discord webhook logging
+  enable-discord-logging: false
+
+
+
 storage:
   # If enabled, data of players who haven't joined in a long time will be deleted.
   enable-auto-purge: true
@@ -96,3 +101,46 @@ format:
   million: "M"      # e.g. 2,000,000 -> 2M
   billion: "B"      # e.g. 3,000,000,000 -> 3B
   trillion: "T"     # e.g. 4,000,000,000,000 -> 4T
+
+webhook-settings:
+  # The Discord Webhook URL where logs will be sent.
+  url: "https://discord.com/api/webhooks/your_webhook_url"
+
+  # Custom identity for the webhook bot.
+  username: "SimpleEconomy Logger"
+  avatar-url: "https://example.com/avatar.png"
+
+  # Sidebar color for the Discord Embed (Hexadecimal format).
+  color: "#22C55E"
+
+  # --- Logging Options ---
+  # Track payments between players (/pay).
+  log-payments: true
+
+  # Track administrative money removals (/eco remove).
+  log-withdrawals: true
+
+  # Track administrative money additions (/eco give/set).
+  log-admin: true
+
+  # Track when a player creates a physical voucher (/withdraw).
+  log-voucher-creations: true
+
+interests:
+  enabled: false
+
+  # The interest multiplier. (Example: 0.05 is 5%, 1.0 is 100%).
+  # Calculation: current_balance * rate
+  rate: 0.05
+
+  # The maximum amount a player can earn per single payout.
+  # This prevents inflation for extremely wealthy players.
+  max-interest: 2000
+
+  # How often players receive interests (in minutes).
+  # High frequency might impact database performance on huge servers.
+  interval: 60
+
+  # Minimum balance required to start earning interests.
+  # Set to 0 to disable this check.
+  min-balance: 100
