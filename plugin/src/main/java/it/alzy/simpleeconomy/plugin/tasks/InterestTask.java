@@ -39,9 +39,7 @@ public class InterestTask extends BukkitRunnable {
 
                 double newBalance = current + bonus;
 
-                plugin.getLanguageManager().send(p, LanguageKeys.INTERESTS_RECEIVED,
-                        "%prefix%", plugin.getLanguageManager().getMessage(LanguageKeys.PREFIX),
-                        "%amount%", plugin.getFormatUtils().formatBalance(bonus));
+                plugin.getLanguageManager().send(p, LanguageKeys.INTERESTS_RECEIVED, "%prefix%", plugin.getLanguageManager().getMessage(LanguageKeys.PREFIX), "%amount%", plugin.getFormatUtils().formatBalance(bonus));
 
                 processedPlayers.increment();
                 return newBalance;

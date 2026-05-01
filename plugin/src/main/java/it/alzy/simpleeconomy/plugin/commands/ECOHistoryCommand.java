@@ -47,7 +47,7 @@ public class ECOHistoryCommand extends BaseCommand {
         languageManager.send(sender, LanguageKeys.ECO_HISTORY_FETCHING, "%prefix%", prefix, "%player%", targetName);
 
         CompletableFuture.supplyAsync(() -> {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+            OfflinePlayer target = Bukkit.getOfflinePlayerIfCached(targetName);
             return (target.hasPlayedBefore() || target.isOnline()) ? target : null;
         }).thenCompose(target -> {
             if (target == null) return CompletableFuture.completedFuture(null);

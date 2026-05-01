@@ -70,6 +70,7 @@ public class PayCommand extends BaseCommand {
         }
 
         EconomyResponse deposit = economy.depositPlayer(target, amount);
+
         if (!deposit.transactionSuccess()) {
             economy.depositPlayer(sender, amount);
             return;
@@ -84,8 +85,8 @@ public class PayCommand extends BaseCommand {
         languageManager.send(target, LanguageKeys.RECEIVED_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%source%", sender.getName());
 
         plugin.getExecutor().execute(() -> {
-            plugin.getCacheMap().merge(sender.getUniqueId(), senderBalanceAfter, Double::sum);
-            plugin.getCacheMap().merge(target.getUniqueId(), targetBalanceAfter, Double::sum);
+            plugin.getCacheMap().merge(sender.getUniqueId(), amount, (oldVal, amt) -> oldVal - amt);
+            plugin.getCacheMap().merge(target.getUniqueId(), amount, Double::sum);
 
             plugin.getStorage().save(sender.getUniqueId(), senderBalanceAfter);
             plugin.getStorage().save(target.getUniqueId(), targetBalanceAfter);

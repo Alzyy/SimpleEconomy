@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;

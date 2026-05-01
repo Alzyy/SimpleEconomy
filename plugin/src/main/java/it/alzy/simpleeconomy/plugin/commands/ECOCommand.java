@@ -129,7 +129,6 @@ public class ECOCommand extends BaseCommand {
     }
 
     private void handleSuccess(CommandSender sender, OfflinePlayer target, double amount, double newBalance, String formattedAmount, EcoAction action) {
-        plugin.getCacheMap().merge(target.getUniqueId(), newBalance, Double::sum);
         plugin.getExecutor().execute(() -> plugin.getStorage().save(target.getUniqueId(), newBalance));
 
         LanguageKeys senderMsg = switch (action) {
@@ -214,7 +213,7 @@ public class ECOCommand extends BaseCommand {
     }
 
     private Collection<OfflinePlayer> getOfflinePlayerFallback(CommandSender sender, String targetName) {
-        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        OfflinePlayer target = Bukkit.getOfflinePlayerIfCached(targetName);
         if (!target.hasPlayedBefore() && !target.isOnline()) {
             languageManager.send(sender, LanguageKeys.PLAYER_NOT_FOUND,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return Collections.emptyList();

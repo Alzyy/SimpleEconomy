@@ -27,8 +27,7 @@ public class BalTopCommand extends BaseCommand {
     public void onBaltop(Player player, @Default("1") int page) {
         plugin.getExecutor().execute(() -> {
             int limit = SettingsConfig.getInstance().getTopPlayersShown();
-
-
+            
             Map<String, Double> topMap = plugin.getStorage().getAllBalances();
             int totalPages = (topMap.size() + limit - 1 ) / limit;
             if (page < 1 || page > totalPages) {
@@ -50,10 +49,7 @@ public class BalTopCommand extends BaseCommand {
                     OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(playerName));
                     String displayName = offlinePlayer.getName() != null ? offlinePlayer.getName() : playerName;
                     String formattedBalance = plugin.getFormatUtils().formatBalance(balance);
-                    languageManager.send(player, LanguageKeys.BALTOP_ENTRY,
-                            "%position%", String.valueOf(rank.getAndIncrement()),
-                            "%player%", displayName,
-                            "%balance%", formattedBalance);
+                    languageManager.send(player, LanguageKeys.BALTOP_ENTRY, "%position%", String.valueOf(rank.getAndIncrement()), "%player%", displayName, "%balance%", formattedBalance);
                 });
             languageManager.send(player, LanguageKeys.BALTOP_FOOTER,  "%currentPage%", String.valueOf(page), "%maxPage%", String.valueOf(totalPages));
         });
