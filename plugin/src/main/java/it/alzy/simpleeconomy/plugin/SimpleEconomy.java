@@ -78,6 +78,12 @@ public final class SimpleEconomy extends JavaPlugin {
     public void onEnable() {
         instance = this;
         try {
+            Class.forName("it.alzy.simpleeconomy.plugin.utils.ChatUtils");
+
+        } catch(ClassNotFoundException e) {
+            // ignored
+        }
+        try {
             Class.forName("com.destroystokyo.paper.PaperConfig");
             isPaper = true;
         } catch (ClassNotFoundException e) {

@@ -152,7 +152,6 @@ public class VaultHook implements Economy {
         SimpleEconomy plugin = SimpleEconomy.getInstance();
         UUID uuid = offlinePlayer.getUniqueId();
 
-        getBalance(offlinePlayer);
 
         double newBalance = plugin.getCacheMap().merge(uuid, amount, Double::sum);
         if(offlinePlayer.isOnline()) {

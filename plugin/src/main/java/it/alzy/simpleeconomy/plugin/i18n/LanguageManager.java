@@ -4,7 +4,6 @@ import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
 import lombok.Setter;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -13,12 +12,15 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LanguageManager {
 
     private final ConcurrentHashMap<String, YamlConfiguration> languages = new ConcurrentHashMap<>();
+
+    private final ConcurrentHashMap<String, Map<String, String>> cachedMessages = new ConcurrentHashMap<>();
     @Setter
     private volatile String activeLanguage;
     private final SimpleEconomy plugin;
@@ -74,6 +76,13 @@ public class LanguageManager {
             String code = file.getName().replace("lang_", "").replace(".yml", "");
             languages.put(code, config);
 
+            Map<String, String> cache = new ConcurrentHashMap<>();
+            for(String key : config.getKeys(true)) {
+                if(config.isString(key)) {
+                    cache.put(key, config.getString(key));
+                }
+            }
+            cachedMessages.put(code, cache);
         } catch (Exception e) {
             plugin.getLogger().severe("Error loading language file " + file.getName() + ": " + e.getMessage());
         }
@@ -98,6 +107,7 @@ public class LanguageManager {
 
     public void unloadLanguages() {
         languages.clear();
+        cachedMessages.clear();
     }
 
     public String getString(String path) {
@@ -108,24 +118,12 @@ public class LanguageManager {
 
 
     public void send(CommandSender sender, LanguageKeys msg, Object... placeholders) {
-        plugin.getExecutor().execute(() -> {
-            YamlConfiguration config;
-            if (sender instanceof Player player) {
-                config = languages.getOrDefault(player.locale().getLanguage(), languages.get(activeLanguage));
-            } else {
-                config = languages.getOrDefault(activeLanguage, languages.get("en"));
-            }
-            if (config == null) {
-                plugin.getLogger().warning("Could not find any language configuration for " + sender.getName());
-                return;
-            }
-            String message = config.getString(msg.path());
-            if (message == null || message.isEmpty()) {
-                message = "§cMessage key missing: " + msg.path();
-            }
-            String finalMessage = message;
-            Bukkit.getScheduler().runTask(plugin, () -> ChatUtils.send(sender, finalMessage, placeholders));
-        });
+        String langCode = (sender instanceof Player p) ? p.locale().getLanguage() : activeLanguage;
+
+        Map<String, String> langMap = cachedMessages.getOrDefault(langCode, cachedMessages.get("en"));
+        String message = (langMap != null) ? langMap.get(msg.path()) : "§cKey not found";
+
+        ChatUtils.send(sender, message, placeholders);
     }
 
     public String getMessage(LanguageKeys msg) {

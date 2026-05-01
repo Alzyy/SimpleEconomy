@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
@@ -26,7 +27,7 @@ public class SQLiteStorage implements Storage {
 
     public SQLiteStorage(SimpleEconomy plugin) {
         this.plugin = plugin;
-        this.executor = plugin.getExecutor();
+        this.executor = Executors.newSingleThreadExecutor();
 
         File dataFolder = plugin.getDataFolder();
         if (!dataFolder.exists()) {
@@ -37,11 +38,19 @@ public class SQLiteStorage implements Storage {
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:sqlite:" + dbFile.getPath());
-        config.setMaximumPoolSize(10);
+
+        config.setMaximumPoolSize(1);
+
         config.setConnectionTestQuery("SELECT 1");
+
         config.setPoolName("SimpleEconomy-SQLite-Pool");
+
         config.setConnectionTimeout(5000);
 
+        config.addDataSourceProperty("journal_mode", "WAL");
+        config.addDataSourceProperty("synchronous", "NORMAL");
+        config.addDataSourceProperty("busy_timeout","5000");
+        
         this.dataSource = new HikariDataSource(config);
     }
 

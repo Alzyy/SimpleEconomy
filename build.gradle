@@ -1,7 +1,7 @@
 
 allprojects {
     group = 'it.alzy.simpleeconomy'
-    version = '3.1'
+    version = '3.2'
 
     repositories {
         mavenCentral()

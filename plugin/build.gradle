@@ -6,7 +6,7 @@ plugins {
 
 description = 'SimpleEconomy'
 group = 'it.alzy.simpleeconomy'
-version = '3.1'
+version = '3.2'
 
 repositories {
     mavenCentral()
@@ -69,11 +69,17 @@ processResources {
 shadowJar {
     from(sourceSets.main.output)
     from(project(':api').sourceSets.main.output)
-    minimize()
+    
+    minimize {
+        exclude(dependency('co.aikar:acf-paper:.*'))
+    }
+    
     mergeServiceFiles()
     archiveFileName.set("${project.description}.jar")
+    
     relocate('co.aikar.commands', 'it.alzy.simpleeconomy.libs.acf')
     relocate('co.aikar.locales', 'it.alzy.simpleeconomy.libs.locales')
+    
+    relocate('com.zaxxer.hikari', 'it.alzy.simpleeconomy.libs.hikari')
 }
-
 

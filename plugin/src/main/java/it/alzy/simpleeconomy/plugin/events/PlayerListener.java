@@ -29,17 +29,16 @@ public class PlayerListener implements Listener {
 
         UUID uuid = event.getUniqueId();
 
-        try {
-            if (!plugin.getStorage().hasAccount(uuid).join()) {
-                plugin.getStorage().create(uuid);
-            }
+        plugin.getStorage().hasAccount(uuid).thenAccept(exists -> {
+            if(!exists) plugin.getStorage().create(uuid);
 
-            Double balance = plugin.getStorage().load(uuid).join();
-            plugin.getCacheMap().putIfAbsent(uuid, balance != null ? balance : 0.0);
-
-        } catch (Exception e) {
+            plugin.getStorage().load(uuid).thenAccept(balance -> {
+                    plugin.getCacheMap().put(uuid, balance != null ? balance : 0.0);
+            });
+        }).exceptionally(e -> {
             plugin.getLogger().severe("Failed to load economy data for " + event.getName() + ": " + e.getMessage());
-        }
+            return null;    
+        });
     }
 
     @EventHandler
