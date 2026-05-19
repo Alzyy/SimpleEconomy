@@ -29,7 +29,7 @@ messages:
       usage: '%prefix% &#6B7280Usage &#374151| &#F9FAFB/eco history <player> <limit>'
       fetching: "%prefix% &#22C55Eℹ &#6B7280Fetching transaction history for &#F9FAFB%player%&#6B7280..."
       header: "&#22C55E📜 &#6B7280Transaction history for &#F9FAFB%player%"
-      entry: "&#F9FAFB%type% &#6B7280of &#22C55E%amount% &#6B7280on &#F9FAFB%date% &#374151( &#6B7280%balance_before% &#374151➜ &#F9FAFB%balance_after% &#374151) &#F9FAFBto/from &#22C55E%target%"
+      entry: "&#F9FAFB%type% &#6B7280of &#22C55E%amount% %currency% &#6B7280on &#F9FAFB%date% &#374151( &#6B7280%balance_before% &#374151➜ &#F9FAFB%balance_after% &#374151) &#F9FAFBto/from &#22C55E%target%"
       no_entries: '%prefix% &#F87171✘ &#EF4444No transaction history found for &#F9FAFB%player%'
   voucher:
     usage: '%prefix% &#6B7280Usage &#374151| &#F9FAFB/voucher <amount>'
@@ -49,3 +49,20 @@ messages:
     add: "<gradient:#00AA00:#55FF55>+ %amount%</gradient>"
   interests:
     received: "%prefix% &#A7F3D0⚖ &#6B7280Interests received &#374151| &#22C55E+%amount% &#6B7280added to your balance"
+  currencies:
+    add: "%prefix% You created the currency &#F9FAFB%currency%&#6B7280!"
+    remove: "%prefix% You removed the currency &#F9FAFB%currency%&#6B7280!"
+    list: "%prefix% &#6B7280Available currencies: &#F9FAFB%currencies%"
+    already-exists: "%prefix% &#F87171✘ &#EF4444The currency &#F9FAFB%currency% &#EF4444already exists!"
+    not-found: "%prefix% &#F87171✘ &#EF4444The currency &#F9FAFB%currency% &#EF4444does not exist!"
+    list-currency-empty: "%prefix% &#F87171✘ &#EF4444No available currencies!"
+  modules:
+    list: "%prefix% &#6B7280Available modules: &#F9FAFB%modules%"
+    no_modules: "%prefix% &#F87171✘ &#EF4444No modules available!"
+    status: "%prefix% &#6B7280Status of module &#F9FAFB%module%&#6B7280: %status%"
+    disabled: "%prefix% &#F87171✘ &#EF4444The module &#F9FAFB%module% &#EF4444has been disabled!"
+    not_found: "%prefix% &#F87171✘ &#EF4444The module &#F9FAFB%module% &#EF4444does not exist!"
+    loaded_from_file: "%prefix% &#86EFAC✔ &#6B7280The module was loaded from file &#F9FAFB%file%"
+    couldnt_find_file: "%prefix% &#F87171✘ &#EF4444Couldn't find the file &#F9FAFB%file%"
+    enabled_placeholder: "&#86EFAC✔"
+    disabled_placeholder: "&#F87171✘"

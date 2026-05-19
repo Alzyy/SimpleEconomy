@@ -4,8 +4,11 @@ import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.LongAdder;
 
 public class InterestTask extends BukkitRunnable {
@@ -23,28 +26,36 @@ public class InterestTask extends BukkitRunnable {
         double rate = settings.getInterestRate();
         double minBalance = settings.minBalanceForInterests();
         double maxInterest = settings.maxInterest();
+        String currency = "money"; 
 
         LongAdder processedPlayers = new LongAdder();
 
         plugin.getLogger().info("Processing interest payout for online players...");
 
-        Bukkit.getOnlinePlayers().parallelStream().forEach(p -> {
-            plugin.getCacheMap().computeIfPresent(p.getUniqueId(), (uuid, current) -> {
-                
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            UUID uuid = p.getUniqueId();
+            
+            Map<String, Double> balances = plugin.getCache().get(uuid);
+            if (balances == null) continue;
+
+            balances.computeIfPresent(currency, (currKey, current) -> {
                 if (current < minBalance) return current;
 
                 double bonus = Math.min(current * rate, maxInterest);
-
                 if (bonus <= 0) return current;
 
                 double newBalance = current + bonus;
 
-                plugin.getLanguageManager().send(p, LanguageKeys.INTERESTS_RECEIVED, "%prefix%", plugin.getLanguageManager().getMessage(LanguageKeys.PREFIX), "%amount%", plugin.getFormatUtils().formatBalance(bonus));
+                plugin.getLanguageManager().send(p, LanguageKeys.INTERESTS_RECEIVED, 
+                        "%prefix%", plugin.getLanguageManager().getMessage(LanguageKeys.PREFIX), 
+                        "%amount%", plugin.getFormatUtils().formatBalance(bonus));
+
+                plugin.getCache().updateCurrency(uuid, currency, newBalance);
 
                 processedPlayers.increment();
                 return newBalance;
             });
-        });
+        }
 
         int total = processedPlayers.intValue();
         if (total > 0) {

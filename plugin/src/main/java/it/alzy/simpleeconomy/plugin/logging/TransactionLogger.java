@@ -66,6 +66,7 @@ public class TransactionLogger {
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             timestamp INTEGER NOT NULL,
                             player_uuid VARCHAR(36) NOT NULL,
+                            currency VARCHAR(64) NOT NULL DEFAULT 'money',
                             type VARCHAR(32) NOT NULL,
                             amount REAL NOT NULL,
                             balance_before REAL NOT NULL,
@@ -75,8 +76,15 @@ public class TransactionLogger {
                         """;
                 stmt.execute(sql);
 
+                try {
+                    stmt.execute("ALTER TABLE transactions ADD COLUMN currency VARCHAR(64) NOT NULL DEFAULT 'money';");
+                    plugin.getLogger().info("Successfully migrated transactions table to include currency column.");
+                } catch (SQLException ignored) {
+                }
+
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_player_uuid ON transactions(player_uuid);");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON transactions(timestamp);");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_currency ON transactions(currency);");
 
                 plugin.getLogger().info("Transaction logging system initialized.");
             } catch (SQLException e) {
@@ -88,15 +96,16 @@ public class TransactionLogger {
     public void appendLog(Transaction transaction) {
         if(dataSource == null || dataSource.isClosed()) return;
         plugin.getExecutor().execute(() -> {
-            String sql = "INSERT INTO transactions (timestamp, player_uuid, type, amount, balance_before, balance_after, target_uuid) VALUES (?, ?, ?, ?, ?, ?, ?);";
+            String sql = "INSERT INTO transactions (timestamp, player_uuid, currency, type, amount, balance_before, balance_after, target_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
             try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setLong(1, transaction.timestamp());
                 pstmt.setString(2, transaction.uuid());
-                pstmt.setString(3, transaction.type().name());
-                pstmt.setDouble(4, transaction.amount());
-                pstmt.setDouble(5, transaction.balanceBefore());
-                pstmt.setDouble(6, transaction.balanceAfter());
-                pstmt.setString(7, transaction.targetUUID());
+                pstmt.setString(3, transaction.currency());
+                pstmt.setString(4, transaction.type().name());
+                pstmt.setDouble(5, transaction.amount());
+                pstmt.setDouble(6, transaction.balanceBefore());
+                pstmt.setDouble(7, transaction.balanceAfter());
+                pstmt.setString(8, transaction.targetUUID());
                 pstmt.executeUpdate();
             } catch (SQLException e) {
                 plugin.getLogger().severe("Failed to log transaction: " + e.getMessage());
@@ -104,22 +113,24 @@ public class TransactionLogger {
         });
     }
 
-    public CompletableFuture<LinkedList<Transaction>> getHistoryOfPlayer(String uuid, int limit) {
+    public CompletableFuture<LinkedList<Transaction>> getHistoryOfPlayer(String uuid, String currency, int limit) {
         return CompletableFuture.supplyAsync(() -> {
             LinkedList<Transaction> history = new LinkedList<>();
             if (dataSource == null || dataSource.isClosed()) return history;
 
-            String sql = "SELECT * FROM transactions WHERE player_uuid = ? ORDER BY timestamp DESC LIMIT ?";
+            String sql = "SELECT * FROM transactions WHERE player_uuid = ? AND currency = ? ORDER BY timestamp DESC LIMIT ?";
 
             try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, uuid);
-                pstmt.setInt(2, limit);
+                pstmt.setString(2, currency.toLowerCase());
+                pstmt.setInt(3, limit);
 
                 try (ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) {
                         history.add(new Transaction(
                                 rs.getString("player_uuid"),
                                 rs.getString("target_uuid"),
+                                rs.getString("currency"),
                                 rs.getDouble("amount"),
                                 rs.getDouble("balance_before"),
                                 rs.getDouble("balance_after"),
@@ -129,7 +140,7 @@ public class TransactionLogger {
                     }
                 }
             } catch (SQLException e) {
-                plugin.getLogger().warning("Failed to fetch history: " + e.getMessage());
+                plugin.getLogger().warning("Failed to fetch history for player " + uuid + " and currency " + currency + ": " + e.getMessage());
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("Failed to parse transaction type from DB: " + e.getMessage());
             }

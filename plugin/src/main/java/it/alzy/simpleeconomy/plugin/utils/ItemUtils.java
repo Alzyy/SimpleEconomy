@@ -39,11 +39,6 @@ public class ItemUtils {
             return;
         }
 
-        if (player.getInventory().firstEmpty() == -1) {
-            languageManager.send(player, LanguageKeys.INVENTORY_FULL, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
-            return;
-        }
-
         Material material = Optional.ofNullable(Material.getMaterial(settings.getVoucherMaterial().toUpperCase())).orElse(Material.PAPER);
 
         ItemStack voucher = new ItemStack(material);

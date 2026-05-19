@@ -73,6 +73,7 @@ public class VoucherEvents implements Listener {
                 new Transaction(
                     player.getUniqueId().toString(),
                     "VOUCHER",
+                    "money",
                     amount,
                     VaultHook.getEconomy().getBalance(player),
                     VaultHook.getEconomy().getBalance(player) + amount,

@@ -4,6 +4,7 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
 
 public class FormatUtils {
 
@@ -39,6 +40,29 @@ public class FormatUtils {
 
         return currencySymbol + formatDecimal(shortNumber) + suffix;
     }
+
+    public String formatVirtualCurrencyBalance(VirtualCurrency vc, double balance) {
+        SettingsConfig config = SettingsConfig.getInstance();
+        String currencySymbol = vc.getSymbol();
+        if(!(config.isFormattingEnabled())) return formatDecimal(balance);
+
+        if (balance < 1_000) {
+            return formatDecimal(balance) + currencySymbol;
+        }
+
+        var entry = SUFFIXES.floorEntry(balance);
+        if (entry == null) {
+            return formatDecimal(balance) + currencySymbol;
+        }
+
+        double divisor = entry.getKey();
+        String suffix = entry.getValue();
+
+        double shortNumber = balance / divisor;
+
+        return  formatDecimal(shortNumber) + suffix + currencySymbol;
+    }
+
 
     private String formatDecimal(double value) {
         if (value == Math.floor(value)) {

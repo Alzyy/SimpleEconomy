@@ -2,11 +2,11 @@ package it.alzy.simpleeconomy.plugin;
 
 import co.aikar.commands.InvalidCommandArgument;
 import co.aikar.commands.PaperCommandManager;
-import com.google.common.collect.Maps;
 import it.alzy.simpleeconomy.api.SimpleEconomyAPI;
 import it.alzy.simpleeconomy.plugin.api.PAPIExpansion;
 import it.alzy.simpleeconomy.plugin.api.internal.EconomyProviderImpl;
 import it.alzy.simpleeconomy.plugin.commands.*;
+import it.alzy.simpleeconomy.plugin.configurations.CurrenciesConfig;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.events.PlayerListener;
 import it.alzy.simpleeconomy.plugin.events.VoucherEvents;
@@ -14,7 +14,11 @@ import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.logging.TransactionLogger;
 import it.alzy.simpleeconomy.plugin.logging.WebhookLogger;
+import it.alzy.simpleeconomy.plugin.managers.CurrencyManager;
+import it.alzy.simpleeconomy.plugin.managers.ModuleManager;
+import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
 import it.alzy.simpleeconomy.plugin.records.DatabaseInfo;
+import it.alzy.simpleeconomy.plugin.storage.Cache;
 import it.alzy.simpleeconomy.plugin.storage.Storage;
 import it.alzy.simpleeconomy.plugin.storage.impl.FileStorage;
 import it.alzy.simpleeconomy.plugin.storage.impl.MySQLStorage;
@@ -22,6 +26,7 @@ import it.alzy.simpleeconomy.plugin.storage.impl.SQLiteStorage;
 import it.alzy.simpleeconomy.plugin.tasks.*;
 import it.alzy.simpleeconomy.plugin.utils.FormatUtils;
 import it.alzy.simpleeconomy.plugin.utils.ItemUtils;
+import it.alzy.simpleeconomy.plugin.utils.TransactionHelper;
 import it.alzy.simpleeconomy.plugin.utils.UpdateUtils;
 import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import lombok.Getter;
@@ -30,20 +35,24 @@ import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
+import java.io.File;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public final class SimpleEconomy extends JavaPlugin {
+public class SimpleEconomy extends JavaPlugin {
 
     @Getter
     private static SimpleEconomy instance;
 
     @Getter
-    private ConcurrentMap<UUID, Double> cacheMap;
+    private final Cache cache = new Cache();
+
     @Getter @Setter
-    private ConcurrentMap<String, Double> topMap;
+    private Map<String, Double> topMap;
     @Getter
     private ExecutorService executor;
     @Getter
@@ -61,13 +70,24 @@ public final class SimpleEconomy extends JavaPlugin {
     private BukkitAudiences bukkitAudiences;
 
     @Getter
+    private CurrencyManager currencyManager;
+
+    @Getter
     private UpdateUtils updateUtils;
     @Getter
     private LanguageManager languageManager;
 
+    @Getter
+    private TransactionHelper transactionHelper;
+
     @Getter private TransactionLogger transactionLogger;
 
     @Getter private WebhookLogger webhookLogger;
+
+    @Getter
+    private ModuleManager moduleManager;
+    @Getter
+    PaperCommandManager commandManager;
 
 
 
@@ -79,10 +99,10 @@ public final class SimpleEconomy extends JavaPlugin {
         instance = this;
         try {
             Class.forName("it.alzy.simpleeconomy.plugin.utils.ChatUtils");
-
         } catch(ClassNotFoundException e) {
             // ignored
         }
+
         try {
             Class.forName("com.destroystokyo.paper.PaperConfig");
             isPaper = true;
@@ -102,7 +122,9 @@ public final class SimpleEconomy extends JavaPlugin {
             initializeCore();
             initializeStorage();
             initializeFeatures();
-
+            moduleManager = new ModuleManager(this);
+            moduleManager.loadModules();
+            
         } catch (Exception e) {
             getLogger().severe("An error occurred during plugin initialization: " + e.getMessage());
             disableSelf();
@@ -124,8 +146,8 @@ public final class SimpleEconomy extends JavaPlugin {
             executor.shutdown();
         }
 
-        if (cacheMap != null) {
-            cacheMap.clear();
+        if (cache != null) {
+            cache.invalidateAll();
         }
 
         if(topMap != null) {
@@ -164,24 +186,43 @@ public final class SimpleEconomy extends JavaPlugin {
 
     private void initializeCore() {
         SettingsConfig settings = SettingsConfig.getInstance();
+
         if(!isPaper) {
-            this.bukkitAudiences = BukkitAudiences.create(this);
+            try {
+                this.bukkitAudiences = BukkitAudiences.create(this);
+            } catch (Throwable t) {
+                getLogger().warning("Adventure audiences unavailable; falling back to Bukkit messages.");
+                isPaper = true;
+            }
         }
+        transactionHelper = new TransactionHelper(this);
         executor = Executors.newFixedThreadPool(settings.getThreadPoolSize());
-        cacheMap = Maps.newConcurrentMap();
-        topMap = Maps.newConcurrentMap();
+        topMap = new LinkedHashMap<>();
         languageManager = new LanguageManager(this, SettingsConfig.getInstance().locale());
         formatUtils = new FormatUtils();
         itemUtils = new ItemUtils();
         amountKey = new NamespacedKey(this, getName() + "_voucheramount");
         uuidKey = new NamespacedKey(this, getName() + "_voucheruuid");
 
-        new VaultHook();
+        if (isClassPresent("net.milkbowl.vault.economy.Economy")) {
+            new VaultHook();
+        } else {
+            getLogger().info("Vault API not detected; skipping Vault hook setup.");
+        }
 
         if (settings.checkForUpdates()) {
             updateUtils = new UpdateUtils();
             updateUtils.checkForUpdates();
             new CheckUpdateTask(this).register();
+        }
+    }
+
+    private boolean isClassPresent(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
         }
     }
 
@@ -244,6 +285,7 @@ public final class SimpleEconomy extends JavaPlugin {
             new AutoPurgeTask(this).register();
         }
         loadApis();
+        currencyManager = new CurrencyManager();
     }
 
     private void loadApis() {
@@ -262,7 +304,7 @@ public final class SimpleEconomy extends JavaPlugin {
     }
 
     private void registerCommands() {
-        PaperCommandManager commandManager = new PaperCommandManager(this);
+        commandManager = new PaperCommandManager(this);
         commandManager.getCommandContexts().registerContext(Double.class, c -> {
             String arg = c.popFirstArg();
 
@@ -277,11 +319,34 @@ public final class SimpleEconomy extends JavaPlugin {
                 throw new InvalidCommandArgument(false);
             }
         });
+        commandManager.getCommandCompletions().registerAsyncCompletion("currencies", c -> {
+            return getCurrencyManager().getAllCurrencies().stream()
+                    .map(VirtualCurrency::getName)
+                    .toList();
+        });
+
+        commandManager.getCommandCompletions().registerAsyncCompletion("modules", c -> {
+            return moduleManager.getLoadedModuleNames().stream().toList();
+        });
+
+        commandManager.getCommandCompletions().registerAsyncCompletion("modulesFiles", c -> {
+            File modulesDir = new File(getDataFolder(), "modules");
+            if (!modulesDir.exists() || !modulesDir.isDirectory()) {
+                return List.of();
+            }
+            return Arrays.stream(modulesDir.listFiles((dir, name) -> name.endsWith(".jar")))
+                    .map(File::getName)
+                    .toList();
+        });
+        
+
         commandManager.registerCommand(new SECommand());
         commandManager.registerCommand(new ECOCommand());
         commandManager.registerCommand(new BalanceCommand());
         commandManager.registerCommand(new PayCommand());
         commandManager.registerCommand(new BalTopCommand());
+        commandManager.registerCommand(new CurrenciesCommand());
+        commandManager.registerCommand(new ModulesCommand());
 
         if (SettingsConfig.getInstance().areVoucherEnabled()) {
             commandManager.registerCommand(new VoucherCommand());
@@ -293,10 +358,11 @@ public final class SimpleEconomy extends JavaPlugin {
     }
 
 
+
     private void loadConfigurations() {
         SettingsConfig.getInstance().registerLightConfig(this);
         SettingsConfig.getInstance().checkMissingKeys();
-
+        CurrenciesConfig.getInstance().registerLightConfig(this);
     }
 
 }

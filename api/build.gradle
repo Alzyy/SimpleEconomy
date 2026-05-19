@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'io.github.alzyy'
-version = '1.0.0'
+version = '1.0.1'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -68,13 +68,16 @@ publishing {
     }
 }
 
-signing {
-    useGpgCmd()
-    sign publishing.publications.mavenJava
-}
+// signing {
+//     required { 
+//         project.hasProperty('signArtifacts') 
+//     }
+//     useGpgCmd()
+//     sign publishing.publications.mavenJava
+// }
 
 tasks.register('generateChecksums') {
-    dependsOn tasks.build, tasks.named('signMavenJavaPublication')
+    dependsOn tasks.build
 
     doLast {
         def filesToHash = [
@@ -105,7 +108,9 @@ tasks.register('generateChecksums') {
 tasks.register('buildBundle', Zip) {
     group = 'build'
     description = 'Create a ZIP ready for Maven Central upload'
-    dependsOn tasks.build, tasks.named('signMavenJavaPublication'), tasks.named('generateChecksums')
+    // dependsOn tasks.build, tasks.named('signMavenJavaPublication'), tasks.named('generateChecksums')
+
+    dependsOn tasks.build, tasks.generateChecksums
 
     archiveBaseName.set('simpleeconomy-api')
     archiveVersion.set(version)

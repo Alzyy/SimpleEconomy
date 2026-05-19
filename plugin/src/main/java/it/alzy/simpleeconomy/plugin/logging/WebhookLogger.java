@@ -26,11 +26,13 @@ public class WebhookLogger {
         if (!enabled) return;
 
         String url = config.webhookURL();
+        DiscordWebhook webhook = new DiscordWebhook(url);
+        
         if (url == null || url.isEmpty() || url.contains("your_webhook_url")) {
+            SimpleEconomy.getInstance().getLogger().warning("Invalid Discord Webhook URL. Please check your configuration.");
             return;
         }
 
-        DiscordWebhook webhook = new DiscordWebhook(url);
         webhook.setUsername(config.username());
         webhook.setAvatarUrl(config.avatarURL());
 

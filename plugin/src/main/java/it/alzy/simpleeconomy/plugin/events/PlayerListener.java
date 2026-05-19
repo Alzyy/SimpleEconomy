@@ -11,6 +11,7 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.util.Map;
 import java.util.UUID;
 
 public class PlayerListener implements Listener {
@@ -29,13 +30,7 @@ public class PlayerListener implements Listener {
 
         UUID uuid = event.getUniqueId();
 
-        plugin.getStorage().hasAccount(uuid).thenAccept(exists -> {
-            if(!exists) plugin.getStorage().create(uuid);
-
-            plugin.getStorage().load(uuid).thenAccept(balance -> {
-                    plugin.getCacheMap().put(uuid, balance != null ? balance : 0.0);
-            });
-        }).exceptionally(e -> {
+        plugin.getStorage().load(uuid).exceptionally(e -> {
             plugin.getLogger().severe("Failed to load economy data for " + event.getName() + ": " + e.getMessage());
             return null;    
         });
@@ -57,10 +52,17 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        Double balance = plugin.getCacheMap().remove(uuid);
+        
+        Map<String, Double> balances = plugin.getCache().get(uuid);
 
-        if (balance != null) {
-            plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, balance));
+        if (balances != null) {
+            plugin.getExecutor().execute(() -> {
+                for (Map.Entry<String, Double> entry : balances.entrySet()) {
+                    plugin.getStorage().save(uuid, entry.getKey(), entry.getValue());
+                }
+                
+                plugin.getCache().remove(uuid);
+            });
         }
     }
 }

@@ -34,8 +34,7 @@ public class SECommand extends BaseCommand {
         }
         plugin.getExecutor().execute(() -> {
             SettingsConfig.getInstance().reload();
-            languageManager.reload(SettingsConfig.getInstance().locale());
-            languageManager.send(player, LanguageKeys.RELOAD_SUCCESS, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+            languageManager.reloadAll(player);
         });
     }
 

@@ -5,17 +5,18 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
 import co.aikar.commands.annotation.Description;
 import co.aikar.commands.annotation.Optional;
+import it.alzy.simpleeconomy.api.EconomyProvider;
+import it.alzy.simpleeconomy.api.SimpleEconomyAPI;
 import it.alzy.simpleeconomy.api.TransactionTypes;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
-import it.alzy.simpleeconomy.plugin.records.Transaction;
-import it.alzy.simpleeconomy.plugin.utils.VaultHook;
+import it.alzy.simpleeconomy.plugin.utils.TransactionHelper;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.math.BigDecimal;
-
+import java.util.UUID;
 
 @CommandAlias("voucher|withdraw")
 @Description("Creates a voucher with an amount")
@@ -23,44 +24,78 @@ public class VoucherCommand extends BaseCommand {
     
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
     private final LanguageManager languageManager = plugin.getLanguageManager();
+
     @Default
     public void root(Player player, @Optional Double amount) {
-        if(amount == null) {
+        if (amount == null) {
             languageManager.send(player, LanguageKeys.VOUCHER_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
-        if(!validateAmount(amount)) {
-            languageManager.send(player, LanguageKeys.NEGATIVE_AMOUNT, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+
+        final EconomyProvider provider = SimpleEconomyAPI.getProvider();
+
+        TransactionHelper helper = plugin.getTransactionHelper();
+
+        if (!helper.validateAmount(player, amount)) {
             return;
         }
-        if(!VaultHook.getEconomy().has(player, amount)) {
-            languageManager.send(player, LanguageKeys.NOT_ENOUGH_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+
+        double maxVoucher = SettingsConfig.getInstance().getMaxVoucherAmount();
+        if (maxVoucher > 0 && amount > maxVoucher) {
+            languageManager.send(player, LanguageKeys.INVALID_AMOUNT, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
-        VaultHook.getEconomy().withdrawPlayer(player, amount);
-        SimpleEconomy.getInstance().getItemUtils().createVoucherAndGive(player, amount);
-        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
-            Transaction transaction = new Transaction(player.getUniqueId().toString(), player.getUniqueId().toString(), amount, VaultHook.getEconomy().getBalance(player)+amount,VaultHook.getEconomy().getBalance(player), TransactionTypes.WITHDRAW, System.currentTimeMillis());
-            plugin.getTransactionLogger().appendLog(transaction);
-        }
-        if(plugin.getWebhookLogger() != null) {
-            plugin.getWebhookLogger().send("withdraw", player.getName(), null, amount);
+
+        if (player.getInventory().firstEmpty() == -1) {
+            languageManager.send(player, LanguageKeys.INVENTORY_FULL, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+            return;
         }
 
+        String currency = "money";
+        UUID uuid = player.getUniqueId();
+
+        provider.getBalance(uuid, currency).thenAccept(balanceBefore -> {
+            
+            if (balanceBefore < amount) {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    languageManager.send(player, LanguageKeys.NOT_ENOUGH_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+                });
+                return;
+            }
+
+            provider.detract(uuid, currency, amount).thenAccept(success -> {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (!success) {
+                        languageManager.send(player, LanguageKeys.NOT_ENOUGH_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+                        return;
+                    }
+
+                    double balanceAfter = balanceBefore - amount;
+
+                    plugin.getItemUtils().createVoucherAndGive(player, amount);
+
+                    String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
+                    languageManager.send(player, LanguageKeys.REMOVED_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%target%", player.getName());
+
+                    helper.commitAsync(
+                            uuid,
+                            uuid,
+                            amount,
+                            balanceBefore,
+                            balanceAfter,
+                            TransactionTypes.WITHDRAW,
+                            "withdraw",
+                            player.getName(),
+                            null
+                    );
+                });
+            }).exceptionally(ex -> {
+                plugin.getLogger().severe("Error processing voucher command for " + player.getName() + ": " + ex.getMessage());
+                return null;
+            });
+        }).exceptionally(ex -> {
+            plugin.getLogger().severe("Error fetching balance for " + player.getName() + " during voucher creation: " + ex.getMessage());
+            return null;
+        });
     }
-
-    public boolean validateAmount(double amount) {
-        if (!Double.isFinite(amount))
-            return false;
-        if (amount <= 0)
-            return false;
-
-        double max = SettingsConfig.getInstance().getMaxVoucherAmount();
-        if (max != 0 && amount > max)
-            return false;
-
-        BigDecimal bd = BigDecimal.valueOf(amount);
-        return bd.scale() <= 2;
-    }
-
 }

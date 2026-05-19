@@ -2,19 +2,16 @@ package it.alzy.simpleeconomy.plugin.commands;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
-import it.alzy.simpleeconomy.api.TransactionTypes;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
-import it.alzy.simpleeconomy.plugin.records.Transaction;
+import it.alzy.simpleeconomy.plugin.utils.TransactionHelper;
 import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import co.aikar.commands.annotation.Optional;
 
-import java.math.BigDecimal;
 
 @CommandAlias("pay")
 @Description("Sends money to a player")
@@ -31,8 +28,13 @@ public class PayCommand extends BaseCommand {
             return;
         }
 
-        if (!Double.isFinite(amount) || amount <= 0 || BigDecimal.valueOf(amount).scale() > 2) {
-            languageManager.send(sender, LanguageKeys.INVALID_AMOUNT, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+        TransactionHelper helper = plugin.getTransactionHelper();
+
+        if (!helper.validateAmount(sender, amount)) {
+            return;
+        }
+
+        if (!helper.checkTransactionLimit(sender, amount)) {
             return;
         }
 
@@ -40,19 +42,12 @@ public class PayCommand extends BaseCommand {
             languageManager.send(sender, LanguageKeys.SELF_COMMAND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
-        if (limited(amount)) {
-            double max = SettingsConfig.getInstance().getMaxTransactionLimit();
-            languageManager.send(sender, LanguageKeys.AMOUNT_EXCEEDS_LIMIT,
-                    "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX),
-                    "%max%", plugin.getFormatUtils().formatBalance(max));
-            return;
-        }
 
-        Player target = Bukkit.getPlayerExact(targetName);
-        if (target == null) {
-            languageManager.send(sender, LanguageKeys.PLAYER_NOT_FOUND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+        java.util.Optional<Player> targetOptional = helper.resolveOnlineTarget(sender, targetName);
+        if (targetOptional.isEmpty()) {
             return;
         }
+        Player target = targetOptional.get();
 
         Economy economy = VaultHook.getEconomy();
         if (economy == null) {
@@ -70,40 +65,24 @@ public class PayCommand extends BaseCommand {
         }
 
         EconomyResponse deposit = economy.depositPlayer(target, amount);
-
         if (!deposit.transactionSuccess()) {
             economy.depositPlayer(sender, amount);
             return;
         }
 
-        double senderBalanceAfter = withdrawal.balance;
-        double targetBalanceAfter = deposit.balance;
         String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
-
         languageManager.send(sender, LanguageKeys.GAVE_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%target%", target.getName());
-
         languageManager.send(target, LanguageKeys.RECEIVED_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%source%", sender.getName());
 
-        plugin.getExecutor().execute(() -> {
-            plugin.getCacheMap().merge(sender.getUniqueId(), amount, (oldVal, amt) -> oldVal - amt);
-            plugin.getCacheMap().merge(target.getUniqueId(), amount, Double::sum);
-
-            plugin.getStorage().save(sender.getUniqueId(), senderBalanceAfter);
-            plugin.getStorage().save(target.getUniqueId(), targetBalanceAfter);
-
-            if (SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
-                Transaction transaction = new Transaction(sender.getUniqueId().toString(), target.getUniqueId().toString(), amount, senderBalanceAfter + amount, senderBalanceAfter, TransactionTypes.PAY, System.currentTimeMillis());
-                plugin.getTransactionLogger().appendLog(transaction);
-            }
-            if(plugin.getWebhookLogger() != null) {
-                plugin.getWebhookLogger().send("pay", target.getName(), sender.getName(), amount);
-            }
-        });
-    }
-
-    public boolean limited(double amount) {
-        double max = SettingsConfig.getInstance().getMaxTransactionLimit();
-        if( max == 0) return false;
-        return amount > max;
+        helper.commitTransferAsync(
+                sender.getUniqueId(),
+                target.getUniqueId(),
+                "money",
+                amount,
+                withdrawal.balance,
+                deposit.balance,
+                sender.getName(),
+                target.getName()
+        );
     }
 }

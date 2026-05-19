@@ -9,18 +9,23 @@ import it.alzy.simpleeconomy.plugin.storage.Storage;
 public class AutoSaveTask extends BukkitRunnable {
 
     private final SimpleEconomy plugin;
+    
     public AutoSaveTask(SimpleEconomy plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public void run() {
-        if(plugin.getCacheMap().isEmpty()) return;
+        int cacheSize = plugin.getCache().getAll().size();
+        
+        if (cacheSize == 0) {
+            return;
+        }
+        
         Storage storage = plugin.getStorage();
-        plugin.getLogger().info(String.format("Saving data for %d players from cache has started.", plugin.getCacheMap().size()));
+        plugin.getLogger().info(String.format("Saving data for %d players from cache has started.", cacheSize));
         storage.bulkSave();
     }
-
 
     public void register() {   
         runTaskTimerAsynchronously(plugin, 0L, SettingsConfig.getInstance().autoSaveInterval() * 20L * 60L);

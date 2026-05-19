@@ -26,16 +26,44 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
+
     compileOnly project(':api')
+    testImplementation project(':api')
+
     implementation 'com.github.NaTorOG:SimpleConfig:1.0.6'
-    compileOnly 'org.projectlombok:lombok:1.18.42'
-    annotationProcessor 'org.projectlombok:lombok:1.18.42'
     implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
-    compileOnly "com.github.kaepsis:VaultAPI:ennamo"
     implementation "com.zaxxer:HikariCP:7.0.2"
+
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    compileOnly("com.github.ben-manes.caffeine:caffeine:3.2.4")
+
+
+    compileOnly "com.github.kaepsis:VaultAPI:ennamo"
     compileOnly 'me.clip:placeholderapi:2.11.7'
     compileOnly("net.kyori:adventure-platform-bukkit:4.4.1")
+
+    testImplementation 'org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.0.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testImplementation 'org.mockito:mockito-core:5.11.0'
+    testImplementation "net.kyori:adventure-platform-bukkit:4.3.4"
+    testImplementation "com.github.kaepsis:VaultAPI:ennamo"
+    testImplementation 'me.clip:placeholderapi:2.11.7'
+    testImplementation 'org.xerial:sqlite-jdbc:3.45.2.0'
+    
+    
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+}
+
+test {
+    useJUnitPlatform() 
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
 }
 
 def targetJavaVersion = 21
@@ -61,6 +89,10 @@ processResources {
     inputs.properties props
     filteringCharset 'UTF-8'
     filesMatching('plugin.yml') {
+        expand props
+    }
+    
+    filesMatching('paper-plugin.yml') {
         expand props
     }
 }

@@ -1,18 +1,22 @@
 package it.alzy.simpleeconomy.plugin.api;
 
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.records.TopEntry;
+import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PAPIExpansion extends PlaceholderExpansion {
 
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
+    
+    private final AtomicReference<List<TopEntry>> topCache = new AtomicReference<>(new ArrayList<>());
+    private long lastUpdate = 0;
+    private final long CACHE_TIME = 30000; // 30 seconds
 
     @Override
     public @NotNull String getIdentifier() {
@@ -31,81 +35,102 @@ public class PAPIExpansion extends PlaceholderExpansion {
 
     @Override
     public String onPlaceholderRequest(Player player, @NotNull String params) {
+        if (player == null) return "";
+
         String lower = params.toLowerCase();
 
         if (lower.startsWith("baltop_")) {
-            String numberPart = lower.substring("baltop_".length());
-            boolean balanceRequest = numberPart.endsWith("_balance");
-            if (balanceRequest) numberPart = numberPart.substring(0, numberPart.length() - "_balance".length());
+            updateTopCache(); 
+            
+            String numberPart = lower.substring(7);
+            boolean isBalanceRequest = numberPart.endsWith("_balance");
+            if (isBalanceRequest) {
+                numberPart = numberPart.substring(0, numberPart.length() - 8);
+            }
 
             try {
                 int position = Integer.parseInt(numberPart);
-                Map<String, Double> snapshot = new HashMap<>(plugin.getTopMap());
-                if (balanceRequest) {
-                    return getPlayerBalanceAtPositionAsync(position, snapshot).join();
-                } else {
-                    return getPlayerNameAtPositionAsync(position, snapshot).join();
-                }
+                List<TopEntry> currentTop = topCache.get();
+
+                if (position < 1 || position > currentTop.size()) return "N/A";
+                
+                TopEntry entry = currentTop.get(position - 1);
+                return isBalanceRequest ? plugin.getFormatUtils().formatBalance(entry.balance()) : entry.name();
+                
             } catch (NumberFormatException e) {
                 return "Invalid position!";
             }
         }
 
-        switch (lower) {
+        if (lower.startsWith("currency_")) {
+            String currencyName = params.substring(9).toLowerCase();
+            
+            Map<String, Double> balances = plugin.getCache().get(player.getUniqueId());
+            double bal = (balances != null && balances.containsKey(currencyName)) 
+                    ? balances.get(currencyName) 
+                    : 0d; 
+
+            var currencyInfo = plugin.getCurrencyManager() != null ? plugin.getCurrencyManager().getCurrency(currencyName) : null;
+            if (currencyInfo != null) {
+                return plugin.getFormatUtils().formatVirtualCurrencyBalance(currencyInfo, bal);
+            }
+            
+            return plugin.getFormatUtils().formatBalance(bal);
+        }
+
+        return switch (lower) {
             case "balance_formatted" -> {
-                double balance = plugin.getCacheMap().getOrDefault(player.getUniqueId(), 0d);
-                return plugin.getFormatUtils().formatBalance(balance);
+                double balance = getCachedBalance(player.getUniqueId(), "money");
+                yield plugin.getFormatUtils().formatBalance(balance);
             }
             case "balance_normal" -> {
-                return String.valueOf(plugin.getCacheMap().getOrDefault(player.getUniqueId(), 0d));
+                double balance = getCachedBalance(player.getUniqueId(), "money");
+                yield String.valueOf(balance);
             }
             case "top_position" -> {
-                Map<String, Double> snapshot = new HashMap<>(plugin.getTopMap());
-                return String.valueOf(getPlayerPositionAsync(player, snapshot).join());
+                updateTopCache();
+                int pos = getPlayerPosition(player.getUniqueId());
+                yield pos > 0 ? String.valueOf(pos) : "N/A";
             }
-            default -> {
-                return "Placeholder not found!";
-            }
+            default -> null;
+        };
+    }
+
+    private double getCachedBalance(UUID uuid, String currency) {
+        Map<String, Double> balances = plugin.getCache().get(uuid);
+        if (balances != null && balances.containsKey(currency)) {
+            return balances.get(currency);
         }
+        return "money".equals(currency) ? SettingsConfig.getInstance().startingBalance() : 0d;
     }
 
+    private void updateTopCache() {
+        long now = System.currentTimeMillis();
+        if (now - lastUpdate < CACHE_TIME) return;
+        lastUpdate = now;
 
-    private CompletableFuture<String> getPlayerNameAtPositionAsync(int position, Map<String, Double> topMap) {
-        return CompletableFuture.supplyAsync(() -> {
-            List<UUID> sorted = topMap.entrySet().stream()
-                    .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                    .map(e -> UUID.fromString(e.getKey()))
-                    .toList();
-
-            if (position < 1 || position > sorted.size()) return "N/A";
-
-            UUID uuid = sorted.get(position - 1);
-            OfflinePlayer offline = Bukkit.getOfflinePlayer(uuid);
-            return offline.getName() != null ? offline.getName() : "Unknown";
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            Map<String, Double> topFromDB = plugin.getStorage().getTopBalances("money", 100);
+            
+            List<TopEntry> updatedTop = new ArrayList<>();
+            for (Map.Entry<String, Double> entry : topFromDB.entrySet()) {
+                try {
+                    UUID uuid = UUID.fromString(entry.getKey());
+                    String name = org.bukkit.Bukkit.getOfflinePlayer(uuid).getName();
+                    updatedTop.add(new TopEntry(name != null ? name : "Unknown", entry.getValue(), uuid));
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+            
+            topCache.set(updatedTop);
         });
     }
 
-    private CompletableFuture<String> getPlayerBalanceAtPositionAsync(int position, Map<String, Double> topMap) {
-        return CompletableFuture.supplyAsync(() -> {
-            List<Double> sorted = topMap.entrySet().stream()
-                    .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                    .map(Map.Entry::getValue)
-                    .toList();
-
-            if (position < 1 || position > sorted.size()) return "N/A";
-            return plugin.getFormatUtils().formatBalance(sorted.get(position - 1));
-        });
-    }
-
-    private CompletableFuture<Integer> getPlayerPositionAsync(Player player, Map<String, Double> topMap) {
-        return CompletableFuture.supplyAsync(() -> {
-            List<UUID> sorted = topMap.entrySet().stream()
-                    .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                    .map(e -> UUID.fromString(e.getKey()))
-                    .toList();
-
-            int index = sorted.indexOf(player.getUniqueId());
-            return (index == -1) ? -1 : index + 1;
-        });
+    private int getPlayerPosition(UUID uuid) {
+        List<TopEntry> currentTop = topCache.get();
+        for (int i = 0; i < currentTop.size(); i++) {
+            if (currentTop.get(i).uuid().equals(uuid)) return i + 1;
+        }
+        return -1;
     }
 }

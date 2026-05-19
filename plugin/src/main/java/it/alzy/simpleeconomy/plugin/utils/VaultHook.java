@@ -1,14 +1,12 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import lombok.Getter;
 import net.milkbowl.vault.economy.Economy;
@@ -20,6 +18,8 @@ public class VaultHook implements Economy {
 
     @Getter
     private static Economy economy;
+
+    private final String currency = "money"; // Vault agisce solo sulla valuta principale
 
     public VaultHook() {
         if (Bukkit.getPluginManager().getPlugin("Vault") != null) {
@@ -73,7 +73,7 @@ public class VaultHook implements Economy {
 
     @Override
     public boolean hasAccount(OfflinePlayer offlinePlayer) {
-        if (SimpleEconomy.getInstance().getCacheMap().containsKey(offlinePlayer.getUniqueId())) {
+        if (SimpleEconomy.getInstance().getCache().contains(offlinePlayer.getUniqueId())) {
             return true;
         }
         return offlinePlayer.hasPlayedBefore() || offlinePlayer.isOnline();
@@ -87,15 +87,29 @@ public class VaultHook implements Economy {
     @Override
     public double getBalance(OfflinePlayer offlinePlayer) {
         UUID uuid = offlinePlayer.getUniqueId();
-        if (SimpleEconomy.getInstance().getCacheMap().containsKey(uuid)) {
-            return SimpleEconomy.getInstance().getCacheMap().get(uuid);
+        SimpleEconomy plugin = SimpleEconomy.getInstance();
+        
+        // Verifica se presente nella nuova cache di Caffeine
+        if (plugin.getCache().contains(uuid)) {
+            Map<String, Double> balances = plugin.getCache().get(uuid);
+            if (balances != null && balances.containsKey(currency)) {
+                return balances.get(currency);
+            }
+            return SettingsConfig.getInstance().startingBalance();
         }
+
+        // Vault richiede una risposta SINCROA. Se non è in cache, forziamo il caricamento sincrono con .join()
         try {
-            Double balance = SimpleEconomy.getInstance().getStorage().load(uuid).join();
-            return balance != null ? balance : 0.0;
-        } catch (Exception e) {
-            return 0.0;
+            Map<String, Double> balances = plugin.getStorage().load(uuid).join();
+            if (balances != null && balances.containsKey(currency)) {
+                return balances.get(currency);
+            }
+        } catch (Exception ex) {
+            plugin.getLogger().severe("Failed to block-load Vault balance for UUID: " + uuid);
+            ex.printStackTrace();
         }
+
+        return SettingsConfig.getInstance().startingBalance();
     }
 
     @Override
@@ -127,15 +141,21 @@ public class VaultHook implements Economy {
             return new EconomyResponse(0, currentBalance, EconomyResponse.ResponseType.FAILURE, "Not enough money");
         }
         double newBalance = currentBalance - amount;
-        if(offlinePlayer.isOnline()) {
-            plugin.getCacheMap().put(uuid, newBalance);
-            if(SettingsConfig.getInstance().enableActionBarMessages()) {
+        
+        // Aggiorna la cache centralizzata e imposta lo stato "dirty" per il salvataggio automatico
+        plugin.getCache().updateCurrency(uuid, currency, newBalance);
+
+        if (offlinePlayer.isOnline() && offlinePlayer.getPlayer() != null) {
+            if (SettingsConfig.getInstance().enableActionBarMessages()) {
                 ChatUtils.createComponentAsync(plugin.getLanguageManager().getMessage(
                                 LanguageKeys.ACTION_BAR_DETRACT),
-                        "%amount%", plugin.getFormatUtils().formatBalance(amount)).thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
+                        "%amount%", plugin.getFormatUtils().formatBalance(amount))
+                .thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
             }
         }
-        plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, newBalance));
+        
+        // Salvataggio asincrono in database
+        plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, currency, newBalance));
         return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, null);
     }
 
@@ -152,17 +172,23 @@ public class VaultHook implements Economy {
         SimpleEconomy plugin = SimpleEconomy.getInstance();
         UUID uuid = offlinePlayer.getUniqueId();
 
+        double currentBalance = getBalance(offlinePlayer);
+        double newBalance = currentBalance + amount;
+        
+        // Aggiorna la cache centralizzata e imposta lo stato "dirty" per il salvataggio automatico
+        plugin.getCache().updateCurrency(uuid, currency, newBalance);
 
-        double newBalance = plugin.getCacheMap().merge(uuid, amount, Double::sum);
-        if(offlinePlayer.isOnline()) {
-            plugin.getCacheMap().put(uuid, newBalance);
-            if(SettingsConfig.getInstance().enableActionBarMessages()) {
+        if (offlinePlayer.isOnline() && offlinePlayer.getPlayer() != null) {
+            if (SettingsConfig.getInstance().enableActionBarMessages()) {
                 ChatUtils.createComponentAsync(plugin.getLanguageManager().getMessage(
-                        LanguageKeys.ACTION_BAR_ADD),
-                        "%amount%", plugin.getFormatUtils().formatBalance(amount)).thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
+                                LanguageKeys.ACTION_BAR_ADD),
+                        "%amount%", plugin.getFormatUtils().formatBalance(amount))
+                .thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
             }
         }
-        plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, newBalance));
+        
+        // Salvataggio asincrono in database
+        plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, currency, newBalance));
         return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, null);
     }
 
@@ -173,42 +199,42 @@ public class VaultHook implements Economy {
 
     @Override
     public EconomyResponse createBank(String s, OfflinePlayer offlinePlayer) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Bank aren't implemented.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Banks aren't implemented.");
     }
 
     @Override
     public EconomyResponse deleteBank(String s) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Bank aren't implemented.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Banks aren't implemented.");
     }
 
     @Override
     public EconomyResponse bankBalance(String s) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Bank aren't implemented.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Banks aren't implemented.");
     }
 
     @Override
     public EconomyResponse bankHas(String s, double v) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Bank aren't implemented.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Banks aren't implemented.");
     }
 
     @Override
     public EconomyResponse bankWithdraw(String s, double v) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Bank aren't implemented.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Banks aren't implemented.");
     }
 
     @Override
     public EconomyResponse bankDeposit(String s, double v) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Bank aren't implemented.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Banks aren't implemented.");
     }
 
     @Override
     public EconomyResponse isBankOwner(String s, OfflinePlayer offlinePlayer) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Bank aren't implemented.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Banks aren't implemented.");
     }
 
     @Override
     public EconomyResponse isBankMember(String s, OfflinePlayer offlinePlayer) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Bank aren't implemented.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Banks aren't implemented.");
     }
 
     @Override
@@ -227,5 +253,4 @@ public class VaultHook implements Economy {
     public boolean createPlayerAccount(OfflinePlayer offlinePlayer, String s) {
         return createPlayerAccount(offlinePlayer);
     }
-
 }

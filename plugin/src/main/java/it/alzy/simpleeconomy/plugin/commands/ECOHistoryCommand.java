@@ -2,6 +2,7 @@ package it.alzy.simpleeconomy.plugin.commands;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
+import co.aikar.commands.annotation.Optional;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
@@ -10,10 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
-import java.util.AbstractMap;
-import java.util.LinkedList;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import static it.alzy.simpleeconomy.plugin.utils.TimeUtils.dateTime;
 
@@ -30,46 +28,41 @@ public class ECOHistoryCommand extends BaseCommand {
     }
 
     @Default
-    @Syntax("<player> [limit]")
-    @CommandCompletion("@players @range:1-20")
-    public void history(CommandSender sender, @Optional String targetName, @Optional @Default("10") Integer limit) {
+    @Syntax("<player> [limit] [currency]")
+    @CommandCompletion("@players @range:1-20 @currencies")
+    public void history(CommandSender sender, @Optional String targetName, @Optional @Default("10") Integer limit, @Optional @Default("money") String currency) {
         if (!sender.hasPermission("simpleconomy.eco.history")) {
             languageManager.send(sender, LanguageKeys.NO_PERMISSION, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
-        if(targetName == null || targetName.isEmpty() || limit == null || limit <= 0) {
+        if (targetName == null || targetName.isEmpty() || limit == null || limit <= 0) {
             languageManager.send(sender, LanguageKeys.ECO_HISTORY_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
 
         String prefix = languageManager.getMessage(LanguageKeys.PREFIX);
-        languageManager.send(sender, LanguageKeys.ECO_HISTORY_FETCHING, "%prefix%", prefix, "%player%", targetName);
+        String targetCurrency = currency.toLowerCase();
 
-        CompletableFuture.supplyAsync(() -> {
-            OfflinePlayer target = Bukkit.getOfflinePlayerIfCached(targetName);
-            return (target.hasPlayedBefore() || target.isOnline()) ? target : null;
-        }).thenCompose(target -> {
-            if (target == null) return CompletableFuture.completedFuture(null);
-            return plugin.getTransactionLogger().getHistoryOfPlayer(target.getUniqueId().toString(), limit)
-                    .thenApply(history -> new AbstractMap.SimpleEntry<>(target, history));
-        }).thenAccept(result -> {
-            if (result == null) {
-                languageManager.send(sender, LanguageKeys.PLAYER_NOT_FOUND, "%prefix%", prefix);
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
+            languageManager.send(sender, LanguageKeys.PLAYER_NOT_FOUND, "%prefix%", prefix);
+            return;
+        }
+
+        String resolvedName = target.getName() != null ? target.getName() : targetName;
+        languageManager.send(sender, LanguageKeys.ECO_HISTORY_FETCHING, "%prefix%", prefix, "%player%", resolvedName);
+
+        plugin.getTransactionLogger().getHistoryOfPlayer(target.getUniqueId().toString(), targetCurrency, limit).thenAccept(transactions -> {
+            if (transactions == null || transactions.isEmpty()) {
+                languageManager.send(sender, LanguageKeys.ECO_HISTORY_NO_ENTRIES, "%prefix%", prefix, "%player%", resolvedName);
                 return;
             }
 
-            OfflinePlayer target = result.getKey();
-            LinkedList<Transaction> transactions = result.getValue();
-
-            if (transactions.isEmpty()) {
-                languageManager.send(sender, LanguageKeys.ECO_HISTORY_NO_ENTRIES, "%prefix%", prefix, "%player%", target.getName());
-                return;
-            }
-
-            languageManager.send(sender, LanguageKeys.ECO_HISTORY_HEADER, "%prefix%", prefix, "%player%", target.getName());
+            languageManager.send(sender, LanguageKeys.ECO_HISTORY_HEADER, "%prefix%", prefix, "%player%", resolvedName);
 
             var formatUtils = plugin.getFormatUtils();
+            var currencyInfo = plugin.getCurrencyManager().getCurrency(targetCurrency);
 
             for (Transaction transaction : transactions) {
                 String targetUUIDString = transaction.targetUUID();
@@ -82,11 +75,21 @@ public class ECOHistoryCommand extends BaseCommand {
                     } catch (IllegalArgumentException ignored) {}
                 }
 
+                String formattedAmount;
+                if ("money".equals(targetCurrency)) {
+                    formattedAmount = formatUtils.formatBalance(transaction.amount());
+                } else if (currencyInfo != null) {
+                    formattedAmount = formatUtils.formatVirtualCurrencyBalance(currencyInfo, transaction.amount());
+                } else {
+                    formattedAmount = String.valueOf(transaction.amount());
+                }
+
                 languageManager.send(sender, LanguageKeys.ECO_HISTORY_ENTRY,
                         "%type%", transaction.type().name(),
-                        "%amount%", formatUtils.formatBalance(transaction.amount()),
-                        "%balance_before%", transaction.balanceBefore(),
-                        "%balance_after%", transaction.balanceAfter(),
+                        "%amount%", formattedAmount,
+                        "%currency%", targetCurrency,
+                        "%balance_before%", String.valueOf(transaction.balanceBefore()),
+                        "%balance_after%", String.valueOf(transaction.balanceAfter()),
                         "%target%", targetDisplayName,
                         "%date%", dateTime(transaction.timestamp())
                 );

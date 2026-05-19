@@ -9,6 +9,7 @@ allprojects {
         maven { url = 'https://jitpack.io' }
         maven { url = 'https://repo.aikar.co/content/groups/aikar/' }
         maven { url = 'https://repo.extendedclip.com/releases/' }
+        
     }
 }
 
@@ -32,6 +33,9 @@ subprojects {
         inputs.properties props
         filteringCharset = 'UTF-8'
         filesMatching('plugin.yml') {
+            expand props
+        }
+        filesMatching('paper-plugin.yml') {
             expand props
         }
     }
