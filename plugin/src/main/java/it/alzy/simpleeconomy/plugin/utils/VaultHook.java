@@ -19,7 +19,7 @@ public class VaultHook implements Economy {
     @Getter
     private static Economy economy;
 
-    private final String currency = "money"; // Vault agisce solo sulla valuta principale
+    private final String currency = "money"; 
 
     public VaultHook() {
         if (Bukkit.getPluginManager().getPlugin("Vault") != null) {
@@ -89,7 +89,6 @@ public class VaultHook implements Economy {
         UUID uuid = offlinePlayer.getUniqueId();
         SimpleEconomy plugin = SimpleEconomy.getInstance();
         
-        // Verifica se presente nella nuova cache di Caffeine
         if (plugin.getCache().contains(uuid)) {
             Map<String, Double> balances = plugin.getCache().get(uuid);
             if (balances != null && balances.containsKey(currency)) {
@@ -98,7 +97,6 @@ public class VaultHook implements Economy {
             return SettingsConfig.getInstance().startingBalance();
         }
 
-        // Vault richiede una risposta SINCROA. Se non è in cache, forziamo il caricamento sincrono con .join()
         try {
             Map<String, Double> balances = plugin.getStorage().load(uuid).join();
             if (balances != null && balances.containsKey(currency)) {
@@ -142,7 +140,6 @@ public class VaultHook implements Economy {
         }
         double newBalance = currentBalance - amount;
         
-        // Aggiorna la cache centralizzata e imposta lo stato "dirty" per il salvataggio automatico
         plugin.getCache().updateCurrency(uuid, currency, newBalance);
 
         if (offlinePlayer.isOnline() && offlinePlayer.getPlayer() != null) {
@@ -154,7 +151,6 @@ public class VaultHook implements Economy {
             }
         }
         
-        // Salvataggio asincrono in database
         plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, currency, newBalance));
         return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, null);
     }
@@ -175,7 +171,6 @@ public class VaultHook implements Economy {
         double currentBalance = getBalance(offlinePlayer);
         double newBalance = currentBalance + amount;
         
-        // Aggiorna la cache centralizzata e imposta lo stato "dirty" per il salvataggio automatico
         plugin.getCache().updateCurrency(uuid, currency, newBalance);
 
         if (offlinePlayer.isOnline() && offlinePlayer.getPlayer() != null) {
@@ -187,7 +182,6 @@ public class VaultHook implements Economy {
             }
         }
         
-        // Salvataggio asincrono in database
         plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, currency, newBalance));
         return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, null);
     }
