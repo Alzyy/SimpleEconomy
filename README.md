@@ -57,5 +57,4 @@ Found an issue with the system currently under development?
 * Write me on Discord @ 0x416c7a79 
 ---
 
-*Maintained by [Alzy*](https://github.com/Alzyy/SimpleEconomy)
 
