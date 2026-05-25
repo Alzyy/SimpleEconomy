@@ -56,6 +56,7 @@ messages:
     already-exists: "%prefix% &#F87171✘ &#EF4444The currency &#F9FAFB%currency% &#EF4444already exists!"
     not-found: "%prefix% &#F87171✘ &#EF4444The currency &#F9FAFB%currency% &#EF4444does not exist!"
     list-currency-empty: "%prefix% &#F87171✘ &#EF4444No available currencies!"
+    symbol-changed: "%prefix% &#86EFAC✔ &#6B7280Symbol changed for &#F9FAFB%currency% &#6B7280from &#F9FAFB%oldSymbol% &#6B7280to &#F9FAFB%symbol%"
   modules:
     list: "%prefix% &#6B7280Available modules: &#F9FAFB%modules%"
     no_modules: "%prefix% &#F87171✘ &#EF4444No modules available!"
