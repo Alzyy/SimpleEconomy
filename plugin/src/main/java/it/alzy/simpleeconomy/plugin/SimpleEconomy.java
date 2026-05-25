@@ -34,6 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 public final class SimpleEconomy extends JavaPlugin {
 
@@ -58,6 +59,9 @@ public final class SimpleEconomy extends JavaPlugin {
     private NamespacedKey uuidKey;
 
     @Getter
+    private Logger logger;
+
+    @Getter
     private BukkitAudiences bukkitAudiences;
 
     @Getter
@@ -77,6 +81,7 @@ public final class SimpleEconomy extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        logger = Logger.getLogger("SimpleEconomy");
         try {
             Class.forName("it.alzy.simpleeconomy.plugin.utils.ChatUtils");
 
@@ -104,7 +109,7 @@ public final class SimpleEconomy extends JavaPlugin {
             initializeFeatures();
 
         } catch (Exception e) {
-            getLogger().severe("An error occurred during plugin initialization: " + e.getMessage());
+            getLogger().severe("An error occurred during instance initialization: " + e.getMessage());
             disableSelf();
         }
     }
@@ -208,7 +213,7 @@ public final class SimpleEconomy extends JavaPlugin {
                 storage = new MySQLStorage(this, info);
             }
             default -> {
-                getLogger().severe("Invalid storage system: '" + system + "'. Disabling plugin.");
+                getLogger().severe("Invalid storage system: '" + system + "'. Disabling instance.");
                 disableSelf();
             }
         }
