@@ -86,7 +86,7 @@ public class VoucherCommand extends BaseCommand {
                             TransactionTypes.WITHDRAW,
                             "withdraw",
                             player.getName(),
-                            null
+                            player.getName()
                     );
                 });
             }).exceptionally(ex -> {

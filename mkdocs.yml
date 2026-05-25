@@ -1,0 +1,72 @@
+site_name: SimpleEconomy
+site_description: Professional documentation for the SimpleEconomy Spigot/Paper plugin
+repo_name: SimpleEconomy
+repo_url: https://github.com/Alzyy/SimpleEconomy
+nav:
+  - Home: index.md
+  - User Guide:
+      - Installation: user-guide/installation.md
+      - Configuration: user-guide/configuration.md
+      - Commands and Permissions: user-guide/commands-permissions.md
+  - Extensibility:
+      - Economy Modules: extensibility/modules.md
+  - API Reference:
+      - API Overview: api/reference.md
+  - Advanced Reference:
+      - Multicurrency: advanced/multicurrency.md
+      - Storage System: advanced/storage.md
+      - Cache System: advanced/cache.md
+      - Logging System: advanced/logging.md
+
+theme:
+  name: material
+  language: en
+  font:
+    text: "Fira Sans"
+    code: "Fira Mono"
+  palette:
+    - scheme: default
+      primary: cyan
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: cyan
+      accent: cyan
+      toggle:
+        icon: material/white-balance-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.sections
+    - navigation.footer
+    - content.code.copy
+    - content.code.annotate
+    - search.highlight
+    - search.suggest
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+plugins:
+  - search

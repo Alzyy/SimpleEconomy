@@ -89,8 +89,6 @@ public class SimpleEconomy extends JavaPlugin {
     @Getter
     PaperCommandManager commandManager;
 
-
-
     @Getter
     private boolean isPaper;
 
@@ -110,6 +108,11 @@ public class SimpleEconomy extends JavaPlugin {
             getLogger().info("Paper API not detected, running in Spigot/Bukkit mode.");
             isPaper = false;
         }
+
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            getLogger().severe("Uncaught exception in thread " + thread.getName() + ": " + throwable.getMessage());
+            throwable.printStackTrace();
+        });
 
         try {
             loadConfigurations();
@@ -195,10 +198,11 @@ public class SimpleEconomy extends JavaPlugin {
                 isPaper = true;
             }
         }
-        transactionHelper = new TransactionHelper(this);
         executor = Executors.newFixedThreadPool(settings.getThreadPoolSize());
         topMap = new LinkedHashMap<>();
         languageManager = new LanguageManager(this, SettingsConfig.getInstance().locale());
+        transactionHelper = new TransactionHelper(this, languageManager);
+
         formatUtils = new FormatUtils();
         itemUtils = new ItemUtils();
         amountKey = new NamespacedKey(this, getName() + "_voucheramount");
@@ -357,8 +361,19 @@ public class SimpleEconomy extends JavaPlugin {
         }
     }
 
-
-
+    public void runAsync(Runnable task) {
+        if(executor == null || executor.isShutdown()) {
+            getLogger().severe("Executor service is not available. Cannot run async task.");
+            return;
+        }
+        executor.execute(() -> {
+            try {
+                task.run();
+            } catch (Exception e) {
+                getLogger().severe("An error occurred while executing an asynchronous task: " + e.getMessage());
+            }
+        });
+    }
     private void loadConfigurations() {
         SettingsConfig.getInstance().registerLightConfig(this);
         SettingsConfig.getInstance().checkMissingKeys();

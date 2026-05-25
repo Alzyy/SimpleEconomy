@@ -7,6 +7,10 @@ import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+
+import java.util.concurrent.ThreadPoolExecutor;
+
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 @CommandAlias("simpleconomy|se|simpleeconomy")
@@ -37,5 +41,40 @@ public class SECommand extends BaseCommand {
             languageManager.reloadAll(player);
         });
     }
+
+    @Subcommand("diagnose")
+    @Description("Diagnose the plugin performance")
+    public void diagnose(CommandSender sender) {
+        if (!sender.hasPermission("simpleconomy.command.diagnose")) {
+            languageManager.send(sender, LanguageKeys.NO_PERMISSION, 
+                "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+            return;
+        }
+
+        plugin.runAsync(() -> {
+            int cacheSize = plugin.getCache().getAll().size();
+            int dirtyEntries = plugin.getCache().getDirtySize();
+            String dbType = SettingsConfig.getInstance().storageSystem();
+            
+            int activeTasks = 0;
+            int queueSize = 0;
+
+            if (plugin.getExecutor() instanceof ThreadPoolExecutor pool) {
+                activeTasks = pool.getActiveCount();
+                queueSize = pool.getQueue().size();
+            }
+
+            languageManager.send(sender, LanguageKeys.DIAGNOSE_RESULT,
+                "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX),
+                "%cacheSize%", String.valueOf(cacheSize),
+                "%dirtyEntries%", String.valueOf(dirtyEntries),
+                "%dbType%", dbType,
+                "%activeTasks%", String.valueOf(activeTasks),
+                "%threadPoolSize%", String.valueOf(SettingsConfig.getInstance().getThreadPoolSize()),
+                "%queueSize%", String.valueOf(queueSize)
+            );
+        });
+    }
+
 
 }

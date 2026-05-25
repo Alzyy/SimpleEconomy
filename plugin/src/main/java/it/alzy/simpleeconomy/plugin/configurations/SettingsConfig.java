@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import net.pino.simpleconfig.LightConfig;
@@ -171,6 +173,17 @@ public class SettingsConfig extends LightConfig {
 
     public boolean logVoucherCreations() { return this.fileConfiguration.getBoolean("webhook-settings.log-voucher-creations", true); }
 
+    public String embedFooter() { return this.fileConfiguration.getString("webhook-settings.embed-templates.footer", "SimpleEconomy Audit Log • %timestamp%"); }
+
+    public Map<String, String> getEmbedTemplate(String type) {
+        String path = "webhook-settings.embed-templates." + type.toLowerCase();
+        if (this.fileConfiguration.isConfigurationSection(path)) {
+            return this.fileConfiguration.getConfigurationSection(path)
+                    .getValues(false).entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())));
+        }
+        return Map.of("title", "Log", "description", "No template", "color", "#FFFFFF");
+    }
 
     public void checkMissingKeys() {
         InputStream resourceStream = SimpleEconomy.getInstance().getResource("config.yml");

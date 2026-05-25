@@ -24,12 +24,10 @@ public class MySQLStorage implements Storage {
 
     private final SimpleEconomy plugin;
     private final HikariDataSource dataSource;
-    private final Executor executor;
     private final String tableName;
 
     public MySQLStorage(SimpleEconomy plugin, DatabaseInfo info) {
         this.plugin = plugin;
-        this.executor = plugin.getExecutor();
         this.tableName = info.tablePrefix() + "players";
 
         HikariConfig config = new HikariConfig();
@@ -65,7 +63,7 @@ public class MySQLStorage implements Storage {
 
     @Override
     public void save(UUID uuid, String currency, double balance) {
-        executor.execute(() -> saveSync(uuid, currency, balance));
+        plugin.runAsync(() -> saveSync(uuid, currency, balance));
     }
 
     @Override
@@ -106,7 +104,7 @@ public class MySQLStorage implements Storage {
                 plugin.getLogger().warning("Failed to load data for UUID " + uuid + " and currency " + currency + ": " + e.getMessage());
             }
             return SettingsConfig.getInstance().startingBalance();
-        }, executor);
+        }, plugin.getExecutor());
     }
 
     @Override
@@ -136,12 +134,12 @@ public class MySQLStorage implements Storage {
 
             plugin.getCache().put(uuid, balances);
             return balances;
-        }, executor);
+        }, plugin.getExecutor());
     }
 
     @Override
     public void create(UUID uuid) {
-        executor.execute(() -> {
+        plugin.runAsync(() -> {
             String defaultCurrency = "money";
             double balance = SettingsConfig.getInstance().startingBalance();
             
@@ -212,7 +210,7 @@ public class MySQLStorage implements Storage {
                 plugin.getLogger().warning("Failed to check account for UUID " + uuid + ": " + e.getMessage());
                 return false;
             }
-        }, executor);
+        }, plugin.getExecutor());
     }
 
     @Override
@@ -239,7 +237,7 @@ public class MySQLStorage implements Storage {
 
     @Override
     public void purge(int days) {
-        executor.execute(() -> {
+        plugin.runAsync(() -> {
             String sql = "DELETE FROM `" + tableName + "` WHERE last_seen < ?";
             long cutoff = System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L);
 

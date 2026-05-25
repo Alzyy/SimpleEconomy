@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -24,11 +23,10 @@ public class FileStorage implements Storage {
 
     private final File folder;
     private final SimpleEconomy plugin;
-    private final ExecutorService executor;
 
     public FileStorage(File dataFolder, SimpleEconomy plugin) {
         this.plugin = plugin;
-        this.executor = plugin.getExecutor();
+        
 
         this.folder = new File(dataFolder, "player_data");
         plugin.getLogger().info("Using FileStorage as storage system!");
@@ -40,7 +38,7 @@ public class FileStorage implements Storage {
 
     @Override
     public void save(UUID uuid, String currency, double balance) {
-        executor.execute(() -> saveSync(uuid, currency, balance));
+        plugin.runAsync(() -> saveSync(uuid, currency, balance));
     }
 
     @Override
@@ -118,7 +116,7 @@ public class FileStorage implements Storage {
                 plugin.getCache().put(uuid, balances);
                 return balances;
             }
-        }, executor);
+        }, plugin.getExecutor());
     }
 
     @Override
@@ -145,12 +143,12 @@ public class FileStorage implements Storage {
                 plugin.getLogger().log(Level.WARNING, "Failed to get balance for " + uuid, e);
                 return 0d;
             }
-        }, executor);
+        }, plugin.getExecutor());
     }
 
     @Override
     public void create(UUID uuid) {
-        executor.execute(() -> {
+        plugin.runAsync(() -> {
             String defaultCurrency = "money";
             double balance = SettingsConfig.getInstance().startingBalance();
             
@@ -191,7 +189,7 @@ public class FileStorage implements Storage {
                 } catch (IOException e) {
                     plugin.getLogger().log(Level.SEVERE, "Failed to execute bulk save for " + uuid, e);
                 }
-            }, executor))
+            }, plugin.getExecutor() ))
             .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
@@ -199,13 +197,13 @@ public class FileStorage implements Storage {
 
     @Override
     public void close() {
-        // I file non richiedono chiusura
+        // Nothing to close for file storage
     }
 
     @Override
     public Map<String, Double> getTopBalances(String currency, int limit) {
         try {
-            var task = executor.submit(() -> {
+            var task = plugin.getExecutor().submit(() -> {
                 Map<String, Double> balances = new HashMap<>();
 
                 File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml"));
@@ -249,7 +247,7 @@ public class FileStorage implements Storage {
     @Override
     public Map<String, Double> getAllBalances(String currency) {
         try {
-            var task = executor.submit(() -> {
+            var task = plugin.getExecutor().submit(() -> {
                 Map<String, Double> balances = new HashMap<>();
 
                 File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml"));
@@ -313,6 +311,6 @@ public class FileStorage implements Storage {
         return CompletableFuture.supplyAsync(() -> {
             File file = new File(folder, uuid.toString() + ".yml");
             return file.exists();
-        }, executor);
+        }, plugin.getExecutor());
     }
 }

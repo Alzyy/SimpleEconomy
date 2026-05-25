@@ -6,90 +6,62 @@ import it.alzy.simpleeconomy.plugin.utils.DiscordWebhook;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 public class WebhookLogger {
+
     public void send(String type, String p1, String p2, double amount) {
         SettingsConfig config = SettingsConfig.getInstance();
+        String template = type.toLowerCase().split(" ")[0]; 
 
         if (!config.shouldLogToDiscord()) {
             return;
         }
-
-        boolean enabled = switch (type.toLowerCase()) {
-            case "pay" -> config.logPayToDiscord();
-            case "remove" -> config.logWithdrawalsToDiscord();
-            case "give", "set" -> config.logAdminToDiscord();
-            case "withdraw" -> config.logVoucherCreations();
-            default -> false;
-        };
-
-        if (!enabled) return;
-
+    
         String url = config.webhookURL();
-        DiscordWebhook webhook = new DiscordWebhook(url);
-        
         if (url == null || url.isEmpty() || url.contains("your_webhook_url")) {
-            SimpleEconomy.getInstance().getLogger().warning("Invalid Discord Webhook URL. Please check your configuration.");
+            SimpleEconomy.getInstance().getLogger().warning("Webhook URL is invalid or not configured.");
             return;
         }
-
+    
+        Map<String, String> embedTemplate = config.getEmbedTemplate(template);
+        
+        if (embedTemplate == null || embedTemplate.isEmpty()) {
+            SimpleEconomy.getInstance().getLogger().warning("No template found for type: " + type);
+        }
+    
+        String formattedAmount = SimpleEconomy.getInstance().getFormatUtils().formatBalance(amount);
+    
+        String title = embedTemplate.getOrDefault("title", "Transaction Log");
+        String desc = embedTemplate.getOrDefault("description", "")
+                    .replace("%sender%", p1)
+                    .replace("%receiver%", p2)
+                    .replace("%executor%", p2) 
+                    .replace("%target%", p1)   
+                    .replace("%player%", p1)  
+                    .replace("%amount%", formattedAmount);
+    
+        DiscordWebhook webhook = new DiscordWebhook(url);
         webhook.setUsername(config.username());
         webhook.setAvatarUrl(config.avatarURL());
-
+    
         DiscordWebhook.Embed embed = new DiscordWebhook.Embed();
-        embed.setColor(config.webhookColor());
-
-        String title = "💰 Transaction Log";
-        String description = "";
-
-        switch (type.toLowerCase()) {
-            case "pay" -> {
-                title = "💸 Player Payment";
-                description = "**" + p1 + "** sent money to **" + p2 + "**";
-                embed.addField("Sender", p1, true);
-                embed.addField("Receiver", p2, true);
-            }
-            case "remove" -> {
-                title = "📉 Admin Action: Remove";
-                description = "Admin **" + p2 + "** removed money from **" + p1 + "**";
-                embed.addField("Admin/Executor", p2, true);
-                embed.addField("Target Player", p1, true);
-            }
-            case "give" -> {
-                title = "📈 Admin Action: Give";
-                description = "Admin **" + p2 + "** gave money to **" + p1 + "**";
-                embed.addField("Admin/Executor", p2, true);
-                embed.addField("Target Player", p1, true);
-            }
-            case "set" -> {
-                title = "⚙️ Admin Action: Set";
-                description = "Admin **" + p2 + "** set the balance for **" + p1 + "**";
-                embed.addField("Admin/Executor", p2, true);
-                embed.addField("Target Player", p1, true);
-            }
-            case "withdraw" -> {
-                title = "🎫 Voucher Creation";
-                description = "**" + p1 + "** created a physical voucher";
-                embed.addField("Player", p1, true);
-            }
-        }
-
         embed.setTitle(title);
-        embed.setDescription(description);
-
-        embed.addField("Amount", SimpleEconomy.getInstance().getFormatUtils().formatBalance(amount), false);
-
+        embed.setDescription(desc);
+        embed.setColor(embedTemplate.getOrDefault("color", config.webhookColor()));
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss"));
-        embed.setFooter("SimpleEconomy Audit Log • " + time, null);
-
+        embed.setFooter(config.embedFooter().replace("%timestamp%", time), null);
+    
         webhook.addEmbed(embed);
-
+    
         webhook.sendAsync().thenAccept(code -> {
-            if (code < 200 || code >= 300) {
-                SimpleEconomy.getInstance().getLogger().warning("Discord Webhook dispatch failed. HTTP Code: " + code);
+            if (code >= 200 && code < 300) {
+            } else {
+                SimpleEconomy.getInstance().getLogger().warning("Webhook failed! HTTP Code: " + code);
             }
         }).exceptionally(ex -> {
-            SimpleEconomy.getInstance().getLogger().severe("Exception during Discord logging: " + ex.getMessage());
+            SimpleEconomy.getInstance().getLogger().severe("Exception during webhook send: " + ex.getMessage());
+            ex.printStackTrace();
             return null;
         });
     }

@@ -8,28 +8,35 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Cache {
 
     private final com.github.benmanes.caffeine.cache.Cache<UUID, Map<String, Double>> cache;
     
-    private final Set<UUID> dirtyPlayers;
+    private final Set<UUID> dirtyPlayers = new HashSet<>(); 
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     public Cache() {
         this.cache = Caffeine.newBuilder()
                 .maximumSize(5000)
                 .expireAfterAccess(30, TimeUnit.MINUTES)
                 .build();
-                
-        this.dirtyPlayers = ConcurrentHashMap.newKeySet();
+
     }
 
     public void put(UUID uuid, Map<String, Double> balances) {
-        if (!(balances instanceof ConcurrentHashMap)) {
-            balances = new ConcurrentHashMap<>(balances);
+        lock.lock(); 
+        try {
+            if (!(balances instanceof ConcurrentHashMap)) {
+                balances = new ConcurrentHashMap<>(balances);
+            }
+            cache.put(uuid, balances);
+            dirtyPlayers.add(uuid);
+        } finally {
+            lock.unlock();
         }
-        cache.put(uuid, balances);
-        dirtyPlayers.add(uuid);
     }
 
     public Map<String, Double> get(UUID uuid) {
@@ -46,10 +53,15 @@ public class Cache {
     }
 
     public void updateCurrency(UUID uuid, String currency, double amount) {
-        Map<String, Double> balances = cache.getIfPresent(uuid);
-        if (balances != null) {
-            balances.put(currency, amount);
-            dirtyPlayers.add(uuid);
+        lock.lock();
+        try {
+            Map<String, Double> balances = cache.getIfPresent(uuid);
+            if (balances != null) {
+                balances.put(currency, amount);
+                dirtyPlayers.add(uuid);
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -63,11 +75,17 @@ public class Cache {
     }
 
     public Set<UUID> getAndClearDirtyPlayers() {
-        Set<UUID> snapshot;
-        synchronized (dirtyPlayers) {
-            snapshot = new HashSet<>(dirtyPlayers);
+        lock.lock();
+        try {
+            Set<UUID> snapshot = new HashSet<>(dirtyPlayers);
             dirtyPlayers.clear();
+            return snapshot;
+        } finally {
+            lock.unlock();
         }
-        return snapshot;
+    }
+
+    public int getDirtySize() {
+        return dirtyPlayers.size();
     }
 }

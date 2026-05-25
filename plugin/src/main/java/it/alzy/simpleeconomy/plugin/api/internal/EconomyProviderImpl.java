@@ -40,7 +40,7 @@ public class EconomyProviderImpl implements EconomyProvider {
             if (plugin.getCache().contains(uuid)) {
                 plugin.getCache().updateCurrency(uuid, currency, amount);
             }
-        });
+        }, plugin.getExecutor());
     }
 
     @Override
@@ -69,7 +69,7 @@ public class EconomyProviderImpl implements EconomyProvider {
             if (plugin.getCache().contains(uuid)) {
                 plugin.getCache().updateCurrency(uuid, currency, newBalance);
             }
-        });
+        }, plugin.getExecutor());
     }
 
     @Override

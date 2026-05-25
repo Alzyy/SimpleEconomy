@@ -27,7 +27,7 @@ public class SQLiteStorage implements Storage {
 
     public SQLiteStorage(SimpleEconomy plugin) {
         this.plugin = plugin;
-        this.executor = Executors.newSingleThreadExecutor();
+        this.executor = Executors.newSingleThreadExecutor(t -> new Thread(t, "SimpleEconomy-SQLite-Executor"));
 
         File dataFolder = plugin.getDataFolder();
         if (!dataFolder.exists()) {

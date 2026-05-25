@@ -67,7 +67,8 @@ public enum LanguageKeys {
     MODULE_LOADED_FROM_FILE("messages.modules.loaded_from_file"),
     MODULE_COULDNT_FIND_FILE("messages.modules.couldnt_find_file"),
     MODULE_ENABLED_PLACEHOLDER("messages.modules.enabled_placeholder"),
-    MODULE_DISABLED_PLACEHOLDER("messages.modules.disabled_placeholder");
+    MODULE_DISABLED_PLACEHOLDER("messages.modules.disabled_placeholder"),
+    DIAGNOSE_RESULT("messages.system.diagnose_result");
 
 
     private final String path;

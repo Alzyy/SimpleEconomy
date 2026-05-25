@@ -20,9 +20,9 @@ public final class TransactionHelper {
     private final SimpleEconomy plugin;
     private final LanguageManager lang;
 
-    public TransactionHelper(SimpleEconomy plugin) {
+    public TransactionHelper(SimpleEconomy plugin, LanguageManager languageManager) {
         this.plugin = plugin;
-        this.lang = plugin.getLanguageManager();
+        this.lang = languageManager;
     }
 
     public Collection<OfflinePlayer> resolveTargets(CommandSender sender, String input) {
@@ -118,30 +118,29 @@ public final class TransactionHelper {
     }
 
 
-    public void commitTransferAsync(UUID senderId, UUID recipientId, String currency,double amount, double senderAfter, double recipientAfter, String senderName,String recipientName ) {
-        plugin.getCache().updateCurrency(senderId, currency, senderAfter);
-        plugin.getCache().updateCurrency(recipientId, currency, recipientAfter);
+    public void commitTransferAsync(UUID senderId, UUID recipientId, String currency, double amount, double senderAfter, double recipientAfter, String senderName, String recipientName) {
 
-        plugin.getExecutor().execute(() -> {
-            plugin.getStorage().save(senderId, currency, senderAfter);
-            plugin.getStorage().save(recipientId, currency, recipientAfter);
+            String id1 = senderId.toString();
+            String id2 = recipientId.toString();
+            String first = id1.compareTo(id2) < 0 ? id1 : id2;
+            String second = id1.compareTo(id2) < 0 ? id2 : id1;
 
-            if (SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
-                Transaction tx = new Transaction(
-                        senderId.toString(),
-                        recipientId.toString(),
-                        currency,
-                        amount,
-                        senderAfter + amount, 
-                        senderAfter,         
-                        TransactionTypes.PAY,
-                        System.currentTimeMillis()
-                );
-                plugin.getTransactionLogger().appendLog(tx);
-            }
+            plugin.getExecutor().execute(() -> {
+            try {
+                TransactionLock.lock(first);
+                TransactionLock.lock(second);
 
-            if (plugin.getWebhookLogger() != null) {
+                plugin.getCache().updateCurrency(senderId, currency, senderAfter);
+                plugin.getCache().updateCurrency(recipientId, currency, recipientAfter);
+                plugin.getStorage().save(senderId, currency, senderAfter);
+                plugin.getStorage().save(recipientId, currency, recipientAfter);
+
+                if (plugin.getWebhookLogger() != null) {
                 plugin.getWebhookLogger().send("pay (" + currency + ")", recipientName, senderName, amount);
+                }
+            } finally {
+                TransactionLock.unlock(second);
+                TransactionLock.unlock(first);
             }
         });
     }

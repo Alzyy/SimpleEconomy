@@ -66,3 +66,5 @@ messages:
     couldnt_find_file: "%prefix% &#F87171✘ &#EF4444Couldn't find the file &#F9FAFB%file%"
     enabled_placeholder: "&#86EFAC✔"
     disabled_placeholder: "&#F87171✘"
+  system:
+    diagnose_result: "%prefix% &#6B7280Diagnose completed &#374151| &#22C55EPlayers in cache: &#F9FAFB%cacheSize% &#6B7280| &#22C55EPlayers waiting to be saved: &#F9FAFB%dirtyEntries% &#6B7280| &#22C55EDatabase type: &#F9FAFB%dbType% &#6B7280| &#22C55EActive tasks: &#F9FAFB%activeTasks% &#6B7280 | &#22C55EThread pool: &#F9FAFB%threadPoolSize% thread(s) &#6B7280 | &#22C55ETasks in queue: &#F9FAFB%queueSize%"
