@@ -73,7 +73,7 @@ public class SQLiteStorage implements Storage {
             try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
                 stmt.execute(sql);
             } catch (SQLException e) {
-                plugin.getLogger().log(Level.SEVERE, "Couldn't create users table. Disabling plugin.", e);
+                plugin.getLogger().log(Level.SEVERE, "Couldn't create users table. Disabling instance.", e);
                 Bukkit.getPluginManager().disablePlugin(plugin);
             }
         });

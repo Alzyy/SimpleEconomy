@@ -26,7 +26,7 @@ public class SECommand extends BaseCommand {
     }
 
     @Subcommand("reload")
-    @Description("Reloads the plugin configurations")
+    @Description("Reloads the instance configurations")
     public void reload(Player player) {
         if (!player.hasPermission("simpleconomy.command.reload")) {
             languageManager.send(player, LanguageKeys.NO_PERMISSION,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));

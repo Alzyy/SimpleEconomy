@@ -36,10 +36,10 @@ public class PayCommand extends BaseCommand {
             return;
         }
 
-        if (sender.getName().equalsIgnoreCase(targetName)) {
-            languageManager.send(sender, LanguageKeys.SELF_COMMAND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
-            return;
-        }
+//        if (sender.getName().equalsIgnoreCase(targetName)) {
+//            languageManager.send(sender, LanguageKeys.SELF_COMMAND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+//            return;
+//        }
         if (limited(amount)) {
             double max = SettingsConfig.getInstance().getMaxTransactionLimit();
             languageManager.send(sender, LanguageKeys.AMOUNT_EXCEEDS_LIMIT,
@@ -85,8 +85,8 @@ public class PayCommand extends BaseCommand {
         languageManager.send(target, LanguageKeys.RECEIVED_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%source%", sender.getName());
 
         plugin.getExecutor().execute(() -> {
-            plugin.getCacheMap().merge(sender.getUniqueId(), amount, (oldVal, amt) -> oldVal - amt);
-            plugin.getCacheMap().merge(target.getUniqueId(), amount, Double::sum);
+            plugin.getCacheMap().put(sender.getUniqueId(), senderBalanceAfter);
+            plugin.getCacheMap().put(target.getUniqueId(), targetBalanceAfter);
 
             plugin.getStorage().save(sender.getUniqueId(), senderBalanceAfter);
             plugin.getStorage().save(target.getUniqueId(), targetBalanceAfter);

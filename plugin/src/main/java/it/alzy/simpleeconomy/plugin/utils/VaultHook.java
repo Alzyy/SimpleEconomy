@@ -1,20 +1,17 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
-import java.util.List;
-import java.util.UUID;
-
-import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
-import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
-import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
-
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import lombok.Getter;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.ServicePriority;
+
+import java.util.List;
+import java.util.UUID;
 
 public class VaultHook implements Economy {
 
@@ -151,9 +148,8 @@ public class VaultHook implements Economy {
         }
         SimpleEconomy plugin = SimpleEconomy.getInstance();
         UUID uuid = offlinePlayer.getUniqueId();
-
-
-        double newBalance = plugin.getCacheMap().merge(uuid, amount, Double::sum);
+        double currentBalance = getBalance(offlinePlayer);
+        double newBalance = currentBalance + amount;
         if(offlinePlayer.isOnline()) {
             plugin.getCacheMap().put(uuid, newBalance);
             if(SettingsConfig.getInstance().enableActionBarMessages()) {
