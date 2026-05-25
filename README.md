@@ -16,7 +16,7 @@ Enjoying the plugin? Leave a review! It only takes a moment, but it means the wo
 
 ## **Installation**
 
-1. Download the plugin .jar file from the [SpigotMC page](https://www.spigotmc.org/resources/simpleeconomy).
+1. Download the plugin .jar file from the [SpigotMC page](https://www.spigotmc.org/resources/simpleeconomy.127423/).
 2. Place it in your server’s `/plugins` folder.
 3. Start or reload the server to generate configuration files.
 4. Open `config.yml` and set your preferred storage method: `mysql`, `sqlite`, or `file`.
@@ -78,9 +78,9 @@ The `SimpleEconomyAPI` provides methods to interact with the economy system prog
 
 #### **Get a Player's Balance**
 ```java
-SimpleEconomyAPI api = SimpleEconomyAPI.getInstance();
+EconomyProvider economyProvider = SimpleEconomyAPI.getProvider();
 OfflinePlayer player = Bukkit.getOfflinePlayer("Alzy");
-CompletableFuture<Double> balanceFuture = api.getBalance(player);
+CompletableFuture<Double> balanceFuture = economyProvider.getBalance(player);
 balanceFuture.thenAccept(balance -> {
     System.out.println("Player's balance: " + balance);
 });
@@ -88,7 +88,7 @@ balanceFuture.thenAccept(balance -> {
 
 #### **Deposit Money**
 ```java
-api.deposit(player, 100.0).thenAccept(result -> {
+economyProvider.deposit(player, 100.0).thenAccept(result -> {
     if (result == TransactionResult.SUCCESS) {
         System.out.println("Deposit successful!");
     }
@@ -97,7 +97,7 @@ api.deposit(player, 100.0).thenAccept(result -> {
 
 #### **Withdraw Money**
 ```java
-api.withdraw(player, 50.0).thenAccept(result -> {
+economyProvider.withdraw(player, 50.0).thenAccept(result -> {
     if (result == TransactionResult.SUCCESS) {
         System.out.println("Withdrawal successful!");
     }

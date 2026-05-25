@@ -2,14 +2,12 @@ package it.alzy.simpleeconomy.plugin.commands;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
-import co.aikar.commands.annotation.Optional;
 import it.alzy.simpleeconomy.api.TransactionTypes;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.records.Transaction;
-import it.alzy.simpleeconomy.plugin.tasks.InterestTask;
 import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
 import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import net.milkbowl.vault.economy.Economy;
@@ -20,7 +18,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -214,6 +214,9 @@ public class ECOCommand extends BaseCommand {
 
     private Collection<OfflinePlayer> getOfflinePlayerFallback(CommandSender sender, String targetName) {
         OfflinePlayer target = Bukkit.getOfflinePlayerIfCached(targetName);
+        if (target == null) {
+            return Collections.emptyList();
+        }
         if (!target.hasPlayedBefore() && !target.isOnline()) {
             languageManager.send(sender, LanguageKeys.PLAYER_NOT_FOUND,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return Collections.emptyList();

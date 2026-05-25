@@ -1,9 +1,9 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+
 import java.util.NavigableMap;
 import java.util.TreeMap;
-
-import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 
 public class FormatUtils {
 

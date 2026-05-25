@@ -155,16 +155,12 @@ public class DiscordWebhook {
 
     public static class Embed {
         private final List<Field> fields = new ArrayList<>();
+        @Setter
         private String title;
         private String description;
         private String color;
         private String footerText;
         private String footerIcon;
-
-        public Embed setTitle(String title) {
-            this.title = title;
-            return this;
-        }
 
         public Embed setDescription(String description) {
             this.description = description;
@@ -175,23 +171,20 @@ public class DiscordWebhook {
             this.color = String.valueOf((r << 16) + (g << 8) + b);
             return this;
         }
-        public Embed setColor(String hex) {
+        public void setColor(String hex) {
             if (hex.startsWith("#")) {
                 hex = hex.substring(1);
             }
             this.color = String.valueOf(Integer.parseInt(hex, 16));
-            return this;
         }
 
-        public Embed setFooter(String text, String iconUrl) {
+        public void setFooter(String text, String iconUrl) {
             this.footerText = text;
             this.footerIcon = iconUrl;
-            return this;
         }
 
-        public Embed addField(String name, String value, boolean inline) {
+        public void addField(String name, String value, boolean inline) {
             this.fields.add(new Field(name, value, inline));
-            return this;
         }
     }
 

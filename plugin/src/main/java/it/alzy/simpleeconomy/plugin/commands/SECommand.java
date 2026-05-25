@@ -1,12 +1,16 @@
 package it.alzy.simpleeconomy.plugin.commands;
 
 import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.*;
+import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.Default;
+import co.aikar.commands.annotation.Description;
+import co.aikar.commands.annotation.Subcommand;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 @CommandAlias("simpleconomy|se|simpleeconomy")
@@ -27,15 +31,15 @@ public class SECommand extends BaseCommand {
 
     @Subcommand("reload")
     @Description("Reloads the instance configurations")
-    public void reload(Player player) {
-        if (!player.hasPermission("simpleconomy.command.reload")) {
-            languageManager.send(player, LanguageKeys.NO_PERMISSION,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+    public void reload(CommandSender commandSender) {
+        if (!commandSender.hasPermission("simpleconomy.command.reload")) {
+            languageManager.send(commandSender, LanguageKeys.NO_PERMISSION,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
         plugin.getExecutor().execute(() -> {
             SettingsConfig.getInstance().reload();
             languageManager.reload(SettingsConfig.getInstance().locale());
-            languageManager.send(player, LanguageKeys.RELOAD_SUCCESS, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+            languageManager.send(commandSender, LanguageKeys.RELOAD_SUCCESS, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
         });
     }
 

@@ -2,6 +2,10 @@ package it.alzy.simpleeconomy.plugin.storage.impl;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.storage.Storage;
+import org.bukkit.Bukkit;
 
 import java.io.File;
 import java.sql.*;
@@ -12,12 +16,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
-
-import org.bukkit.Bukkit;
-
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import it.alzy.simpleeconomy.plugin.storage.Storage;
 
 public class SQLiteStorage implements Storage {
 
