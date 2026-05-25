@@ -1,13 +1,16 @@
 package it.alzy.simpleeconomy.plugin.api;
 
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class PAPIExpansion extends PlaceholderExpansion {

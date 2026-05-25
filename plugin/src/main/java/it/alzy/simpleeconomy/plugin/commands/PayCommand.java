@@ -36,10 +36,10 @@ public class PayCommand extends BaseCommand {
             return;
         }
 
-//        if (sender.getName().equalsIgnoreCase(targetName)) {
-//            languageManager.send(sender, LanguageKeys.SELF_COMMAND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
-//            return;
-//        }
+        if (sender.getName().equalsIgnoreCase(targetName)) {
+            languageManager.send(sender, LanguageKeys.SELF_COMMAND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+            return;
+        }
         if (limited(amount)) {
             double max = SettingsConfig.getInstance().getMaxTransactionLimit();
             languageManager.send(sender, LanguageKeys.AMOUNT_EXCEEDS_LIMIT,

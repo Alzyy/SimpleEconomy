@@ -1,17 +1,16 @@
 package it.alzy.simpleeconomy.plugin.commands;
 
-import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
-import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
 import co.aikar.commands.annotation.Description;
 import co.aikar.commands.annotation.Optional;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 
 @CommandAlias("balance|bal|money")
 @Description("Displays the balance of a player. Shows your own balance if no player is specified. Viewing others' balances requires permission.")

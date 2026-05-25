@@ -1,10 +1,9 @@
 package it.alzy.simpleeconomy.plugin.tasks;
 
-import org.bukkit.scheduler.BukkitRunnable;
-
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.storage.Storage;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class AutoSaveTask extends BukkitRunnable {
 

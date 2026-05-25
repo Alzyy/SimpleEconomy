@@ -259,10 +259,10 @@ public final class SimpleEconomy extends JavaPlugin {
 
     private void registerListeners() {
         var pm = getServer().getPluginManager();
-        pm.registerEvents(new PlayerListener(), this);
+        pm.registerEvents(new PlayerListener(this, languageManager), this);
 
         if (SettingsConfig.getInstance().areVoucherEnabled()) {
-            pm.registerEvents(new VoucherEvents(), this);
+            pm.registerEvents(new VoucherEvents(this, languageManager), this);
         }
     }
 

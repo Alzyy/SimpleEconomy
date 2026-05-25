@@ -1,9 +1,8 @@
 package it.alzy.simpleeconomy.plugin.tasks;
 
-import org.bukkit.scheduler.BukkitRunnable;
-
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

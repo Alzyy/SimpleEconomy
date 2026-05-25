@@ -1,15 +1,15 @@
 package it.alzy.simpleeconomy.plugin.configurations;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import net.pino.simpleconfig.LightConfig;
 import net.pino.simpleconfig.annotations.Config;
 import net.pino.simpleconfig.annotations.ConfigFile;
 import org.bukkit.configuration.file.YamlConfiguration;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Config
 @ConfigFile("config.yml")

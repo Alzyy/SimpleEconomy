@@ -13,15 +13,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.UUID;
 
-public class PlayerListener implements Listener {
-
-    private final SimpleEconomy plugin;
-    private final LanguageManager languageManager;
-
-    public PlayerListener() {
-        this.plugin = SimpleEconomy.getInstance();
-        this.languageManager = plugin.getLanguageManager();
-    }
+public record PlayerListener(SimpleEconomy plugin, LanguageManager languageManager) implements Listener {
 
     @EventHandler
     public void onPlayerLogin(AsyncPlayerPreLoginEvent event) {

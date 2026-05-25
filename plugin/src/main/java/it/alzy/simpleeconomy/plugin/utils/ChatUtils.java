@@ -25,20 +25,20 @@ public class ChatUtils {
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
     private static final Map<String, Component> COMPONENT_CACHE = Collections.synchronizedMap(
-        new LinkedHashMap<String, Component>(128, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<String, Component> eldest) {
-                return size() > 512;
+            new LinkedHashMap<>(128, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Component> eldest) {
+                    return size() > 512;
+                }
             }
-        }
     );   
     private static final Map<String, String> CONVERSION_CACHE = Collections.synchronizedMap(
-        new LinkedHashMap<String, String>(128, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-                return size() > 512;
+            new LinkedHashMap<>(128, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                    return size() > 512;
+                }
             }
-        }
     );   
     private static final Component EMPTY_COMPONENT = Component.empty();
 
