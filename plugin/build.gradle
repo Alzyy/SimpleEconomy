@@ -35,8 +35,8 @@ dependencies {
     implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
     implementation "com.zaxxer:HikariCP:7.0.2"
 
-    compileOnly 'org.projectlombok:lombok:1.18.34'
-    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+    compileOnly 'org.projectlombok:lombok:1.18.46'
+    annotationProcessor 'org.projectlombok:lombok:1.18.46'
 
     compileOnly("com.github.ben-manes.caffeine:caffeine:3.2.4")
 
