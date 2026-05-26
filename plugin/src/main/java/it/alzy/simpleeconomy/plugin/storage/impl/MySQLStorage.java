@@ -1,24 +1,24 @@
 package it.alzy.simpleeconomy.plugin.storage.impl;
 
-import java.sql.*;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.records.DatabaseInfo;
+import it.alzy.simpleeconomy.plugin.storage.Storage;
+import org.bukkit.Bukkit;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
-
-import org.bukkit.Bukkit;
-
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import it.alzy.simpleeconomy.plugin.records.DatabaseInfo;
-import it.alzy.simpleeconomy.plugin.storage.Storage;
 
 public class MySQLStorage implements Storage {
 
@@ -71,10 +71,10 @@ public class MySQLStorage implements Storage {
         if (Bukkit.isPrimaryThread()) {
             plugin.getLogger().severe("[WARNING] saveSync() was called on the main thread! UUID: " + uuid);
         }
-        
+
         String sql = "INSERT INTO `" + tableName + "` (uuid, currency, balance, last_seen) VALUES (?, ?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE balance = VALUES(balance), last_seen = VALUES(last_seen)";
-                
+
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, uuid.toString());
@@ -142,7 +142,7 @@ public class MySQLStorage implements Storage {
         plugin.runAsync(() -> {
             String defaultCurrency = "money";
             double balance = SettingsConfig.getInstance().startingBalance();
-            
+
             Map<String, Double> balances = new ConcurrentHashMap<>();
             balances.put(defaultCurrency, balance);
 
@@ -157,7 +157,7 @@ public class MySQLStorage implements Storage {
         if (dirtyPlayers.isEmpty()) return;
 
         String sql = "INSERT INTO `" + tableName + "` (uuid, currency, balance, last_seen) VALUES (?, ?, ?, ?) " +
-                     "ON DUPLICATE KEY UPDATE balance = VALUES(balance), last_seen = VALUES(last_seen)";
+                "ON DUPLICATE KEY UPDATE balance = VALUES(balance), last_seen = VALUES(last_seen)";
 
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
@@ -245,7 +245,7 @@ public class MySQLStorage implements Storage {
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setLong(1, cutoff);
                 int deletedRows = stmt.executeUpdate();
-                
+
                 if (deletedRows > 0) {
                     plugin.getLogger().info("Purged " + deletedRows + " entries inactive for more than " + days + " days.");
                 }

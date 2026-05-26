@@ -1,25 +1,25 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
-import org.bukkit.Bukkit;
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import lombok.Getter;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.ServicePriority;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class VaultHook implements Economy {
 
     @Getter
     private static Economy economy;
 
-    private final String currency = "money"; 
+    private final String currency = "money";
 
     public VaultHook() {
         if (Bukkit.getPluginManager().getPlugin("Vault") != null) {
@@ -88,7 +88,7 @@ public class VaultHook implements Economy {
     public double getBalance(OfflinePlayer offlinePlayer) {
         UUID uuid = offlinePlayer.getUniqueId();
         SimpleEconomy plugin = SimpleEconomy.getInstance();
-        
+
         if (plugin.getCache().contains(uuid)) {
             Map<String, Double> balances = plugin.getCache().get(uuid);
             if (balances != null && balances.containsKey(currency)) {
@@ -103,8 +103,7 @@ public class VaultHook implements Economy {
                 return balances.get(currency);
             }
         } catch (Exception ex) {
-            plugin.getLogger().severe("Failed to block-load Vault balance for UUID: " + uuid);
-            ex.printStackTrace();
+            plugin.getLogger().severe("Failed to block-load Vault balance for UUID: " + uuid + ": " + ex.getMessage());
         }
 
         return SettingsConfig.getInstance().startingBalance();
@@ -139,18 +138,18 @@ public class VaultHook implements Economy {
             return new EconomyResponse(0, currentBalance, EconomyResponse.ResponseType.FAILURE, "Not enough money");
         }
         double newBalance = currentBalance - amount;
-        
+
         plugin.getCache().updateCurrency(uuid, currency, newBalance);
 
         if (offlinePlayer.isOnline() && offlinePlayer.getPlayer() != null) {
             if (SettingsConfig.getInstance().enableActionBarMessages()) {
                 ChatUtils.createComponentAsync(plugin.getLanguageManager().getMessage(
-                                LanguageKeys.ACTION_BAR_DETRACT),
-                        "%amount%", plugin.getFormatUtils().formatBalance(amount))
-                .thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
+                                        LanguageKeys.ACTION_BAR_DETRACT),
+                                "%amount%", plugin.getFormatUtils().formatBalance(amount))
+                        .thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
             }
         }
-        
+
         plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, currency, newBalance));
         return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, null);
     }
@@ -170,18 +169,18 @@ public class VaultHook implements Economy {
 
         double currentBalance = getBalance(offlinePlayer);
         double newBalance = currentBalance + amount;
-        
+
         plugin.getCache().updateCurrency(uuid, currency, newBalance);
 
         if (offlinePlayer.isOnline() && offlinePlayer.getPlayer() != null) {
             if (SettingsConfig.getInstance().enableActionBarMessages()) {
                 ChatUtils.createComponentAsync(plugin.getLanguageManager().getMessage(
-                                LanguageKeys.ACTION_BAR_ADD),
-                        "%amount%", plugin.getFormatUtils().formatBalance(amount))
-                .thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
+                                        LanguageKeys.ACTION_BAR_ADD),
+                                "%amount%", plugin.getFormatUtils().formatBalance(amount))
+                        .thenAccept(comp -> ChatUtils.sendActionBar(offlinePlayer.getPlayer(), comp));
             }
         }
-        
+
         plugin.getExecutor().execute(() -> plugin.getStorage().save(uuid, currency, newBalance));
         return new EconomyResponse(amount, newBalance, EconomyResponse.ResponseType.SUCCESS, null);
     }

@@ -1,5 +1,6 @@
 package it.alzy.simpleeconomy.plugin.api;
 
+import io.papermc.paper.plugin.configuration.PluginMeta;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.records.TopEntry;
@@ -7,16 +8,18 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class PAPIExpansion extends PlaceholderExpansion {
 
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
-    
+
     private final AtomicReference<List<TopEntry>> topCache = new AtomicReference<>(new ArrayList<>());
     private long lastUpdate = 0;
-    private final long CACHE_TIME = 30000; // 30 seconds
 
     @Override
     public @NotNull String getIdentifier() {
@@ -29,8 +32,10 @@ public class PAPIExpansion extends PlaceholderExpansion {
     }
 
     @Override
+    @SuppressWarnings("UnstableApiUsage")
     public @NotNull String getVersion() {
-        return plugin.getDescription().getVersion();
+        PluginMeta pluginMeta = plugin.getPluginMeta();
+        return pluginMeta.getVersion();
     }
 
     @Override
@@ -40,8 +45,8 @@ public class PAPIExpansion extends PlaceholderExpansion {
         String lower = params.toLowerCase();
 
         if (lower.startsWith("baltop_")) {
-            updateTopCache(); 
-            
+            updateTopCache();
+
             String numberPart = lower.substring(7);
             boolean isBalanceRequest = numberPart.endsWith("_balance");
             if (isBalanceRequest) {
@@ -53,10 +58,10 @@ public class PAPIExpansion extends PlaceholderExpansion {
                 List<TopEntry> currentTop = topCache.get();
 
                 if (position < 1 || position > currentTop.size()) return "N/A";
-                
+
                 TopEntry entry = currentTop.get(position - 1);
                 return isBalanceRequest ? plugin.getFormatUtils().formatBalance(entry.balance()) : entry.name();
-                
+
             } catch (NumberFormatException e) {
                 return "Invalid position!";
             }
@@ -64,17 +69,17 @@ public class PAPIExpansion extends PlaceholderExpansion {
 
         if (lower.startsWith("currency_")) {
             String currencyName = params.substring(9).toLowerCase();
-            
+
             Map<String, Double> balances = plugin.getCache().get(player.getUniqueId());
-            double bal = (balances != null && balances.containsKey(currencyName)) 
-                    ? balances.get(currencyName) 
-                    : 0d; 
+            double bal = (balances != null && balances.containsKey(currencyName))
+                    ? balances.get(currencyName)
+                    : 0d;
 
             var currencyInfo = plugin.getCurrencyManager() != null ? plugin.getCurrencyManager().getCurrency(currencyName) : null;
             if (currencyInfo != null) {
                 return plugin.getFormatUtils().formatVirtualCurrencyBalance(currencyInfo, bal);
             }
-            
+
             return plugin.getFormatUtils().formatBalance(bal);
         }
 
@@ -96,6 +101,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
         };
     }
 
+    // TODO: Multi-currency placeholders
     private double getCachedBalance(UUID uuid, String currency) {
         Map<String, Double> balances = plugin.getCache().get(uuid);
         if (balances != null && balances.containsKey(currency)) {
@@ -106,12 +112,14 @@ public class PAPIExpansion extends PlaceholderExpansion {
 
     private void updateTopCache() {
         long now = System.currentTimeMillis();
+        // 30 seconds
+        long CACHE_TIME = 30000;
         if (now - lastUpdate < CACHE_TIME) return;
         lastUpdate = now;
 
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             Map<String, Double> topFromDB = plugin.getStorage().getTopBalances("money", 100);
-            
+
             List<TopEntry> updatedTop = new ArrayList<>();
             for (Map.Entry<String, Double> entry : topFromDB.entrySet()) {
                 try {
@@ -121,7 +129,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
                 } catch (IllegalArgumentException ignored) {
                 }
             }
-            
+
             topCache.set(updatedTop);
         });
     }

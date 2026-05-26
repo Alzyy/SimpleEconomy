@@ -2,7 +2,6 @@ package it.alzy.simpleeconomy.plugin.commands;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
-import co.aikar.commands.annotation.Optional;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
@@ -72,7 +71,8 @@ public class ECOHistoryCommand extends BaseCommand {
                     try {
                         OfflinePlayer transTarget = Bukkit.getOfflinePlayer(UUID.fromString(targetUUIDString));
                         targetDisplayName = (transTarget.getName() != null) ? transTarget.getName() : "Unknown";
-                    } catch (IllegalArgumentException ignored) {}
+                    } catch (IllegalArgumentException ignored) {
+                    }
                 }
 
                 String formattedAmount;

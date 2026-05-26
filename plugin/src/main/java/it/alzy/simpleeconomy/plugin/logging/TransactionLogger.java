@@ -10,11 +10,7 @@ import it.alzy.simpleeconomy.plugin.records.Transaction;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.LinkedList;
 import java.util.concurrent.CompletableFuture;
 
@@ -30,14 +26,14 @@ public class TransactionLogger {
     public void init() {
         plugin.getExecutor().execute(() -> {
             File folder = plugin.getDataFolder();
-            if(!folder.exists()) folder.mkdirs();
+            if (!folder.exists()) folder.mkdirs();
 
             File dbFile = new File(folder, "transactions.db");
             try {
-                if(dbFile.exists() && Files.size(dbFile.toPath()) > MBToBytes(SettingsConfig.getInstance().getTransactionLoggingMaxFileSize())) {
+                if (dbFile.exists() && Files.size(dbFile.toPath()) > MBToBytes(SettingsConfig.getInstance().getTransactionLoggingMaxFileSize())) {
                     plugin.getLogger().info("Transaction log file exceeded max size, rotating it...");
                     File rotatedFile = new File(folder, "transactions_" + System.currentTimeMillis() + ".db");
-                    if(dbFile.renameTo(rotatedFile)) {
+                    if (dbFile.renameTo(rotatedFile)) {
                         plugin.getLogger().info("Transaction log file rotated to " + rotatedFile.getName());
                     } else {
                         plugin.getLogger().warning("Failed to rotate transaction log file!");
@@ -94,7 +90,7 @@ public class TransactionLogger {
     }
 
     public void appendLog(Transaction transaction) {
-        if(dataSource == null || dataSource.isClosed()) return;
+        if (dataSource == null || dataSource.isClosed()) return;
         plugin.getExecutor().execute(() -> {
             String sql = "INSERT INTO transactions (timestamp, player_uuid, currency, type, amount, balance_before, balance_after, target_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
             try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {

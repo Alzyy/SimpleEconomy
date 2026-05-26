@@ -1,6 +1,7 @@
 package it.alzy.simpleeconomy.plugin.storage;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -12,9 +13,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Cache {
 
-    private final com.github.benmanes.caffeine.cache.Cache<UUID, Map<String, Double>> cache;
-    
-    private final Set<UUID> dirtyPlayers = new HashSet<>(); 
+    private final com.github.benmanes.caffeine.cache.Cache<@NotNull UUID, Map<String, Double>> cache;
+
+    private final Set<UUID> dirtyPlayers = new HashSet<>();
 
     private final ReentrantLock lock = new ReentrantLock();
 
@@ -27,7 +28,7 @@ public class Cache {
     }
 
     public void put(UUID uuid, Map<String, Double> balances) {
-        lock.lock(); 
+        lock.lock();
         try {
             if (!(balances instanceof ConcurrentHashMap)) {
                 balances = new ConcurrentHashMap<>(balances);

@@ -1,14 +1,14 @@
 package it.alzy.simpleeconomy.plugin.managers;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List; // Usa List al posto di ArrayList per coerenza
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import it.alzy.simpleeconomy.api.EconomyModule;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.modules.ModuleLoader;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ModuleManager {
 
@@ -27,7 +27,7 @@ public class ModuleManager {
     public void loadModules() {
         plugin.getLogger().info("Loading external modules...");
         File[] files = modulesFolder.listFiles((dir, name) -> name.endsWith(".jar"));
-        
+
         if (files == null || files.length == 0) {
             plugin.getLogger().info("No modules found to load.");
             return;
@@ -36,13 +36,10 @@ public class ModuleManager {
         for (File f : files) {
             try {
                 EconomyModule module = ModuleLoader.loadModule(f, plugin);
-                if (module != null) {
-                    modules.add(module);
-                    plugin.getLogger().info("Successfully loaded module: " + f.getName());
-                }
+                modules.add(module);
+                plugin.getLogger().info("Successfully loaded module: " + f.getName());
             } catch (Exception e) {
                 plugin.getLogger().severe("Failed to load module from " + f.getName() + ": " + e.getMessage());
-                e.printStackTrace();
             }
         }
         plugin.getLogger().info("Finished loading modules. Total: " + modules.size());
@@ -53,7 +50,6 @@ public class ModuleManager {
             module.onDisable();
         } catch (Exception e) {
             plugin.getLogger().severe("Error while disabling module: " + e.getMessage());
-            e.printStackTrace();
         }
         modules.clear();
     }
@@ -74,7 +70,6 @@ public class ModuleManager {
                     plugin.getLogger().info("Module " + moduleName + " has been enabled.");
                 } catch (Exception e) {
                     plugin.getLogger().severe("Failed to enable module " + moduleName + ": " + e.getMessage());
-                    e.printStackTrace();
                 }
                 return;
             }
@@ -90,7 +85,6 @@ public class ModuleManager {
                     plugin.getLogger().info("Module " + moduleName + " has been disabled.");
                 } catch (Exception e) {
                     plugin.getLogger().severe("Failed to disable module " + moduleName + ": " + e.getMessage());
-                    e.printStackTrace();
                 }
                 return;
             }
@@ -106,13 +100,10 @@ public class ModuleManager {
         }
         try {
             EconomyModule module = ModuleLoader.loadModule(file, plugin);
-            if (module != null) {
-                modules.add(module);
-                plugin.getLogger().info("Successfully loaded module from file: " + fileName);
-            }
+            modules.add(module);
+            plugin.getLogger().info("Successfully loaded module from file: " + fileName);
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to load module from file " + fileName + ": " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -120,5 +111,5 @@ public class ModuleManager {
         File file = new File(modulesFolder, fileName);
         return file.exists() && file.getName().endsWith(".jar");
     }
-    
+
 }

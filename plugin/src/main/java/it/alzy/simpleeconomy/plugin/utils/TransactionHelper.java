@@ -15,15 +15,7 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-public final class TransactionHelper {
-
-    private final SimpleEconomy plugin;
-    private final LanguageManager lang;
-
-    public TransactionHelper(SimpleEconomy plugin, LanguageManager languageManager) {
-        this.plugin = plugin;
-        this.lang = languageManager;
-    }
+public record TransactionHelper(SimpleEconomy plugin, LanguageManager lang) {
 
     public Collection<OfflinePlayer> resolveTargets(CommandSender sender, String input) {
         if (input.startsWith("@") && input.length() == 2) {
@@ -62,17 +54,17 @@ public final class TransactionHelper {
         return Collections.singletonList(target);
     }
 
-    public boolean validateAmount(CommandSender sender, double amount) {
-        return validateAmount(sender, amount, false);
+    public boolean isNotValidAmount(CommandSender sender, double amount) {
+        return isNotVallidAmount(sender, amount, false);
     }
 
-    public boolean validateAmount(CommandSender sender, double amount, boolean allowZero) {
+    public boolean isNotVallidAmount(CommandSender sender, double amount, boolean allowZero) {
         boolean positiveCheck = allowZero ? amount >= 0 : amount > 0;
         if (!Double.isFinite(amount) || !positiveCheck || BigDecimal.valueOf(amount).scale() > 2) {
             sendPrefixed(sender, LanguageKeys.INVALID_AMOUNT);
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     public boolean checkTransactionLimit(CommandSender sender, double amount) {
@@ -90,7 +82,7 @@ public final class TransactionHelper {
         commitAsync(actorId, targetId, "money", amount, balanceBefore, balanceAfter, type, webhookAction, webhookActor, webhookTarget);
     }
 
-    public void commitAsync( UUID actorId, UUID targetId, String currency, double amount, double balanceBefore, double balanceAfter, TransactionTypes type,String webhookAction, String webhookActor, String webhookTarget ) {
+    public void commitAsync(UUID actorId, UUID targetId, String currency, double amount, double balanceBefore, double balanceAfter, TransactionTypes type, String webhookAction, String webhookActor, String webhookTarget) {
         plugin.getCache().updateCurrency(targetId, currency, balanceAfter);
 
         plugin.getExecutor().execute(() -> {
@@ -120,12 +112,12 @@ public final class TransactionHelper {
 
     public void commitTransferAsync(UUID senderId, UUID recipientId, String currency, double amount, double senderAfter, double recipientAfter, String senderName, String recipientName) {
 
-            String id1 = senderId.toString();
-            String id2 = recipientId.toString();
-            String first = id1.compareTo(id2) < 0 ? id1 : id2;
-            String second = id1.compareTo(id2) < 0 ? id2 : id1;
+        String id1 = senderId.toString();
+        String id2 = recipientId.toString();
+        String first = id1.compareTo(id2) < 0 ? id1 : id2;
+        String second = id1.compareTo(id2) < 0 ? id2 : id1;
 
-            plugin.getExecutor().execute(() -> {
+        plugin.getExecutor().execute(() -> {
             try {
                 TransactionLock.lock(first);
                 TransactionLock.lock(second);
@@ -136,7 +128,7 @@ public final class TransactionHelper {
                 plugin.getStorage().save(recipientId, currency, recipientAfter);
 
                 if (plugin.getWebhookLogger() != null) {
-                plugin.getWebhookLogger().send("pay (" + currency + ")", recipientName, senderName, amount);
+                    plugin.getWebhookLogger().send("pay (" + currency + ")", recipientName, senderName, amount);
                 }
             } finally {
                 TransactionLock.unlock(second);

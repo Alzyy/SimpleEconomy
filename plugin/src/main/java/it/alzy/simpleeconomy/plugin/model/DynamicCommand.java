@@ -9,7 +9,6 @@ import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.records.Transaction;
-
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -29,8 +28,6 @@ public class DynamicCommand extends BaseCommand {
     public DynamicCommand(VirtualCurrency currency) {
         this.currency = currency;
     }
-
-    private enum EcoAction { GIVE, SET, REMOVE }
 
     @Default
     @CommandCompletion("@players")
@@ -54,7 +51,7 @@ public class DynamicCommand extends BaseCommand {
 
                 double bal = currency.getBalance(target.getUniqueId());
                 String formatted = plugin.getFormatUtils().formatVirtualCurrencyBalance(currency, bal);
-                
+
                 languageManager.sendCurrencyMessage(player, currency, LanguageKeys.BALANCE_CHECK_OTHER, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%balance%", formatted, "%target%", target.getName());
             });
         }
@@ -96,14 +93,14 @@ public class DynamicCommand extends BaseCommand {
         double senderBal = currency.getBalance(sender.getUniqueId());
         if (senderBal < amount) {
             languageManager.sendCurrencyMessage(sender, currency, LanguageKeys.NOT_ENOUGH_MONEY,
-                "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX),
-                "%balance%", plugin.getFormatUtils().formatVirtualCurrencyBalance(currency, senderBal));
+                    "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX),
+                    "%balance%", plugin.getFormatUtils().formatVirtualCurrencyBalance(currency, senderBal));
             return;
         }
 
         UUID senderUUID = sender.getUniqueId();
         UUID targetUUID = target.getUniqueId();
-        
+
         double senderBalanceAfter = senderBal - amount;
         double targetBalanceAfter = currency.getBalance(targetUUID) + amount;
 
@@ -112,15 +109,15 @@ public class DynamicCommand extends BaseCommand {
 
         String formattedAmount = plugin.getFormatUtils().formatVirtualCurrencyBalance(currency, amount);
 
-        languageManager.send(sender, LanguageKeys.GAVE_MONEY, 
-            "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), 
-            "%amount%", formattedAmount, 
-            "%target%", target.getName());
+        languageManager.send(sender, LanguageKeys.GAVE_MONEY,
+                "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX),
+                "%amount%", formattedAmount,
+                "%target%", target.getName());
 
-        languageManager.send(target, LanguageKeys.RECEIVED_MONEY, 
-            "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), 
-            "%amount%", formattedAmount, 
-            "%source%", sender.getName());
+        languageManager.send(target, LanguageKeys.RECEIVED_MONEY,
+                "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX),
+                "%amount%", formattedAmount,
+                "%source%", sender.getName());
 
         plugin.getExecutor().execute(() -> {
             plugin.getStorage().save(senderUUID, currency.getName(), senderBalanceAfter);
@@ -130,7 +127,7 @@ public class DynamicCommand extends BaseCommand {
                 Transaction transaction = new Transaction(senderUUID.toString(), targetUUID.toString(), currency.getName(), amount, senderBal, senderBalanceAfter, TransactionTypes.PAY, System.currentTimeMillis());
                 plugin.getTransactionLogger().appendLog(transaction);
             }
-            if(plugin.getWebhookLogger() != null) {
+            if (plugin.getWebhookLogger() != null) {
                 plugin.getWebhookLogger().send("pay (" + currency.getName() + ")", target.getName(), sender.getName(), amount);
             }
         });
@@ -140,7 +137,7 @@ public class DynamicCommand extends BaseCommand {
     @CommandPermission("simpleeconomy.eco.give")
     @CommandCompletion("@players|@a|@p|@r")
     public void give(CommandSender sender, @Optional String targetName, @Optional Double amount) {
-        if(targetName == null || amount == null) {
+        if (targetName == null || amount == null) {
             languageManager.sendCurrencyMessage(sender, currency, LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
@@ -151,8 +148,8 @@ public class DynamicCommand extends BaseCommand {
     @CommandPermission("simpleeconomy.eco.set")
     @CommandCompletion("@players|@a|@p|@r")
     public void set(CommandSender sender, @Optional String targetName, @Optional Double amount) {
-        if(targetName == null || amount == null) {
-            languageManager.sendCurrencyMessage(sender, currency,LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+        if (targetName == null || amount == null) {
+            languageManager.sendCurrencyMessage(sender, currency, LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
         executeAdminAction(sender, targetName, amount, EcoAction.SET);
@@ -162,7 +159,7 @@ public class DynamicCommand extends BaseCommand {
     @CommandPermission("simpleeconomy.eco.remove")
     @CommandCompletion("@players|@a|@p|@r")
     public void remove(CommandSender sender, @Optional String targetName, @Optional Double amount) {
-        if(targetName == null || amount == null) {
+        if (targetName == null || amount == null) {
             languageManager.sendCurrencyMessage(sender, currency, LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
@@ -254,7 +251,7 @@ public class DynamicCommand extends BaseCommand {
 
     private Collection<OfflinePlayer> getOfflinePlayerFallback(CommandSender sender, String targetName) {
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-        if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
             languageManager.sendCurrencyMessage(sender, currency, LanguageKeys.PLAYER_NOT_FOUND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return Collections.emptyList();
         }
@@ -265,4 +262,6 @@ public class DynamicCommand extends BaseCommand {
         double max = SettingsConfig.getInstance().getMaxTransactionLimit();
         return max != 0 && amount > max;
     }
+
+    private enum EcoAction {GIVE, SET, REMOVE}
 }

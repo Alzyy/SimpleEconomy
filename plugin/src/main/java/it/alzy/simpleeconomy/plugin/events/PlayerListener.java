@@ -32,7 +32,7 @@ public class PlayerListener implements Listener {
 
         plugin.getStorage().load(uuid).exceptionally(e -> {
             plugin.getLogger().severe("Failed to load economy data for " + event.getName() + ": " + e.getMessage());
-            return null;    
+            return null;
         });
     }
 
@@ -52,7 +52,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        
+
         Map<String, Double> balances = plugin.getCache().get(uuid);
 
         if (balances != null) {
@@ -60,7 +60,7 @@ public class PlayerListener implements Listener {
                 for (Map.Entry<String, Double> entry : balances.entrySet()) {
                     plugin.getStorage().save(uuid, entry.getKey(), entry.getValue());
                 }
-                
+
                 plugin.getCache().remove(uuid);
             });
         }

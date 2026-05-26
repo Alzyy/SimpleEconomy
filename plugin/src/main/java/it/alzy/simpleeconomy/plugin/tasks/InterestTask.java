@@ -26,7 +26,7 @@ public class InterestTask extends BukkitRunnable {
         double rate = settings.getInterestRate();
         double minBalance = settings.minBalanceForInterests();
         double maxInterest = settings.maxInterest();
-        String currency = "money"; 
+        String currency = "money";
 
         LongAdder processedPlayers = new LongAdder();
 
@@ -34,7 +34,7 @@ public class InterestTask extends BukkitRunnable {
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             UUID uuid = p.getUniqueId();
-            
+
             Map<String, Double> balances = plugin.getCache().get(uuid);
             if (balances == null) continue;
 
@@ -46,8 +46,8 @@ public class InterestTask extends BukkitRunnable {
 
                 double newBalance = current + bonus;
 
-                plugin.getLanguageManager().send(p, LanguageKeys.INTERESTS_RECEIVED, 
-                        "%prefix%", plugin.getLanguageManager().getMessage(LanguageKeys.PREFIX), 
+                plugin.getLanguageManager().send(p, LanguageKeys.INTERESTS_RECEIVED,
+                        "%prefix%", plugin.getLanguageManager().getMessage(LanguageKeys.PREFIX),
                         "%amount%", plugin.getFormatUtils().formatBalance(bonus));
 
                 plugin.getCache().updateCurrency(uuid, currency, newBalance);

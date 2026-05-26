@@ -25,14 +25,14 @@ public class BalTopCommand extends BaseCommand {
     @Syntax("[page]")
     public void onBaltop(Player player, @Default("1") int page) {
         plugin.getExecutor().execute(() -> {
-            
+
             int pageSize = SettingsConfig.getInstance().getTopPlayersShown();
             if (pageSize <= 0) pageSize = 10;
 
             int fetchLimit = pageSize * 10;
-            
+
             Map<String, Double> topMap = plugin.getStorage().getTopBalances("money", fetchLimit);
-            
+
             int totalPages = (topMap.size() + pageSize - 1) / pageSize;
             if (totalPages == 0) {
                 totalPages = 1;
@@ -54,7 +54,7 @@ public class BalTopCommand extends BaseCommand {
                     .forEach(entry -> {
                         String playerUuidStr = entry.getKey();
                         double balance = entry.getValue();
-                        
+
                         String displayName;
                         try {
                             UUID uuid = UUID.fromString(playerUuidStr);

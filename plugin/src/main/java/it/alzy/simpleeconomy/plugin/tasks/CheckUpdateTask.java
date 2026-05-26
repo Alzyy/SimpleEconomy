@@ -1,24 +1,29 @@
 package it.alzy.simpleeconomy.plugin.tasks;
 
-import org.bukkit.scheduler.BukkitRunnable;
-
+import io.papermc.paper.plugin.configuration.PluginMeta;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.utils.UpdateUtils;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class CheckUpdateTask extends BukkitRunnable {
 
     private final SimpleEconomy plugin;
+
     public CheckUpdateTask(SimpleEconomy plugin) {
         this.plugin = plugin;
     }
 
     @Override
+    @SuppressWarnings("UnstableApiUsage")
     public void run() {
         String latestVersion = UpdateUtils.getNewVersion();
-        if (latestVersion == null || latestVersion.isEmpty()) {return;}
+        if (latestVersion == null || latestVersion.isEmpty()) {
+            return;
+        }
 
-        String currentVersion = plugin.getDescription().getVersion();
+        PluginMeta pluginMeta = plugin.getPluginMeta();
+        String currentVersion = pluginMeta.getVersion();
         if (!currentVersion.equals(latestVersion)) {
             plugin.getLogger().info("A new version of SimpleEconomy is available! (Current: " + currentVersion + ", Latest: " + latestVersion + ")");
             plugin.getLogger().info("Download it from: https://www.spigotmc.org/resources/simpleeconomy.127423/");

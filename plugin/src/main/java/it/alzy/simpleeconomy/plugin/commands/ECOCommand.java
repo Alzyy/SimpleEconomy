@@ -2,7 +2,6 @@ package it.alzy.simpleeconomy.plugin.commands;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
-import co.aikar.commands.annotation.Optional;
 import it.alzy.simpleeconomy.api.EconomyProvider;
 import it.alzy.simpleeconomy.api.SimpleEconomyAPI;
 import it.alzy.simpleeconomy.api.TransactionTypes;
@@ -16,7 +15,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @CommandAlias("eco")
@@ -25,8 +25,6 @@ public class ECOCommand extends BaseCommand {
 
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
     private final LanguageManager languageManager = plugin.getLanguageManager();
-
-    private enum EcoAction { GIVE, SET, REMOVE }
 
     @Default
     public void root(CommandSender player) {
@@ -61,20 +59,20 @@ public class ECOCommand extends BaseCommand {
         TransactionHelper helper = plugin.getTransactionHelper();
 
         boolean allowZero = (action == EcoAction.SET);
-        if (!helper.validateAmount(sender, amount, allowZero)) return;
+        if (helper.isNotVallidAmount(sender, amount, allowZero)) return;
 
         Collection<OfflinePlayer> targets = helper.resolveTargets(sender, targetName);
         if (targets.isEmpty()) return;
 
         String prefix = languageManager.getMessage(LanguageKeys.PREFIX);
-        String currency = "money"; 
+        String currency = "money";
 
         final EconomyProvider provider = SimpleEconomyAPI.getProvider();
         for (OfflinePlayer target : targets) {
             UUID targetId = target.getUniqueId();
 
             provider.getBalance(targetId, currency).thenAccept(currentBalance -> {
-                
+
                 CompletableFuture<Boolean> transactionFuture;
                 double newBalance;
 
@@ -94,15 +92,13 @@ public class ECOCommand extends BaseCommand {
                     default -> throw new IllegalStateException("Unexpected action: " + action);
                 }
 
-                transactionFuture.thenAccept(success -> {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (success) {
-                            handleSuccess(sender, target, amount, currentBalance, newBalance, action, prefix, helper);
-                        } else {
-                            ChatUtils.send(sender, "&cError: Insufficient funds or transaction failed for " + target.getName() + ".", "%prefix%", prefix);
-                        }
-                    });
-                }).exceptionally(ex -> {
+                transactionFuture.thenAccept(success -> Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (success) {
+                        handleSuccess(sender, target, amount, currentBalance, newBalance, action, prefix, helper);
+                    } else {
+                        ChatUtils.send(sender, "&cError: Insufficient funds or transaction failed for " + target.getName() + ".", "%prefix%", prefix);
+                    }
+                })).exceptionally(ex -> {
                     plugin.getLogger().severe("Error processing /eco command: " + ex.getMessage());
                     return null;
                 });
@@ -154,4 +150,6 @@ public class ECOCommand extends BaseCommand {
     private void sendUsage(CommandSender sender) {
         languageManager.send(sender, LanguageKeys.ECO_USAGE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
     }
+
+    private enum EcoAction {GIVE, SET, REMOVE}
 }

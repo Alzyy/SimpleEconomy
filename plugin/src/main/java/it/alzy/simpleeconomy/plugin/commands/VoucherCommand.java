@@ -21,7 +21,7 @@ import java.util.UUID;
 @CommandAlias("voucher|withdraw")
 @Description("Creates a voucher with an amount")
 public class VoucherCommand extends BaseCommand {
-    
+
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
     private final LanguageManager languageManager = plugin.getLanguageManager();
 
@@ -36,7 +36,7 @@ public class VoucherCommand extends BaseCommand {
 
         TransactionHelper helper = plugin.getTransactionHelper();
 
-        if (!helper.validateAmount(player, amount)) {
+        if (helper.isNotValidAmount(player, amount)) {
             return;
         }
 
@@ -55,41 +55,37 @@ public class VoucherCommand extends BaseCommand {
         UUID uuid = player.getUniqueId();
 
         provider.getBalance(uuid, currency).thenAccept(balanceBefore -> {
-            
+
             if (balanceBefore < amount) {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    languageManager.send(player, LanguageKeys.NOT_ENOUGH_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
-                });
+                Bukkit.getScheduler().runTask(plugin, () -> languageManager.send(player, LanguageKeys.NOT_ENOUGH_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX)));
                 return;
             }
 
-            provider.detract(uuid, currency, amount).thenAccept(success -> {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (!success) {
-                        languageManager.send(player, LanguageKeys.NOT_ENOUGH_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
-                        return;
-                    }
+            provider.detract(uuid, currency, amount).thenAccept(success -> Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!success) {
+                    languageManager.send(player, LanguageKeys.NOT_ENOUGH_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+                    return;
+                }
 
-                    double balanceAfter = balanceBefore - amount;
+                double balanceAfter = balanceBefore - amount;
 
-                    plugin.getItemUtils().createVoucherAndGive(player, amount);
+                plugin.getItemUtils().createVoucherAndGive(player, amount);
 
-                    String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
-                    languageManager.send(player, LanguageKeys.REMOVED_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%target%", player.getName());
+                String formattedAmount = plugin.getFormatUtils().formatBalance(amount);
+                languageManager.send(player, LanguageKeys.REMOVED_MONEY, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%amount%", formattedAmount, "%target%", player.getName());
 
-                    helper.commitAsync(
-                            uuid,
-                            uuid,
-                            amount,
-                            balanceBefore,
-                            balanceAfter,
-                            TransactionTypes.WITHDRAW,
-                            "withdraw",
-                            player.getName(),
-                            player.getName()
-                    );
-                });
-            }).exceptionally(ex -> {
+                helper.commitAsync(
+                        uuid,
+                        uuid,
+                        amount,
+                        balanceBefore,
+                        balanceAfter,
+                        TransactionTypes.WITHDRAW,
+                        "withdraw",
+                        player.getName(),
+                        player.getName()
+                );
+            })).exceptionally(ex -> {
                 plugin.getLogger().severe("Error processing voucher command for " + player.getName() + ": " + ex.getMessage());
                 return null;
             });
