@@ -59,7 +59,7 @@ public class ECOCommand extends BaseCommand {
         TransactionHelper helper = plugin.getTransactionHelper();
 
         boolean allowZero = (action == EcoAction.SET);
-        if (helper.isNotVallidAmount(sender, amount, allowZero)) return;
+        if (helper.isNotValidAmount(sender, amount, allowZero)) return;
 
         Collection<OfflinePlayer> targets = helper.resolveTargets(sender, targetName);
         if (targets.isEmpty()) return;

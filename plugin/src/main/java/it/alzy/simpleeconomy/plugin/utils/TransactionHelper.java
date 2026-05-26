@@ -55,10 +55,10 @@ public record TransactionHelper(SimpleEconomy plugin, LanguageManager lang) {
     }
 
     public boolean isNotValidAmount(CommandSender sender, double amount) {
-        return isNotVallidAmount(sender, amount, false);
+        return isNotValidAmount(sender, amount, false);
     }
 
-    public boolean isNotVallidAmount(CommandSender sender, double amount, boolean allowZero) {
+    public boolean isNotValidAmount(CommandSender sender, double amount, boolean allowZero) {
         boolean positiveCheck = allowZero ? amount >= 0 : amount > 0;
         if (!Double.isFinite(amount) || !positiveCheck || BigDecimal.valueOf(amount).scale() > 2) {
             sendPrefixed(sender, LanguageKeys.INVALID_AMOUNT);
