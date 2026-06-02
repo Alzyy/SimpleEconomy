@@ -60,14 +60,14 @@ public class SQLiteStorage implements Storage {
 
         executor.execute(() -> {
             String sql = """
-                         CREATE TABLE IF NOT EXISTS users (
-                             uuid TEXT,
-                             currency TEXT DEFAULT 'money',
-                             balance REAL DEFAULT 0,
-                             last_seen BIGINT NOT NULL,
-                             PRIMARY KEY (uuid, currency)
-                         );
-                         """;
+                    CREATE TABLE IF NOT EXISTS users (
+                        uuid TEXT,
+                        currency TEXT DEFAULT 'money',
+                        balance REAL DEFAULT 0,
+                        last_seen BIGINT NOT NULL,
+                        PRIMARY KEY (uuid, currency)
+                    );
+                    """;
 
             try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
                 stmt.execute(sql);
@@ -80,9 +80,9 @@ public class SQLiteStorage implements Storage {
 
     private void saveToDatabase(UUID uuid, String currency, double balance) {
         String sql = """
-                     INSERT INTO users(uuid, currency, balance, last_seen) VALUES (?, ?, ?, ?)
-                     ON CONFLICT(uuid, currency) DO UPDATE SET balance = ?, last_seen = ?;
-                     """;
+                INSERT INTO users(uuid, currency, balance, last_seen) VALUES (?, ?, ?, ?)
+                ON CONFLICT(uuid, currency) DO UPDATE SET balance = ?, last_seen = ?;
+                """;
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             long timestamp = System.currentTimeMillis();
@@ -168,7 +168,7 @@ public class SQLiteStorage implements Storage {
         executor.execute(() -> {
             String defaultCurrency = "money";
             double balance = SettingsConfig.getInstance().startingBalance();
-            
+
             Map<String, Double> balances = new ConcurrentHashMap<>();
             balances.put(defaultCurrency, balance);
 
@@ -183,9 +183,9 @@ public class SQLiteStorage implements Storage {
         if (dirtyPlayers.isEmpty()) return;
 
         String sql = """
-                     INSERT INTO users(uuid, currency, balance, last_seen) VALUES (?, ?, ?, ?)
-                     ON CONFLICT(uuid, currency) DO UPDATE SET balance = ?, last_seen = ?;
-                     """;
+                INSERT INTO users(uuid, currency, balance, last_seen) VALUES (?, ?, ?, ?)
+                ON CONFLICT(uuid, currency) DO UPDATE SET balance = ?, last_seen = ?;
+                """;
 
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);

@@ -7,6 +7,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class AutoPurgeTask extends BukkitRunnable {
 
     private final SimpleEconomy plugin;
+
     public AutoPurgeTask(SimpleEconomy plugin) {
         this.plugin = plugin;
     }

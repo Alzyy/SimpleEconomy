@@ -1,23 +1,22 @@
 package it.alzy.simpleeconomy.plugin.events;
 
 import it.alzy.simpleeconomy.api.TransactionTypes;
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
 import it.alzy.simpleeconomy.plugin.records.Transaction;
+import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.EquipmentSlot; // Import this
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 
 public class VoucherEvents implements Listener {
 
@@ -68,18 +67,18 @@ public class VoucherEvents implements Listener {
             }
         }
 
-        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
+        if (SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
             plugin.getTransactionLogger().appendLog(
-                new Transaction(
-                    player.getUniqueId().toString(),
-                    "VOUCHER",
-                    "money",
-                    amount,
-                    VaultHook.getEconomy().getBalance(player),
-                    VaultHook.getEconomy().getBalance(player) + amount,
-                    TransactionTypes.DEPOSIT,
-                    System.currentTimeMillis()
-                )
+                    new Transaction(
+                            player.getUniqueId().toString(),
+                            "VOUCHER",
+                            "money",
+                            amount,
+                            VaultHook.getEconomy().getBalance(player),
+                            VaultHook.getEconomy().getBalance(player) + amount,
+                            TransactionTypes.DEPOSIT,
+                            System.currentTimeMillis()
+                    )
             );
         }
     }

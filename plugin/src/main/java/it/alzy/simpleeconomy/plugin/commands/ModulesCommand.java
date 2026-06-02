@@ -1,7 +1,5 @@
 package it.alzy.simpleeconomy.plugin.commands;
 
-import org.bukkit.entity.Player;
-
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandCompletion;
@@ -10,19 +8,20 @@ import co.aikar.commands.annotation.Subcommand;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import org.bukkit.entity.Player;
 
 @CommandAlias("modules")
 @CommandPermission("simpleeconomy.command.modules")
 public class ModulesCommand extends BaseCommand {
-    
+
 
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();
     private final LanguageManager languageManager = plugin.getLanguageManager();
 
     @Subcommand("list")
     public void onList(Player player) {
-        if(plugin.getModuleManager().getModules().isEmpty()) {
-            plugin.getLanguageManager().send(player, LanguageKeys.MODULES_NO_MODULES,"%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
+        if (plugin.getModuleManager().getModules().isEmpty()) {
+            plugin.getLanguageManager().send(player, LanguageKeys.MODULES_NO_MODULES, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX));
             return;
         }
         StringBuilder sb = new StringBuilder();
@@ -45,7 +44,7 @@ public class ModulesCommand extends BaseCommand {
     @Subcommand("status")
     @CommandCompletion("@modules")
     public void onStatus(Player player, String moduleName) {
-        if(plugin.getModuleManager().getLoadedModuleNames().stream().noneMatch(m -> m.equalsIgnoreCase(moduleName))) {
+        if (plugin.getModuleManager().getLoadedModuleNames().stream().noneMatch(m -> m.equalsIgnoreCase(moduleName))) {
             plugin.getLanguageManager().send(player, LanguageKeys.MODULE_NOT_FOUND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%module%", moduleName);
             return;
         }
@@ -57,7 +56,7 @@ public class ModulesCommand extends BaseCommand {
     @Subcommand("loadfromfile")
     @CommandCompletion("@modulesFiles")
     public void onLoadFromFile(Player player, String fileName) {
-        if(!plugin.getModuleManager().doesFileExists(fileName)) {
+        if (!plugin.getModuleManager().doesFileExists(fileName)) {
             plugin.getLanguageManager().send(player, LanguageKeys.MODULE_COULDNT_FIND_FILE, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%file%", fileName);
             return;
         }

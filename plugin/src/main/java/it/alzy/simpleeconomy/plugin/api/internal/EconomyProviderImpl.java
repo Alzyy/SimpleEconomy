@@ -4,6 +4,7 @@ import it.alzy.simpleeconomy.api.EconomyProvider;
 import it.alzy.simpleeconomy.api.TransactionResult;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
 
 import java.util.Map;
 import java.util.Set;
@@ -11,13 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public class EconomyProviderImpl implements EconomyProvider {
-
-    private final SimpleEconomy plugin;
-
-    public EconomyProviderImpl(SimpleEconomy plugin) {
-        this.plugin = plugin;
-    }
+public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvider {
 
     @Override
     public CompletableFuture<Double> getBalance(UUID uuid, String currency) {
@@ -36,7 +31,7 @@ public class EconomyProviderImpl implements EconomyProvider {
     public CompletableFuture<Void> setBalance(UUID uuid, String currency, double amount) {
         return CompletableFuture.runAsync(() -> {
             plugin.getStorage().save(uuid, currency, amount);
-            
+
             if (plugin.getCache().contains(uuid)) {
                 plugin.getCache().updateCurrency(uuid, currency, amount);
             }
@@ -65,7 +60,7 @@ public class EconomyProviderImpl implements EconomyProvider {
     private CompletableFuture<Void> updateBalanceInternal(UUID uuid, String currency, double newBalance) {
         return CompletableFuture.runAsync(() -> {
             plugin.getStorage().save(uuid, currency, newBalance);
-            
+
             if (plugin.getCache().contains(uuid)) {
                 plugin.getCache().updateCurrency(uuid, currency, newBalance);
             }
@@ -90,20 +85,20 @@ public class EconomyProviderImpl implements EconomyProvider {
             }
 
             return detract(from, currency, amount)
-            .thenCompose(success -> {
-                if(!success) return CompletableFuture.completedFuture(TransactionResult.ERROR);
-                
-                return deposit(to, currency, amount).exceptionallyCompose(ex -> {
-                    plugin.getLogger().severe("Transfer failed during deposit to " + to + ". Refunding " + from);
-                    return deposit(from, currency, amount);
-                })
-                .thenApply(v -> TransactionResult.SUCCESS);
-            });
+                    .thenCompose(success -> {
+                        if (!success) return CompletableFuture.completedFuture(TransactionResult.ERROR);
+
+                        return deposit(to, currency, amount).exceptionallyCompose(ex -> {
+                                    plugin.getLogger().severe("Transfer failed during deposit to " + to + ". Refunding " + from);
+                                    return deposit(from, currency, amount);
+                                })
+                                .thenApply(v -> TransactionResult.SUCCESS);
+                    });
         });
     }
 
     @Override
     public Set<String> getAvailableVirtualCurrencies() {
-        return plugin.getCurrencyManager().getAllCurrencies().stream().map(curr -> curr.getName()).collect(Collectors.toSet());
+        return plugin.getCurrencyManager().getAllCurrencies().stream().map(VirtualCurrency::getName).collect(Collectors.toSet());
     }
 }

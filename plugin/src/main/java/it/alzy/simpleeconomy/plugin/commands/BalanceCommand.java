@@ -1,18 +1,17 @@
 package it.alzy.simpleeconomy.plugin.commands;
 
-import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
-import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
 import co.aikar.commands.annotation.Description;
 import co.aikar.commands.annotation.Optional;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
+import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.UUID;
@@ -26,7 +25,7 @@ public class BalanceCommand extends BaseCommand {
 
     @Default
     public void onBalance(Player player, @Optional String targetName) {
-        
+
         if (targetName == null || targetName.isEmpty()) {
             double balance = getCachedBalance(player.getUniqueId());
             String formattedBalance = plugin.getFormatUtils().formatBalance(balance);
@@ -40,7 +39,7 @@ public class BalanceCommand extends BaseCommand {
         }
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-        
+
         if (!target.hasPlayedBefore() && !target.isOnline()) {
             languageManager.send(player, LanguageKeys.PLAYER_NOT_FOUND, "%prefix%", languageManager.getMessage(LanguageKeys.PREFIX), "%target%", targetName);
             return;

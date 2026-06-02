@@ -1,5 +1,12 @@
 package it.alzy.simpleeconomy.plugin.configurations;
 
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import net.pino.simpleconfig.LightConfig;
+import net.pino.simpleconfig.annotations.Config;
+import net.pino.simpleconfig.annotations.ConfigFile;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -7,19 +14,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import net.pino.simpleconfig.LightConfig;
-import net.pino.simpleconfig.annotations.Config;
-import net.pino.simpleconfig.annotations.ConfigFile;
-import org.bukkit.configuration.file.YamlConfiguration;
-
 @Config
 @ConfigFile("config.yml")
 public class SettingsConfig extends LightConfig {
 
     private static SettingsConfig instance = null;
 
-    public String locale() { return this.fileConfiguration.getString("settings.locale", "en"); }
+    private SettingsConfig() {
+    }
+
+    public static SettingsConfig getInstance() {
+        if (instance == null) instance = new SettingsConfig();
+        return instance;
+    }
+
+    public String locale() {
+        return this.fileConfiguration.getString("settings.locale", "en");
+    }
 
     public double startingBalance() {
         return this.fileConfiguration.getDouble("settings.starting-balance", 1000d);
@@ -117,17 +128,25 @@ public class SettingsConfig extends LightConfig {
         return this.fileConfiguration.getInt("settings.baltop-limit", 10);
     }
 
-    public boolean isFormattingEnabled() { return this.fileConfiguration.getBoolean("settings.enable-balance-formatting", true); }
+    public boolean isFormattingEnabled() {
+        return this.fileConfiguration.getBoolean("settings.enable-balance-formatting", true);
+    }
 
-    public boolean registerPlaceholderAPI() { return this.fileConfiguration.getBoolean("settings.use-placeholderapi", true); }
+    public boolean registerPlaceholderAPI() {
+        return this.fileConfiguration.getBoolean("settings.use-placeholderapi", true);
+    }
 
     public String getDBPrefixTable() {
         return this.fileConfiguration.getString("database.table-prefix", "se_");
     }
 
-    public boolean isTransactionLoggingEnabled() { return this.fileConfiguration.getBoolean("transaction-logger.enable-logger", true); }
+    public boolean isTransactionLoggingEnabled() {
+        return this.fileConfiguration.getBoolean("transaction-logger.enable-logger", true);
+    }
 
-    public int getTransactionLoggingMaxFileSize() { return this.fileConfiguration.getInt("transaction-logger.file-size-limit-mb", 10); }
+    public int getTransactionLoggingMaxFileSize() {
+        return this.fileConfiguration.getInt("transaction-logger.file-size-limit-mb", 10);
+    }
 
     public int getMaxTransactionLimit() {
         return this.fileConfiguration.getInt("settings.max-transaction-amount", 0);
@@ -141,44 +160,80 @@ public class SettingsConfig extends LightConfig {
         return this.fileConfiguration.getBoolean("storage.enable-auto-purge", true);
     }
 
-    public boolean enableActionBarMessages() {return this.fileConfiguration.getBoolean("settings.enable-action-bar-messages", false);}
+    public boolean enableActionBarMessages() {
+        return this.fileConfiguration.getBoolean("settings.enable-action-bar-messages", false);
+    }
 
-    public boolean isInterestEnabled() {return this.fileConfiguration.getBoolean("interests.enabled", false);}
+    public boolean isInterestEnabled() {
+        return this.fileConfiguration.getBoolean("interests.enabled", false);
+    }
 
-    public double minBalanceForInterests() {return this.fileConfiguration.getDouble("interests.min-balance", 100);}
+    public double minBalanceForInterests() {
+        return this.fileConfiguration.getDouble("interests.min-balance", 100);
+    }
 
-    public double maxInterest() {return this.fileConfiguration.getDouble("interests.max-interest", 2000);}
-
-    public double getInterestRate() { return this.fileConfiguration.getDouble("interests.rate", 0.05);}
-
-    public int getInterestInterval() { return this.fileConfiguration.getInt("interests.interval", 60); }
+    public double maxInterest() {
+        return this.fileConfiguration.getDouble("interests.max-interest", 2000);
+    }
 
     // --- Discord Webhook Getters ---
 
-    public boolean shouldLogToDiscord() { return this.fileConfiguration.getBoolean("settings.enable-discord-logging", false);}
+    public double getInterestRate() {
+        return this.fileConfiguration.getDouble("interests.rate", 0.05);
+    }
 
-    public String webhookURL() { return this.fileConfiguration.getString("webhook-settings.url", ""); }
+    public int getInterestInterval() {
+        return this.fileConfiguration.getInt("interests.interval", 60);
+    }
 
-    public String username() { return this.fileConfiguration.getString("webhook-settings.username", "SimpleEconomy Logger"); }
+    public boolean shouldLogToDiscord() {
+        return this.fileConfiguration.getBoolean("settings.enable-discord-logging", false);
+    }
 
-    public String avatarURL() { return this.fileConfiguration.getString("webhook-settings.avatar-url", "https://example.com/avatar.png"); }
+    public String webhookURL() {
+        return this.fileConfiguration.getString("webhook-settings.url", "");
+    }
 
-    public String webhookColor() { return this.fileConfiguration.getString("webhook-settings.color", "#22C55E"); }
+    public String username() {
+        return this.fileConfiguration.getString("webhook-settings.username", "SimpleEconomy Logger");
+    }
 
-    public boolean logPayToDiscord() { return this.fileConfiguration.getBoolean("webhook-settings.log-payments", true); }
+    public String avatarURL() {
+        return this.fileConfiguration.getString("webhook-settings.avatar-url", "https://example.com/avatar.png");
+    }
 
-    public boolean logWithdrawalsToDiscord() { return this.fileConfiguration.getBoolean("webhook-settings.log-withdrawals", true); }
+    public String webhookColor() {
+        return this.fileConfiguration.getString("webhook-settings.color", "#22C55E");
+    }
 
-    public boolean logAdminToDiscord() { return this.fileConfiguration.getBoolean("webhook-settings.log-admin", true); }
+    public boolean logPayToDiscord() {
+        return this.fileConfiguration.getBoolean("webhook-settings.log-payments", true);
+    }
 
-    public boolean logVoucherCreations() { return this.fileConfiguration.getBoolean("webhook-settings.log-voucher-creations", true); }
+    public boolean logWithdrawalsToDiscord() {
+        return this.fileConfiguration.getBoolean("webhook-settings.log-withdrawals", true);
+    }
 
-    public String embedFooter() { return this.fileConfiguration.getString("webhook-settings.embed-templates.footer", "SimpleEconomy Audit Log • %timestamp%"); }
+    public boolean logAdminToDiscord() {
+        return this.fileConfiguration.getBoolean("webhook-settings.log-admin", true);
+    }
+
+    public boolean logVoucherCreations() {
+        return this.fileConfiguration.getBoolean("webhook-settings.log-voucher-creations", true);
+    }
+
+    public String embedFooter() {
+        return this.fileConfiguration.getString("webhook-settings.embed-templates.footer", "SimpleEconomy Audit Log • %timestamp%");
+    }
 
     public Map<String, String> getEmbedTemplate(String type) {
         String path = "webhook-settings.embed-templates." + type.toLowerCase();
+        ConfigurationSection templateSection = this.fileConfiguration.getConfigurationSection("webhook-settings.embed-templates");
+        if (templateSection == null) {
+            return Map.of("title", "Log", "description", "No template", "color", "#FFFFFF");
+        }
         if (this.fileConfiguration.isConfigurationSection(path)) {
-            return this.fileConfiguration.getConfigurationSection(path)
+            return templateSection
                     .getValues(false).entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())));
         }
@@ -202,12 +257,5 @@ public class SettingsConfig extends LightConfig {
                 this.saveAndReload();
             }
         }
-    }
-
-    private SettingsConfig() {}
-
-    public static SettingsConfig getInstance() {
-        if(instance == null) instance = new SettingsConfig();
-        return instance;
     }
 }

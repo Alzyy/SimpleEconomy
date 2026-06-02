@@ -24,11 +24,7 @@ import it.alzy.simpleeconomy.plugin.storage.impl.FileStorage;
 import it.alzy.simpleeconomy.plugin.storage.impl.MySQLStorage;
 import it.alzy.simpleeconomy.plugin.storage.impl.SQLiteStorage;
 import it.alzy.simpleeconomy.plugin.tasks.*;
-import it.alzy.simpleeconomy.plugin.utils.FormatUtils;
-import it.alzy.simpleeconomy.plugin.utils.ItemUtils;
-import it.alzy.simpleeconomy.plugin.utils.TransactionHelper;
-import it.alzy.simpleeconomy.plugin.utils.UpdateUtils;
-import it.alzy.simpleeconomy.plugin.utils.VaultHook;
+import it.alzy.simpleeconomy.plugin.utils.*;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
@@ -50,8 +46,10 @@ public class SimpleEconomy extends JavaPlugin {
 
     @Getter
     private final Cache cache = new Cache();
-
-    @Getter @Setter
+    @Getter
+    PaperCommandManager commandManager;
+    @Getter
+    @Setter
     private Map<String, Double> topMap;
     @Getter
     private ExecutorService executor;
@@ -65,30 +63,22 @@ public class SimpleEconomy extends JavaPlugin {
     private NamespacedKey amountKey;
     @Getter
     private NamespacedKey uuidKey;
-
     @Getter
     private BukkitAudiences bukkitAudiences;
-
     @Getter
     private CurrencyManager currencyManager;
-
     @Getter
     private UpdateUtils updateUtils;
     @Getter
     private LanguageManager languageManager;
-
     @Getter
     private TransactionHelper transactionHelper;
-
-    @Getter private TransactionLogger transactionLogger;
-
-    @Getter private WebhookLogger webhookLogger;
-
+    @Getter
+    private TransactionLogger transactionLogger;
+    @Getter
+    private WebhookLogger webhookLogger;
     @Getter
     private ModuleManager moduleManager;
-    @Getter
-    PaperCommandManager commandManager;
-
     @Getter
     private boolean isPaper;
 
@@ -97,7 +87,7 @@ public class SimpleEconomy extends JavaPlugin {
         instance = this;
         try {
             Class.forName("it.alzy.simpleeconomy.plugin.utils.ChatUtils");
-        } catch(ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             // ignored
         }
 
@@ -109,10 +99,7 @@ public class SimpleEconomy extends JavaPlugin {
             isPaper = false;
         }
 
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-            getLogger().severe("Uncaught exception in thread " + thread.getName() + ": " + throwable.getMessage());
-            throwable.printStackTrace();
-        });
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> getLogger().severe("Uncaught exception in thread " + thread.getName() + ": " + throwable.getMessage()));
 
         try {
             loadConfigurations();
@@ -127,7 +114,7 @@ public class SimpleEconomy extends JavaPlugin {
             initializeFeatures();
             moduleManager = new ModuleManager(this);
             moduleManager.loadModules();
-            
+
         } catch (Exception e) {
             getLogger().severe("An error occurred during plugin initialization: " + e.getMessage());
             disableSelf();
@@ -153,14 +140,14 @@ public class SimpleEconomy extends JavaPlugin {
             cache.invalidateAll();
         }
 
-        if(topMap != null) {
+        if (topMap != null) {
             topMap.clear();
         }
-        if(languageManager != null) {
+        if (languageManager != null) {
             languageManager.unloadLanguages();
         }
 
-        if(transactionLogger != null) {
+        if (transactionLogger != null) {
             transactionLogger.close();
         }
 
@@ -190,7 +177,7 @@ public class SimpleEconomy extends JavaPlugin {
     private void initializeCore() {
         SettingsConfig settings = SettingsConfig.getInstance();
 
-        if(!isPaper) {
+        if (!isPaper) {
             try {
                 this.bukkitAudiences = BukkitAudiences.create(this);
             } catch (Throwable t) {
@@ -208,7 +195,7 @@ public class SimpleEconomy extends JavaPlugin {
         amountKey = new NamespacedKey(this, getName() + "_voucheramount");
         uuidKey = new NamespacedKey(this, getName() + "_voucheruuid");
 
-        if (isClassPresent("net.milkbowl.vault.economy.Economy")) {
+        if (isClassPresent()) {
             new VaultHook();
         } else {
             getLogger().info("Vault API not detected; skipping Vault hook setup.");
@@ -221,9 +208,9 @@ public class SimpleEconomy extends JavaPlugin {
         }
     }
 
-    private boolean isClassPresent(String className) {
+    private boolean isClassPresent() {
         try {
-            Class.forName(className);
+            Class.forName("net.milkbowl.vault.economy.Economy");
             return true;
         } catch (ClassNotFoundException e) {
             return false;
@@ -249,7 +236,7 @@ public class SimpleEconomy extends JavaPlugin {
                         settings.getDBName(),
                         settings.getDBMaxPool(),
                         settings.getDBPrefixTable()
-                        );
+                );
                 storage = new MySQLStorage(this, info);
             }
             default -> {
@@ -264,7 +251,7 @@ public class SimpleEconomy extends JavaPlugin {
         registerCommands();
         new AutoSaveTask(this).register();
         new BalTopRefreshTask(this).register();
-        if(SettingsConfig.getInstance().isInterestEnabled()) {
+        if (SettingsConfig.getInstance().isInterestEnabled()) {
             new InterestTask(this).register();
         }
         if (SettingsConfig.getInstance().registerPlaceholderAPI()) {
@@ -276,16 +263,16 @@ public class SimpleEconomy extends JavaPlugin {
             }
         }
 
-        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
+        if (SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
             transactionLogger = new TransactionLogger(this);
             transactionLogger.init();
         }
 
-        if(SettingsConfig.getInstance().shouldLogToDiscord()) {
+        if (SettingsConfig.getInstance().shouldLogToDiscord()) {
             webhookLogger = new WebhookLogger();
         }
 
-        if(SettingsConfig.getInstance().isAutoPurgeEnabled()) {
+        if (SettingsConfig.getInstance().isAutoPurgeEnabled()) {
             new AutoPurgeTask(this).register();
         }
         loadApis();
@@ -323,26 +310,26 @@ public class SimpleEconomy extends JavaPlugin {
                 throw new InvalidCommandArgument(false);
             }
         });
-        commandManager.getCommandCompletions().registerAsyncCompletion("currencies", c -> {
-            return getCurrencyManager().getAllCurrencies().stream()
-                    .map(VirtualCurrency::getName)
-                    .toList();
-        });
+        commandManager.getCommandCompletions().registerAsyncCompletion("currencies", c -> getCurrencyManager().getAllCurrencies().stream()
+                .map(VirtualCurrency::getName)
+                .toList());
 
-        commandManager.getCommandCompletions().registerAsyncCompletion("modules", c -> {
-            return moduleManager.getLoadedModuleNames().stream().toList();
-        });
+        commandManager.getCommandCompletions().registerAsyncCompletion("modules", c -> moduleManager.getLoadedModuleNames().stream().toList());
 
         commandManager.getCommandCompletions().registerAsyncCompletion("modulesFiles", c -> {
             File modulesDir = new File(getDataFolder(), "modules");
             if (!modulesDir.exists() || !modulesDir.isDirectory()) {
                 return List.of();
             }
-            return Arrays.stream(modulesDir.listFiles((dir, name) -> name.endsWith(".jar")))
+            File[] files = modulesDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
+            if (files == null || files.length == 0) {
+                return List.of();
+            }
+            return Arrays.stream(files)
                     .map(File::getName)
                     .toList();
         });
-        
+
 
         commandManager.registerCommand(new SECommand());
         commandManager.registerCommand(new ECOCommand());
@@ -356,13 +343,13 @@ public class SimpleEconomy extends JavaPlugin {
             commandManager.registerCommand(new VoucherCommand());
         }
 
-        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
+        if (SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
             commandManager.registerCommand(new ECOHistoryCommand());
         }
     }
 
     public void runAsync(Runnable task) {
-        if(executor == null || executor.isShutdown()) {
+        if (executor == null || executor.isShutdown()) {
             getLogger().severe("Executor service is not available. Cannot run async task.");
             return;
         }
@@ -374,6 +361,7 @@ public class SimpleEconomy extends JavaPlugin {
             }
         });
     }
+
     private void loadConfigurations() {
         SettingsConfig.getInstance().registerLightConfig(this);
         SettingsConfig.getInstance().checkMissingKeys();

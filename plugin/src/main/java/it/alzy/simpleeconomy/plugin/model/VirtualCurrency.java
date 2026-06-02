@@ -1,21 +1,19 @@
 package it.alzy.simpleeconomy.plugin.model;
 
-import java.util.Map;
-import java.util.UUID;
-
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import lombok.Data;
 import lombok.Setter;
 
+import java.util.Map;
+import java.util.UUID;
+
 @Data
 public class VirtualCurrency {
-    
+
     private final String name;
-    
+    private final String columnOrKey;
     @Setter
     private String symbol;
-    
-    private final String columnOrKey;
 
     public VirtualCurrency(String name, String symbol) {
         this.name = name;
@@ -25,11 +23,11 @@ public class VirtualCurrency {
 
     public double getBalance(UUID playerId) {
         Map<String, Double> balances = SimpleEconomy.getInstance().getCache().get(playerId);
-        
+
         if (balances != null && balances.containsKey(this.columnOrKey)) {
             return balances.get(this.columnOrKey);
         }
-        
+
         return 0.0;
     }
 

@@ -1,37 +1,29 @@
 package it.alzy.simpleeconomy.plugin.storage.impl;
 
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
+import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.storage.Storage;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
+public record FileStorage(File folder, SimpleEconomy plugin) implements Storage {
 
-import it.alzy.simpleeconomy.plugin.SimpleEconomy;
-import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
-import it.alzy.simpleeconomy.plugin.storage.Storage;
-
-public class FileStorage implements Storage {
-
-    private final File folder;
-    private final SimpleEconomy plugin;
-
-    public FileStorage(File dataFolder, SimpleEconomy plugin) {
+    public FileStorage(File folder, SimpleEconomy plugin) {
         this.plugin = plugin;
-        
 
-        this.folder = new File(dataFolder, "player_data");
+
+        this.folder = new File(folder, "player_data");
         plugin.getLogger().info("Using FileStorage as storage system!");
 
-        if (!folder.exists() && !folder.mkdirs()) {
+        if (!this.folder.exists() && !this.folder.mkdirs()) {
             plugin.getLogger().severe("Could not create player_data directory!");
         }
     }
@@ -46,13 +38,13 @@ public class FileStorage implements Storage {
         if (plugin.getServer().isPrimaryThread()) {
             plugin.getLogger().severe("[WARNING] saveSync() was called on the main thread! UUID: " + uuid);
         }
-        
+
         File file = new File(folder, uuid.toString() + ".yml");
         YamlConfiguration config = file.exists() ? YamlConfiguration.loadConfiguration(file) : new YamlConfiguration();
-        
+
         config.set("balances." + currency, balance);
         config.set("last_seen", System.currentTimeMillis());
-        
+
         if (config.contains("balance")) {
             config.set("balance", null);
         }
@@ -131,13 +123,13 @@ public class FileStorage implements Storage {
 
             try {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-                
+
                 if (config.contains("balances." + currency)) {
                     return config.getDouble("balances." + currency);
                 } else if ("money".equals(currency) && config.contains("balance")) {
                     return config.getDouble("balance");
                 }
-                
+
                 return startingBalance;
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Failed to get balance for " + uuid, e);
@@ -151,7 +143,7 @@ public class FileStorage implements Storage {
         plugin.runAsync(() -> {
             String defaultCurrency = "money";
             double balance = SettingsConfig.getInstance().startingBalance();
-            
+
             Map<String, Double> balances = new ConcurrentHashMap<>();
             balances.put(defaultCurrency, balance);
 
@@ -167,30 +159,30 @@ public class FileStorage implements Storage {
 
         long timestamp = System.currentTimeMillis();
         var futures = dirtyPlayers.stream()
-            .map(uuid -> CompletableFuture.runAsync(() -> {
-                Map<String, Double> balances = plugin.getCache().get(uuid);
-                if (balances == null) return;
-                
-                File file = new File(folder, uuid.toString() + ".yml");
-                YamlConfiguration config = file.exists() ? YamlConfiguration.loadConfiguration(file) : new YamlConfiguration();
+                .map(uuid -> CompletableFuture.runAsync(() -> {
+                    Map<String, Double> balances = plugin.getCache().get(uuid);
+                    if (balances == null) return;
 
-                for (Map.Entry<String, Double> currencyEntry : balances.entrySet()) {
-                    config.set("balances." + currencyEntry.getKey(), currencyEntry.getValue());
-                }
-                
-                config.set("last_seen", timestamp);
-                
-                if (config.contains("balance")) {
-                    config.set("balance", null);
-                }
+                    File file = new File(folder, uuid.toString() + ".yml");
+                    YamlConfiguration config = file.exists() ? YamlConfiguration.loadConfiguration(file) : new YamlConfiguration();
 
-                try {
-                    config.save(file);
-                } catch (IOException e) {
-                    plugin.getLogger().log(Level.SEVERE, "Failed to execute bulk save for " + uuid, e);
-                }
-            }, plugin.getExecutor() ))
-            .toList();
+                    for (Map.Entry<String, Double> currencyEntry : balances.entrySet()) {
+                        config.set("balances." + currencyEntry.getKey(), currencyEntry.getValue());
+                    }
+
+                    config.set("last_seen", timestamp);
+
+                    if (config.contains("balance")) {
+                        config.set("balance", null);
+                    }
+
+                    try {
+                        config.save(file);
+                    } catch (IOException e) {
+                        plugin.getLogger().log(Level.SEVERE, "Failed to execute bulk save for " + uuid, e);
+                    }
+                }, plugin.getExecutor()))
+                .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
     }
@@ -290,7 +282,7 @@ public class FileStorage implements Storage {
                         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
                         long lastSeen = config.getLong("last_seen", System.currentTimeMillis());
                         long cutoff = System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L);
-                        
+
                         if (lastSeen < cutoff) {
                             if (file.delete()) {
                                 plugin.getLogger().info("Deleted inactive player data file: " + file.getName());

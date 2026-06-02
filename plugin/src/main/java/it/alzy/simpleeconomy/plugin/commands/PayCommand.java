@@ -10,7 +10,6 @@ import it.alzy.simpleeconomy.plugin.utils.VaultHook;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.entity.Player;
-import co.aikar.commands.annotation.Optional;
 
 
 @CommandAlias("pay")
@@ -30,7 +29,7 @@ public class PayCommand extends BaseCommand {
 
         TransactionHelper helper = plugin.getTransactionHelper();
 
-        if (!helper.validateAmount(sender, amount)) {
+        if (helper.isNotValidAmount(sender, amount)) {
             return;
         }
 

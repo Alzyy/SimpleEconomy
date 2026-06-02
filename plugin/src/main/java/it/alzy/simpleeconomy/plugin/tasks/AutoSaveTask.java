@@ -1,15 +1,14 @@
 package it.alzy.simpleeconomy.plugin.tasks;
 
-import org.bukkit.scheduler.BukkitRunnable;
-
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.storage.Storage;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class AutoSaveTask extends BukkitRunnable {
 
     private final SimpleEconomy plugin;
-    
+
     public AutoSaveTask(SimpleEconomy plugin) {
         this.plugin = plugin;
     }
@@ -17,18 +16,18 @@ public class AutoSaveTask extends BukkitRunnable {
     @Override
     public void run() {
         int cacheSize = plugin.getCache().getAll().size();
-        
+
         if (cacheSize == 0) {
             return;
         }
-        
+
         Storage storage = plugin.getStorage();
         plugin.getLogger().info(String.format("Saving data for %d players from cache has started.", cacheSize));
         storage.bulkSave();
     }
 
-    public void register() {   
+    public void register() {
         runTaskTimerAsynchronously(plugin, 0L, SettingsConfig.getInstance().autoSaveInterval() * 20L * 60L);
     }
-    
+
 }

@@ -1,11 +1,10 @@
 package it.alzy.simpleeconomy.plugin.commands;
 
-import co.aikar.commands.annotation.*;
-import org.bukkit.entity.Player;
-
 import co.aikar.commands.BaseCommand;
+import co.aikar.commands.annotation.*;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import org.bukkit.entity.Player;
 
 import java.util.stream.Collectors;
 
@@ -73,17 +72,17 @@ public class CurrenciesCommand extends BaseCommand {
             plugin.getLanguageManager().send(player, LanguageKeys.NO_PERMISSION, "%prefix%", plugin.getLanguageManager().getMessage(LanguageKeys.PREFIX));
             return;
         }
-        
+
         var currencies = plugin.getCurrencyManager().getAllCurrencies();
         if (currencies.isEmpty()) {
             plugin.getLanguageManager().send(player, LanguageKeys.CURRENCY_LIST_EMPTY, "%prefix%", plugin.getLanguageManager().getMessage(LanguageKeys.PREFIX));
             return;
         }
-        
+
         String formattedList = currencies.stream()
                 .map(currency -> currency.getName() + " (" + currency.getSymbol() + ")")
                 .collect(Collectors.joining(", "));
-        
+
         plugin.getLanguageManager().send(player, LanguageKeys.CURRENCY_LIST, "%prefix%", plugin.getLanguageManager().getMessage(LanguageKeys.PREFIX), "%currencies%", formattedList);
     }
 }

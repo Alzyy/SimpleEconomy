@@ -15,17 +15,15 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LanguageManager {
 
     private final ConcurrentHashMap<String, Map<String, String>> cachedMessages = new ConcurrentHashMap<>();
-
+    private final SimpleEconomy plugin;
     @Setter
     private volatile String activeLanguage;
-
-    private final SimpleEconomy plugin;
 
     public LanguageManager(SimpleEconomy plugin, String lang) {
         this.plugin = plugin;
@@ -79,7 +77,7 @@ public class LanguageManager {
             }
 
             String code = file.getName().replace("lang_", "").replace(".yml", "");
-            
+
             Map<String, String> langCache = new ConcurrentHashMap<>();
             for (String key : config.getKeys(true)) {
                 if (config.isString(key)) {
@@ -95,9 +93,7 @@ public class LanguageManager {
 
     public void reload(String language) {
         this.activeLanguage = language;
-        loadLanguages().thenRun(() -> {
-            plugin.getLogger().info("Language reloaded: " + language);
-        });
+        loadLanguages().thenRun(() -> plugin.getLogger().info("Language reloaded: " + language));
     }
 
     public void unloadLanguages() {
@@ -111,7 +107,7 @@ public class LanguageManager {
     }
 
     public void send(CommandSender sender, LanguageKeys msg, Object... placeholders) {
-        String langCode = (sender instanceof Player p) ? p.getLocale().split("_")[0] : activeLanguage;
+        String langCode = (sender instanceof Player p) ? p.locale().getLanguage() : activeLanguage;
 
         Map<String, String> langMap = cachedMessages.getOrDefault(langCode, cachedMessages.getOrDefault("en", new ConcurrentHashMap<>()));
         String message = langMap.getOrDefault(msg.path(), "§cKey not found: " + msg.path());
@@ -120,7 +116,7 @@ public class LanguageManager {
     }
 
     public void sendCurrencyMessage(CommandSender sender, VirtualCurrency currency, LanguageKeys msg, Object... placeholders) {
-        String langCode = (sender instanceof Player p) ? p.getLocale().split("_")[0] : activeLanguage;
+        String langCode = (sender instanceof Player p) ? p.locale().getLanguage() : activeLanguage;
         Map<String, String> langMap = cachedMessages.getOrDefault(langCode, cachedMessages.getOrDefault("en", new ConcurrentHashMap<>()));
 
         String genericPath = msg.path();
@@ -160,7 +156,7 @@ public class LanguageManager {
                 if (changed) {
                     try {
                         config.save(file);
-                        updateAndLoad(file); 
+                        updateAndLoad(file);
                     } catch (Exception e) {
                         plugin.getLogger().warning("Could not auto-generate translations for " + currency.getName());
                     }
@@ -168,6 +164,7 @@ public class LanguageManager {
             }
         }, plugin.getExecutor());
     }
+
     public void removeCurrencyMessages(String name) {
         CompletableFuture.runAsync(() -> {
             for (String langCode : cachedMessages.keySet()) {
@@ -179,20 +176,19 @@ public class LanguageManager {
                 config.set(sectionPath, null);
                 try {
                     config.save(file);
-                    updateAndLoad(file); 
+                    updateAndLoad(file);
                 } catch (Exception e) {
                     plugin.getLogger().warning("Could not remove translations for " + name);
                 }
             }
         }, plugin.getExecutor());
     }
+
     public String getMessage(LanguageKeys msg) {
         return getString(msg.path());
     }
 
     public void reloadAll(CommandSender sender) {
-        loadLanguages().thenRun(() -> {
-            send(sender, LanguageKeys.RELOAD_SUCCESS, "%prefix%", getMessage(LanguageKeys.PREFIX));
-        });
+        loadLanguages().thenRun(() -> send(sender, LanguageKeys.RELOAD_SUCCESS, "%prefix%", getMessage(LanguageKeys.PREFIX)));
     }
 }
