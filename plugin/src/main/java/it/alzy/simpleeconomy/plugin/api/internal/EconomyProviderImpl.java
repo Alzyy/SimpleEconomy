@@ -2,9 +2,13 @@ package it.alzy.simpleeconomy.plugin.api.internal;
 
 import it.alzy.simpleeconomy.api.EconomyProvider;
 import it.alzy.simpleeconomy.api.TransactionResult;
+import it.alzy.simpleeconomy.api.TransactionTypes;
+import it.alzy.simpleeconomy.api.events.PostTransactionEvent;
+import it.alzy.simpleeconomy.api.events.PreTransactionEvent;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
+import org.bukkit.Bukkit;
 
 import java.util.Map;
 import java.util.Set;
@@ -40,20 +44,42 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
 
     @Override
     public CompletableFuture<Void> deposit(UUID uuid, String currency, double amount) {
-        return getBalance(uuid, currency).thenCompose(current -> {
+        return CompletableFuture.runAsync(() -> {
+            PreTransactionEvent preEvent = new PreTransactionEvent(null, uuid, currency, amount, TransactionTypes.DEPOSIT);
+            Bukkit.getPluginManager().callEvent(preEvent);
+
+            if (preEvent.isCancelled()) {
+                throw new IllegalStateException("Transaction cancelled: " + preEvent.getCancelReason());
+            }
+        }, plugin.getExecutor()).thenCompose(v -> getBalance(uuid, currency)).thenCompose(current -> {
             double newBalance = current + amount;
-            return updateBalanceInternal(uuid, currency, newBalance);
+            return updateBalanceInternal(uuid, currency, newBalance).thenRun(() -> {
+                PostTransactionEvent postEvent = new PostTransactionEvent(null, uuid, currency, amount, TransactionTypes.DEPOSIT);
+                Bukkit.getPluginManager().callEvent(postEvent);
+            });
         });
     }
 
     @Override
     public CompletableFuture<Boolean> detract(UUID uuid, String currency, double amount) {
-        return getBalance(uuid, currency).thenCompose(current -> {
-            if (current < amount) {
-                return CompletableFuture.completedFuture(false);
-            }
-            double newBalance = current - amount;
-            return updateBalanceInternal(uuid, currency, newBalance).thenApply(v -> true);
+        return CompletableFuture.supplyAsync(() -> {
+            PreTransactionEvent preEvent = new PreTransactionEvent(uuid, null, currency, amount, TransactionTypes.WITHDRAW);
+            Bukkit.getPluginManager().callEvent(preEvent);
+            return !preEvent.isCancelled();
+        }, plugin.getExecutor()).thenCompose(allowed -> {
+            if (!allowed) return CompletableFuture.completedFuture(false);
+
+            return getBalance(uuid, currency).thenCompose(current -> {
+                if (current < amount) {
+                    return CompletableFuture.completedFuture(false);
+                }
+                double newBalance = current - amount;
+                return updateBalanceInternal(uuid, currency, newBalance).thenApply(v -> {
+                    PostTransactionEvent postEvent = new PostTransactionEvent(uuid, null, currency, amount, TransactionTypes.WITHDRAW);
+                    Bukkit.getPluginManager().callEvent(postEvent);
+                    return true;
+                });
+            });
         });
     }
 
@@ -84,16 +110,28 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
                 return CompletableFuture.completedFuture(TransactionResult.INSUFFICIENT_FUNDS);
             }
 
-            return detract(from, currency, amount)
-                    .thenCompose(success -> {
-                        if (!success) return CompletableFuture.completedFuture(TransactionResult.ERROR);
+            PreTransactionEvent preEvent = new PreTransactionEvent(from, to, currency, amount, TransactionTypes.PAY);
+            Bukkit.getPluginManager().callEvent(preEvent);
 
-                        return deposit(to, currency, amount).exceptionallyCompose(ex -> {
-                                    plugin.getLogger().severe("Transfer failed during deposit to " + to + ". Refunding " + from);
-                                    return deposit(from, currency, amount);
-                                })
-                                .thenApply(v -> TransactionResult.SUCCESS);
-                    });
+            if (preEvent.isCancelled()) {
+                return CompletableFuture.completedFuture(TransactionResult.ERROR);
+            }
+
+            return detract(from, currency, amount)
+            .thenCompose(success -> {
+                if (!success) return CompletableFuture.completedFuture(TransactionResult.ERROR);
+
+                return deposit(to, currency, amount)
+                        .thenApply(v -> {
+                            PostTransactionEvent postEvent = new PostTransactionEvent(from, to, currency, amount, TransactionTypes.PAY);
+                            Bukkit.getPluginManager().callEvent(postEvent);
+                            return TransactionResult.SUCCESS;
+                        })
+                        .exceptionallyCompose(ex -> {
+                            plugin.getLogger().severe("Transfer failed during deposit to " + to + " (Tier full?). Refunding " + from);
+                            return deposit(from, currency, amount).thenApply(v -> TransactionResult.ERROR);
+                        });
+            });
         });
     }
 

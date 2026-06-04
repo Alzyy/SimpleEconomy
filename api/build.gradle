@@ -23,8 +23,20 @@ tasks.named('javadocJar') {
     archiveBaseName.set('simpleeconomy-api')
 }
 
+tasks.withType(Javadoc).configureEach {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
 repositories {
     mavenCentral()
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+}
+
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 }
 
 jar {
@@ -68,37 +80,48 @@ publishing {
     }
 }
 
-// signing {
-//     required { 
-//         project.hasProperty('signArtifacts') 
-//     }
-//     useGpgCmd()
-//     sign publishing.publications.mavenJava
-// }
+signing {
+    required { project.gradle.taskGraph.hasTask(":api:buildBundle") || project.gradle.taskGraph.hasTask("buildBundle") }
+    
+    def pgpSigningKeyBase64 = System.getenv("GPG_SIGNING_KEY_BASE64") ?: project.findProperty("signing.secretKey")
+    def pgpPassword = System.getenv("GPG_PASSPHRASE") ?: project.findProperty("signing.password")
+    def pgpKeyId = "01AD5A0D"
+
+    if (pgpSigningKeyBase64 && pgpPassword) {
+        def cleanBase64 = pgpSigningKeyBase64.toString().replaceAll("\\s", "")
+        byte[] decryptedKey = Base64.getDecoder().decode(cleanBase64)
+        
+        useInMemoryPgpKeys(pgpKeyId, new String(decryptedKey, java.nio.charset.StandardCharsets.UTF_8), pgpPassword.toString())
+    } else {
+        useInMemoryPgpKeys(pgpKeyId, "", "")
+    }
+    
+    sign publishing.publications.mavenJava
+}
 
 tasks.register('generateChecksums') {
-    dependsOn tasks.build
+    dependsOn tasks.build, tasks.named('signMavenJavaPublication')
 
     doLast {
         def filesToHash = [
                 file("$buildDir/libs/simpleeconomy-api-${version}.jar"),
+                file("$buildDir/libs/simpleeconomy-api-${version}.jar.asc"),
                 file("$buildDir/libs/simpleeconomy-api-${version}-sources.jar"),
+                file("$buildDir/libs/simpleeconomy-api-${version}-sources.jar.asc"),
                 file("$buildDir/libs/simpleeconomy-api-${version}-javadoc.jar"),
-                file("$buildDir/publications/mavenJava/pom-default.xml")
+                file("$buildDir/libs/simpleeconomy-api-${version}-javadoc.jar.asc"),
+                file("$buildDir/publications/mavenJava/pom-default.xml"),
+                file("$buildDir/publications/mavenJava/pom-default.xml.asc")
         ]
 
         filesToHash.each { f ->
             if (f.exists()) {
                 def md5 = java.security.MessageDigest.getInstance('MD5')
-                f.eachByte(4096) { bytes, size ->
-                    md5.update(bytes, 0, size)
-                }
+                f.eachByte(4096) { bytes, size -> md5.update(bytes, 0, size) }
                 new File("${f}.md5").text = md5.digest().encodeHex().toString()
 
                 def sha1 = java.security.MessageDigest.getInstance('SHA-1')
-                f.eachByte(4096) { bytes, size ->
-                    sha1.update(bytes, 0, size)
-                }
+                f.eachByte(4096) { bytes, size -> sha1.update(bytes, 0, size) }
                 new File("${f}.sha1").text = sha1.digest().encodeHex().toString()
             }
         }
@@ -108,9 +131,8 @@ tasks.register('generateChecksums') {
 tasks.register('buildBundle', Zip) {
     group = 'build'
     description = 'Create a ZIP ready for Maven Central upload'
-    // dependsOn tasks.build, tasks.named('signMavenJavaPublication'), tasks.named('generateChecksums')
-
-    dependsOn tasks.build, tasks.generateChecksums
+    
+    dependsOn tasks.build, tasks.named('signMavenJavaPublication'), tasks.generateChecksums
 
     archiveBaseName.set('simpleeconomy-api')
     archiveVersion.set(version)
@@ -137,8 +159,10 @@ tasks.register('buildBundle', Zip) {
     from("$buildDir/publications/mavenJava") {
         include "pom-default.xml"
         include "pom-default.xml.asc"
+        
         include "pom-default.xml.md5"
         include "pom-default.xml.sha1"
+        
         into mavenPath
         rename 'pom-default.xml', "simpleeconomy-api-${version}.pom"
         rename 'pom-default.xml.asc', "simpleeconomy-api-${version}.pom.asc"

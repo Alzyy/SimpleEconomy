@@ -98,6 +98,10 @@ public class ModuleManager {
             plugin.getLogger().warning("Module file " + fileName + " not found or is not a .jar file.");
             return;
         }
+        if(modules.stream().anyMatch(m -> m.getName().equalsIgnoreCase(fileName.replace(".jar", "")))) {
+            unloadModule(modules.stream().filter(m -> m.getName().equalsIgnoreCase(fileName.replace(".jar", ""))).findFirst().orElse(null));
+            plugin.getLogger().info("Module " + fileName.replace(".jar", "") + " was already loaded, it has been unloaded to be reloaded.");              
+        }
         try {
             EconomyModule module = ModuleLoader.loadModule(file, plugin);
             modules.add(module);
