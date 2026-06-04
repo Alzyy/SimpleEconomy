@@ -2,6 +2,7 @@ package it.alzy.simpleeconomy.plugin.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import io.papermc.paper.plugin.configuration.PluginMeta;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -20,9 +21,12 @@ public class UpdateUtils {
     private static final String API_URL = "https://api.spiget.org/v2/resources/127423/versions/latest";
     private static final Gson gson = new Gson();
 
-    @Getter private static volatile boolean isUpdateAvailable = false;
-    @Getter private static volatile String newVersion = "";
+    @Getter
+    private static volatile boolean isUpdateAvailable = false;
+    @Getter
+    private static volatile String newVersion = "";
 
+    @SuppressWarnings("UnstableApiUsage")
     public void checkForUpdates() {
         CompletableFuture.supplyAsync(() -> {
             try {
@@ -39,7 +43,9 @@ public class UpdateUtils {
                 if (!obj.has("name")) return;
 
                 String latestVersion = obj.get("name").getAsString();
-                String currentVersion = plugin.getDescription().getVersion();
+
+                PluginMeta pluginMeta = plugin.getPluginMeta();
+                String currentVersion = pluginMeta.getVersion();
 
                 if (!currentVersion.equalsIgnoreCase(latestVersion)) {
                     isUpdateAvailable = true;

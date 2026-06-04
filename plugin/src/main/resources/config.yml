@@ -110,10 +110,6 @@ webhook-settings:
   username: "SimpleEconomy Logger"
   avatar-url: "https://example.com/avatar.png"
 
-  # Sidebar color for the Discord Embed (Hexadecimal format).
-  color: "#22C55E"
-
-  # --- Logging Options ---
   # Track payments between players (/pay).
   log-payments: true
 
@@ -126,6 +122,29 @@ webhook-settings:
   # Track when a player creates a physical voucher (/withdraw).
   log-voucher-creations: true
 
+  embed-templates:
+    pay:
+      color: "#3B82F6"
+      title: "💸 Player Payment"
+      description: "**%sender%** sent money to **%receiver%**\nAmount: **%amount%**"
+    give:
+      color: "#10B981"
+      title: "📈 Admin Action: Give"
+      description: "Admin **%executor%** gave money to **%target%**\nAmount: **%amount%**"
+    set:
+      color: "#F59E0B"
+      title: "⚙️ Admin Action: Set"
+      description: "Admin **%executor%** set the balance for **%target%**\nAmount: **%amount%**"
+    withdraw:
+      color: "#EF4444"
+      title: "🎫 Voucher Creation"
+      description: "**%player%** created a physical voucher\nAmount: **%amount%**"
+    remove:
+      color: "#DC2626"
+      title: "📉 Admin Action: Remove"
+      description: "Admin **%executor%** removed money from **%target%**\nAmount: **%amount%**"
+
+    footer: "SimpleEconomy Audit Log • %timestamp%"
 interests:
   enabled: false
 

@@ -2,6 +2,7 @@ package it.alzy.simpleeconomy.plugin.i18n;
 
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
+import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
 import it.alzy.simpleeconomy.plugin.utils.ChatUtils;
 import lombok.Setter;
 import org.bukkit.command.CommandSender;
@@ -14,16 +15,15 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LanguageManager {
 
-    private final ConcurrentHashMap<String, YamlConfiguration> languages = new ConcurrentHashMap<>();
-
     private final ConcurrentHashMap<String, Map<String, String>> cachedMessages = new ConcurrentHashMap<>();
+    private final SimpleEconomy plugin;
     @Setter
     private volatile String activeLanguage;
-    private final SimpleEconomy plugin;
 
     public LanguageManager(SimpleEconomy plugin, String lang) {
         this.plugin = plugin;
@@ -31,8 +31,8 @@ public class LanguageManager {
         loadLanguages();
     }
 
-    public void loadLanguages() {
-        plugin.getExecutor().execute(() -> {
+    public CompletableFuture<Void> loadLanguages() {
+        return CompletableFuture.runAsync(() -> {
             plugin.getLogger().info("Loading language files...");
             File langFolder = new File(plugin.getDataFolder(), "languages");
             if (!langFolder.exists()) {
@@ -42,12 +42,15 @@ public class LanguageManager {
                 plugin.getLogger().info("Default language files created.");
             }
 
-            for (File file : Objects.requireNonNull(langFolder.listFiles())) {
+            File[] files = langFolder.listFiles();
+            if (files == null) return;
+
+            for (File file : files) {
                 if (file.getName().endsWith(".yml")) {
                     updateAndLoad(file);
                 }
             }
-        });
+        }, plugin.getExecutor());
     }
 
     private void updateAndLoad(File file) {
@@ -74,59 +77,118 @@ public class LanguageManager {
             }
 
             String code = file.getName().replace("lang_", "").replace(".yml", "");
-            languages.put(code, config);
 
-            Map<String, String> cache = new ConcurrentHashMap<>();
-            for(String key : config.getKeys(true)) {
-                if(config.isString(key)) {
-                    cache.put(key, config.getString(key));
+            Map<String, String> langCache = new ConcurrentHashMap<>();
+            for (String key : config.getKeys(true)) {
+                if (config.isString(key)) {
+                    langCache.put(key, Objects.requireNonNull(config.getString(key)));
                 }
             }
-            cachedMessages.put(code, cache);
+            cachedMessages.put(code, langCache);
+
         } catch (Exception e) {
             plugin.getLogger().severe("Error loading language file " + file.getName() + ": " + e.getMessage());
         }
     }
 
     public void reload(String language) {
-        setActiveLanguage(language);
-        plugin.getExecutor().execute(() -> {
-            try {
-                File file = new File(plugin.getDataFolder(), "languages/lang_" + activeLanguage + ".yml");
-                if (!file.exists()) {
-                    plugin.getLogger().warning("Language file for '" + activeLanguage + "' not found. Reverting to english.");
-                    activeLanguage = "en";
-                    return;
-                }
-                updateAndLoad(file);
-            } catch (Exception e) {
-                plugin.getLogger().severe("Failed to reload language '" + activeLanguage + "': " + e.getMessage());
-            }
-        });
+        this.activeLanguage = language;
+        loadLanguages().thenRun(() -> plugin.getLogger().info("Language reloaded: " + language));
     }
 
     public void unloadLanguages() {
-        languages.clear();
         cachedMessages.clear();
     }
 
     public String getString(String path) {
-        YamlConfiguration config = languages.getOrDefault(activeLanguage, languages.get("en"));
-        if (config == null) return "Language Error: No config loaded.";
-        return config.getString(path, "Message " + path + " not found.");
+        Map<String, String> langMap = cachedMessages.getOrDefault(activeLanguage, cachedMessages.get("en"));
+        if (langMap == null) return "§cLanguage not loaded.";
+        return langMap.getOrDefault(path, "§cMessage " + path + " not found.");
     }
-
 
     public void send(CommandSender sender, LanguageKeys msg, Object... placeholders) {
         String langCode = (sender instanceof Player p) ? p.locale().getLanguage() : activeLanguage;
 
-        Map<String, String> langMap = cachedMessages.getOrDefault(langCode, cachedMessages.get("en"));
-        String message = (langMap != null) ? langMap.get(msg.path()) : "§cKey not found";
+        Map<String, String> langMap = cachedMessages.getOrDefault(langCode, cachedMessages.getOrDefault("en", new ConcurrentHashMap<>()));
+        String message = langMap.getOrDefault(msg.path(), "§cKey not found: " + msg.path());
 
         ChatUtils.send(sender, message, placeholders);
     }
 
+    public void sendCurrencyMessage(CommandSender sender, VirtualCurrency currency, LanguageKeys msg, Object... placeholders) {
+        String langCode = (sender instanceof Player p) ? p.locale().getLanguage() : activeLanguage;
+        Map<String, String> langMap = cachedMessages.getOrDefault(langCode, cachedMessages.getOrDefault("en", new ConcurrentHashMap<>()));
+
+        String genericPath = msg.path();
+        String currencySpecificPath = genericPath.replace("messages.", "messages.currencies." + currency.getName() + ".");
+
+        String finalMessage = langMap.getOrDefault(currencySpecificPath, langMap.getOrDefault(genericPath, "§cKey not found"));
+
+        ChatUtils.send(sender, finalMessage, placeholders);
+    }
+
+    public void setupCurrencyTranslations(VirtualCurrency currency) {
+        CompletableFuture.runAsync(() -> {
+            for (String langCode : cachedMessages.keySet()) {
+                File file = new File(plugin.getDataFolder(), "languages/lang_" + langCode + ".yml");
+                if (!file.exists()) continue;
+
+                YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+                boolean changed = false;
+
+                LanguageKeys[] keysToCopy = {
+                        LanguageKeys.BALANCE_CHECK_SELF,
+                        LanguageKeys.BALANCE_CHECK_OTHER,
+                        LanguageKeys.GAVE_MONEY,
+                        LanguageKeys.RECEIVED_MONEY
+                };
+
+                for (LanguageKeys key : keysToCopy) {
+                    String genericPath = key.path();
+                    String currencyPath = genericPath.replace("messages.", "messages.currencies." + currency.getName() + ".");
+
+                    if (!config.contains(currencyPath)) {
+                        config.set(currencyPath, config.get(genericPath));
+                        changed = true;
+                    }
+                }
+
+                if (changed) {
+                    try {
+                        config.save(file);
+                        updateAndLoad(file);
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("Could not auto-generate translations for " + currency.getName());
+                    }
+                }
+            }
+        }, plugin.getExecutor());
+    }
+
+    public void removeCurrencyMessages(String name) {
+        CompletableFuture.runAsync(() -> {
+            for (String langCode : cachedMessages.keySet()) {
+                File file = new File(plugin.getDataFolder(), "languages/lang_" + langCode + ".yml");
+                if (!file.exists()) continue;
+
+                YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+                String sectionPath = "messages.currencies." + name;
+                config.set(sectionPath, null);
+                try {
+                    config.save(file);
+                    updateAndLoad(file);
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Could not remove translations for " + name);
+                }
+            }
+        }, plugin.getExecutor());
+    }
+
     public String getMessage(LanguageKeys msg) {
         return getString(msg.path());
+    }
+
+    public void reloadAll(CommandSender sender) {
+        loadLanguages().thenRun(() -> send(sender, LanguageKeys.RELOAD_SUCCESS, "%prefix%", getMessage(LanguageKeys.PREFIX)));
     }
 }

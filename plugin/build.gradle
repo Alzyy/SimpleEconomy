@@ -6,7 +6,7 @@ plugins {
 
 description = 'SimpleEconomy'
 group = 'it.alzy.simpleeconomy'
-version = '3.2'
+version = '3.3'
 
 repositories {
     mavenCentral()
@@ -31,12 +31,21 @@ dependencies {
         exclude group: "org.apache.commons", module: "commons-lang3"
     }
     compileOnly project(':api')
+
+    implementation 'io.github.alzyy:simpleeconomy-api:1.0.1'
     implementation 'com.github.NaTorOG:SimpleConfig:1.0.6'
     compileOnly 'org.projectlombok:lombok:1.18.46'
     annotationProcessor 'org.projectlombok:lombok:1.18.46'
     implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
-    compileOnly "com.github.kaepsis:VaultAPI:ennamo"
     implementation "com.zaxxer:HikariCP:7.0.2"
+
+    compileOnly 'org.projectlombok:lombok:1.18.46'
+    annotationProcessor 'org.projectlombok:lombok:1.18.46'
+
+    compileOnly("com.github.ben-manes.caffeine:caffeine:3.2.4")
+
+
+    compileOnly "com.github.kaepsis:VaultAPI:ennamo"
     compileOnly 'me.clip:placeholderapi:2.11.7'
     compileOnly("net.kyori:adventure-platform-bukkit:4.4.1")
 
@@ -68,6 +77,10 @@ processResources {
     inputs.properties props
     filteringCharset 'UTF-8'
     filesMatching('plugin.yml') {
+        expand props
+    }
+    
+    filesMatching('paper-plugin.yml') {
         expand props
     }
 }

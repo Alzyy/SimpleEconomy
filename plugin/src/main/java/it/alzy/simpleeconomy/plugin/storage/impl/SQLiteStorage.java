@@ -11,8 +11,10 @@ import java.io.File;
 import java.sql.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -25,7 +27,7 @@ public class SQLiteStorage implements Storage {
 
     public SQLiteStorage(SimpleEconomy plugin) {
         this.plugin = plugin;
-        this.executor = Executors.newSingleThreadExecutor();
+        this.executor = Executors.newSingleThreadExecutor(t -> new Thread(t, "SimpleEconomy-SQLite-Executor"));
 
         File dataFolder = plugin.getDataFolder();
         if (!dataFolder.exists()) {
@@ -38,17 +40,14 @@ public class SQLiteStorage implements Storage {
         config.setJdbcUrl("jdbc:sqlite:" + dbFile.getPath());
 
         config.setMaximumPoolSize(1);
-
         config.setConnectionTestQuery("SELECT 1");
-
         config.setPoolName("SimpleEconomy-SQLite-Pool");
-
         config.setConnectionTimeout(5000);
 
         config.addDataSourceProperty("journal_mode", "WAL");
         config.addDataSourceProperty("synchronous", "NORMAL");
-        config.addDataSourceProperty("busy_timeout","5000");
-        
+        config.addDataSourceProperty("busy_timeout", "5000");
+
         this.dataSource = new HikariDataSource(config);
     }
 
@@ -61,11 +60,13 @@ public class SQLiteStorage implements Storage {
 
         executor.execute(() -> {
             String sql = """
-                        CREATE TABLE IF NOT EXISTS users (
-                            uuid TEXT PRIMARY KEY,
-                            balance REAL DEFAULT 0,
-                            last_seen BIGINT NOT NULL
-                        );
+                    CREATE TABLE IF NOT EXISTS users (
+                        uuid TEXT,
+                        currency TEXT DEFAULT 'money',
+                        balance REAL DEFAULT 0,
+                        last_seen BIGINT NOT NULL,
+                        PRIMARY KEY (uuid, currency)
+                    );
                     """;
 
             try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
@@ -77,79 +78,85 @@ public class SQLiteStorage implements Storage {
         });
     }
 
-    private void saveToDatabase(UUID uuid, double balance) {
+    private void saveToDatabase(UUID uuid, String currency, double balance) {
         String sql = """
-                INSERT INTO users(uuid, balance, last_seen) VALUES (?, ?, ?)
-                ON CONFLICT(uuid) DO UPDATE SET balance = ?, last_seen = ?;
-            """;
+                INSERT INTO users(uuid, currency, balance, last_seen) VALUES (?, ?, ?, ?)
+                ON CONFLICT(uuid, currency) DO UPDATE SET balance = ?, last_seen = ?;
+                """;
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             long timestamp = System.currentTimeMillis();
 
             ps.setString(1, uuid.toString());
-            ps.setDouble(2, balance);
-            ps.setLong(3, timestamp);
+            ps.setString(2, currency);
+            ps.setDouble(3, balance);
+            ps.setLong(4, timestamp);
 
-            ps.setDouble(4, balance);
-            ps.setLong(5, timestamp);
+            ps.setDouble(5, balance);
+            ps.setLong(6, timestamp);
             ps.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to save balance for UUID: " + uuid, e);
+            plugin.getLogger().log(Level.WARNING, "Failed to save balance for UUID: " + uuid + " and currency: " + currency, e);
         }
     }
 
     @Override
-    public void save(UUID uuid, double balance) {
-        executor.execute(() -> saveToDatabase(uuid, balance));
+    public void save(UUID uuid, String currency, double balance) {
+        executor.execute(() -> saveToDatabase(uuid, currency, balance));
     }
 
     @Override
-    public void saveSync(UUID uuid, double balance) {
+    public void saveSync(UUID uuid, String currency, double balance) {
         if (Bukkit.isPrimaryThread()) {
             plugin.getLogger().severe("[WARNING] saveSync() was called on the main thread! UUID: " + uuid);
         }
-        saveToDatabase(uuid, balance);
+        saveToDatabase(uuid, currency, balance);
     }
 
     @Override
-    public CompletableFuture<Double> load(UUID uuid) {
+    public CompletableFuture<Map<String, Double>> load(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "SELECT balance FROM users WHERE uuid = ?";
+            String sql = "SELECT currency, balance FROM users WHERE uuid = ?";
+            Map<String, Double> balances = new ConcurrentHashMap<>();
 
             try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, uuid.toString());
                 ResultSet rs = ps.executeQuery();
 
-                if (rs.next()) {
-                    double balance = rs.getDouble("balance");
-                    plugin.getCacheMap().putIfAbsent(uuid, balance);
-                    return balance;
+                while (rs.next()) {
+                    balances.put(rs.getString("currency"), rs.getDouble("balance"));
                 }
             } catch (SQLException e) {
-                plugin.getLogger().log(Level.WARNING, "Failed to load balance for UUID " + uuid, e);
+                plugin.getLogger().log(Level.WARNING, "Failed to load balances for UUID " + uuid, e);
             }
 
-            double defaultBalance = SettingsConfig.getInstance().startingBalance();
-            plugin.getCacheMap().putIfAbsent(uuid, defaultBalance);
-            saveToDatabase(uuid, defaultBalance);
-            return defaultBalance;
+            if (balances.isEmpty()) {
+                String defaultCurrency = "money";
+                double defaultBalance = SettingsConfig.getInstance().startingBalance();
+                balances.put(defaultCurrency, defaultBalance);
+                saveToDatabase(uuid, defaultCurrency, defaultBalance);
+            }
+
+            plugin.getCache().put(uuid, balances);
+            return balances;
         }, executor);
     }
 
     @Override
-    public CompletableFuture<Double> getBalance(UUID uuid) {
+    public CompletableFuture<Double> getBalance(UUID uuid, String currency) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "SELECT balance FROM users WHERE uuid = ?";
+            String sql = "SELECT balance FROM users WHERE uuid = ? AND currency = ?";
 
             try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, uuid.toString());
+                ps.setString(2, currency);
                 ResultSet rs = ps.executeQuery();
 
                 if (rs.next()) {
                     return rs.getDouble("balance");
                 }
             } catch (SQLException e) {
-                plugin.getLogger().log(Level.WARNING, "Failed to load balance for UUID " + uuid, e);
+                plugin.getLogger().log(Level.WARNING, "Failed to load balance for UUID " + uuid + " and currency " + currency, e);
             }
 
             return SettingsConfig.getInstance().startingBalance();
@@ -159,35 +166,51 @@ public class SQLiteStorage implements Storage {
     @Override
     public void create(UUID uuid) {
         executor.execute(() -> {
+            String defaultCurrency = "money";
             double balance = SettingsConfig.getInstance().startingBalance();
-            plugin.getCacheMap().putIfAbsent(uuid, balance);
-            saveToDatabase(uuid, balance);
+
+            Map<String, Double> balances = new ConcurrentHashMap<>();
+            balances.put(defaultCurrency, balance);
+
+            plugin.getCache().put(uuid, balances);
+            saveToDatabase(uuid, defaultCurrency, balance);
         });
     }
 
     @Override
     public void bulkSave() {
+        Set<UUID> dirtyPlayers = plugin.getCache().getAndClearDirtyPlayers();
+        if (dirtyPlayers.isEmpty()) return;
+
         String sql = """
-                INSERT INTO users(uuid, balance, last_seen) VALUES (?, ?, ?)
-                ON CONFLICT(uuid) DO UPDATE SET balance = ?, last_seen = ?;
-            """;
-    
+                INSERT INTO users(uuid, currency, balance, last_seen) VALUES (?, ?, ?, ?)
+                ON CONFLICT(uuid, currency) DO UPDATE SET balance = ?, last_seen = ?;
+                """;
+
         try (Connection conn = getConnection()) {
-            conn.setAutoCommit(false); 
+            conn.setAutoCommit(false);
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 long timestamp = System.currentTimeMillis();
-                
-                for (Map.Entry<UUID, Double> entry : plugin.getCacheMap().entrySet()) {
-                    ps.setString(1, entry.getKey().toString());
-                    ps.setDouble(2, entry.getValue());
-                    ps.setLong(3, timestamp);
-                    ps.setDouble(4, entry.getValue());
-                    ps.setLong(5, timestamp);
-                    ps.addBatch();
+
+                for (UUID uuid : dirtyPlayers) {
+                    Map<String, Double> balances = plugin.getCache().get(uuid);
+                    if (balances == null) continue;
+
+                    String uuidStr = uuid.toString();
+                    for (Map.Entry<String, Double> currencyEntry : balances.entrySet()) {
+                        ps.setString(1, uuidStr);
+                        ps.setString(2, currencyEntry.getKey());
+                        ps.setDouble(3, currencyEntry.getValue());
+                        ps.setLong(4, timestamp);
+
+                        ps.setDouble(5, currencyEntry.getValue());
+                        ps.setLong(6, timestamp);
+                        ps.addBatch();
+                    }
                 }
-                
+
                 ps.executeBatch();
-                conn.commit(); 
+                conn.commit();
             } catch (SQLException e) {
                 conn.rollback();
                 plugin.getLogger().log(Level.SEVERE, "Failed to execute bulk save", e);
@@ -202,13 +225,16 @@ public class SQLiteStorage implements Storage {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
         }
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
     }
-    
+
     @Override
     public CompletableFuture<Boolean> hasAccount(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
             try (Connection conn = dataSource.getConnection();
-                    PreparedStatement stmt = conn.prepareStatement("SELECT balance FROM users WHERE uuid = ?")) {
+                 PreparedStatement stmt = conn.prepareStatement("SELECT 1 FROM users WHERE uuid = ? LIMIT 1")) {
                 stmt.setString(1, uuid.toString());
                 try (ResultSet rs = stmt.executeQuery()) {
                     return rs.next();
@@ -217,16 +243,17 @@ public class SQLiteStorage implements Storage {
                 plugin.getLogger().warning("Failed to load data for UUID " + uuid + ": " + e.getMessage());
                 return false;
             }
-        }, plugin.getExecutor());
+        }, executor);
     }
 
     @Override
-    public Map<String, Double> getTopBalances(int limit) {
+    public Map<String, Double> getTopBalances(String currency, int limit) {
         Map<String, Double> topBalances = new LinkedHashMap<>();
-        String sql = "SELECT uuid, balance FROM users ORDER BY balance DESC LIMIT ?";
+        String sql = "SELECT uuid, balance FROM users WHERE currency = ? ORDER BY balance DESC LIMIT ?";
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, limit);
+            ps.setString(1, currency);
+            ps.setInt(2, limit);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -235,7 +262,7 @@ public class SQLiteStorage implements Storage {
                 topBalances.put(uuid, balance);
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to retrieve top balances", e);
+            plugin.getLogger().log(Level.WARNING, "Failed to retrieve top balances for currency: " + currency, e);
         }
 
         return topBalances;
@@ -245,7 +272,6 @@ public class SQLiteStorage implements Storage {
     public void purge(int days) {
         executor.execute(() -> {
             String sql = "DELETE FROM users WHERE last_seen < ?";
-
             long cutoff = System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L);
 
             try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -253,19 +279,21 @@ public class SQLiteStorage implements Storage {
                 int rowsDeleted = ps.executeUpdate();
 
                 if (rowsDeleted > 0) {
-                    plugin.getLogger().info("Purged " + rowsDeleted + " accounts inactive for more than " + days + " days.");
+                    plugin.getLogger().info("Purged " + rowsDeleted + " entries inactive for more than " + days + " days.");
                 }
             } catch (SQLException e) {
                 plugin.getLogger().log(Level.WARNING, "Failed to purge inactive accounts", e);
             }
         });
     }
+
     @Override
-    public Map<String, Double> getAllBalances() {
+    public Map<String, Double> getAllBalances(String currency) {
         Map<String, Double> allBalances = new LinkedHashMap<>();
-        String sql = "SELECT uuid, balance FROM users";
+        String sql = "SELECT uuid, balance FROM users WHERE currency = ?";
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, currency);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -274,11 +302,9 @@ public class SQLiteStorage implements Storage {
                 allBalances.put(uuid, balance);
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to retrieve all balances", e);
+            plugin.getLogger().log(Level.WARNING, "Failed to retrieve all balances for currency: " + currency, e);
         }
 
         return allBalances;
     }
-
-    
 }

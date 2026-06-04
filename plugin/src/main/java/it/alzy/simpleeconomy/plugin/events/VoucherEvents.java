@@ -18,7 +18,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-public record VoucherEvents(SimpleEconomy plugin, LanguageManager languageManager) implements Listener {
+public class VoucherEvents implements Listener {
+
+    private final SimpleEconomy plugin = SimpleEconomy.getInstance();
+    private final LanguageManager languageManager = plugin.getLanguageManager();
 
     @EventHandler
     public void playerInteract(PlayerInteractEvent ev) {
@@ -64,17 +67,18 @@ public record VoucherEvents(SimpleEconomy plugin, LanguageManager languageManage
             }
         }
 
-        if(SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
+        if (SettingsConfig.getInstance().isTransactionLoggingEnabled()) {
             plugin.getTransactionLogger().appendLog(
-                new Transaction(
-                    player.getUniqueId().toString(),
-                    "VOUCHER",
-                    amount,
-                    VaultHook.getEconomy().getBalance(player),
-                    VaultHook.getEconomy().getBalance(player) + amount,
-                    TransactionTypes.DEPOSIT,
-                    System.currentTimeMillis()
-                )
+                    new Transaction(
+                            player.getUniqueId().toString(),
+                            "VOUCHER",
+                            "money",
+                            amount,
+                            VaultHook.getEconomy().getBalance(player),
+                            VaultHook.getEconomy().getBalance(player) + amount,
+                            TransactionTypes.DEPOSIT,
+                            System.currentTimeMillis()
+                    )
             );
         }
     }

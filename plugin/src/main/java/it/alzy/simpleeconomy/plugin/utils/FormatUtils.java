@@ -1,6 +1,7 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -20,24 +21,29 @@ public class FormatUtils {
     public String formatBalance(double balance) {
         SettingsConfig config = SettingsConfig.getInstance();
         String currencySymbol = config.currencySymbol();
+        if (!config.isFormattingEnabled()) return formatDecimal(balance);
+        return retrieveFormattedBalance(currencySymbol, balance);
+    }
 
-        if(!(config.isFormattingEnabled())) return formatDecimal(balance);
+    public String formatVirtualCurrencyBalance(VirtualCurrency vc, double balance) {
+        SettingsConfig config = SettingsConfig.getInstance();
+        String currencySymbol = vc.getSymbol();
+        if (!(config.isFormattingEnabled())) return formatDecimal(balance);
+        return retrieveFormattedBalance(currencySymbol, balance);
+    }
 
+    private String retrieveFormattedBalance(String currencySymbol, double balance) {
         if (balance < 1_000) {
-            return currencySymbol + formatDecimal(balance);
+            return formatDecimal(balance) + currencySymbol;
         }
-
         var entry = SUFFIXES.floorEntry(balance);
         if (entry == null) {
-            return currencySymbol + formatDecimal(balance);
+            return formatDecimal(balance) + currencySymbol;
         }
-
         double divisor = entry.getKey();
         String suffix = entry.getValue();
-
         double shortNumber = balance / divisor;
-
-        return currencySymbol + formatDecimal(shortNumber) + suffix;
+        return formatDecimal(shortNumber) + suffix + currencySymbol;
     }
 
     private String formatDecimal(double value) {

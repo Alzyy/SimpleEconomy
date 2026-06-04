@@ -49,7 +49,27 @@ public enum LanguageKeys {
     ACTION_BAR_DETRACT("messages.action_bar.detract"),
     ACTION_BAR_ADD("messages.action_bar.add"),
 
-    INTERESTS_RECEIVED("messages.interests.received");
+    INTERESTS_RECEIVED("messages.interests.received"),
+
+    CURRENCY_ADD("messages.currencies.add"),
+    CURRENCY_REMOVE("messages.currencies.remove"),
+    CURRENCY_LIST("messages.currencies.list"),
+    CURRENCY_ALREADY_EXISTS("messages.currencies.already-exists"),
+    CURRENCY_NOT_FOUND("messages.currencies.not-found"),
+    CURRENCY_LIST_EMPTY("messages.currencies.list-currency-empty"),
+    CURRENCY_SYMBOL_CHANGED("messages.currencies.symbol-changed"),
+
+    MODULES_LIST("messages.modules.list"),
+    MODULES_NO_MODULES("messages.modules.no_modules"),
+    MODULES_STATUS("messages.modules.status"),
+    MODULE_DISABLED("messages.modules.disabled"),
+    MODULE_NOT_FOUND("messages.modules.not_found"),
+    MODULE_LOADED_FROM_FILE("messages.modules.loaded_from_file"),
+    MODULE_COULDNT_FIND_FILE("messages.modules.couldnt_find_file"),
+    MODULE_ENABLED_PLACEHOLDER("messages.modules.enabled_placeholder"),
+    MODULE_DISABLED_PLACEHOLDER("messages.modules.disabled_placeholder"),
+    DIAGNOSE_RESULT("messages.system.diagnose_result");
+
 
     private final String path;
 

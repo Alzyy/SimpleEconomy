@@ -171,6 +171,7 @@ public class DiscordWebhook {
             this.color = String.valueOf((r << 16) + (g << 8) + b);
             return this;
         }
+
         public void setColor(String hex) {
             if (hex.startsWith("#")) {
                 hex = hex.substring(1);

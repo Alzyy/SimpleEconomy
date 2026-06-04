@@ -31,7 +31,7 @@ public class ChatUtils {
                     return size() > 512;
                 }
             }
-    );   
+    );
     private static final Map<String, String> CONVERSION_CACHE = Collections.synchronizedMap(
             new LinkedHashMap<>(128, 0.75f, true) {
                 @Override
@@ -39,7 +39,7 @@ public class ChatUtils {
                     return size() > 512;
                 }
             }
-    );   
+    );
     private static final Component EMPTY_COMPONENT = Component.empty();
 
     private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9a-fA-F]{6})");
@@ -120,11 +120,12 @@ public class ChatUtils {
 
         return converted;
     }
+
     public static void send(CommandSender sender, String message, Object... placeholders) {
         if (sender == null || message == null || message.isEmpty()) return;
-    
+
         final String processedMessage = applyPlaceholders(message, placeholders);
-    
+
         if (Bukkit.isPrimaryThread()) {
             deliverMessage(sender, processedMessage);
         } else {
@@ -140,12 +141,12 @@ public class ChatUtils {
             sender.sendMessage(parsed);
         }
     }
-    
+
     public static void send(CommandSender sender, String message) {
         if (sender == null || message == null || message.isEmpty()) {
             return;
         }
-        if(Bukkit.isPrimaryThread()) {
+        if (Bukkit.isPrimaryThread()) {
             sender.sendMessage(parse(message));
         } else {
             Bukkit.getScheduler().runTask(SimpleEconomy.getInstance(), () -> sender.sendMessage(parse(message)));
@@ -154,7 +155,7 @@ public class ChatUtils {
 
     private static String applyPlaceholders(String message, Object... placeholders) {
         if (placeholders == null || placeholders.length == 0) return message;
-        
+
         for (int i = 0; i < placeholders.length; i += 2) {
             String key = String.valueOf(placeholders[i]);
             String value = String.valueOf(placeholders[i + 1]);

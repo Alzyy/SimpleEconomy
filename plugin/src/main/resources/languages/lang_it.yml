@@ -49,3 +49,23 @@ messages:
     add: "<gradient:#00AA00:#55FF55>+ %amount%</gradient>"
   interests:
     received: "%prefix% &#A7F3D0⚖ &#6B7280Interessi maturati &#374151| &#22C55E+%amount% &#6B7280aggiunti al tuo saldo"
+  currencies:
+    add: "%prefix% Hai creato la valuta &#F9FAFB%currency%&#6B7280!"
+    remove: "%prefix% Hai rimosso la valuta &#F9FAFB%currency%&#6B7280!"
+    list: "%prefix% &#6B7280Valute disponibili: &#F9FAFB%currencies%"
+    already-exists: "%prefix% &#F87171✘ &#EF4444La valuta &#F9FAFB%currency% &#EF4444esiste già!"
+    not-found: "%prefix% &#F87171✘ &#EF4444La valuta &#F9FAFB%currency% &#EF4444non esiste!"
+    list-currency-empty: "%prefix% &#F87171✘ &#EF4444Nessuna valuta disponibile!"
+    symbol-changed: "%prefix% &#86EFAC✔ &#6B7280Simbolo di &#F9FAFB%currency% &#6B7280cambiato da &#F9FAFB%oldSymbol% &#6B7280a &#F9FAFB%symbol%"
+  modules:
+    list: "%prefix% &#6B7280Moduli disponibili: &#F9FAFB%modules%"
+    no_modules: "%prefix% &#F87171✘ &#EF4444Nessun modulo disponibile!"
+    status: "%prefix% &#6B7280Stato del modulo &#F9FAFB%module%&#6B7280: %status%"
+    disabled: "%prefix% &#F87171✘ &#EF4444Il modulo &#F9FAFB%module% &#EF4444è stato disabilitato!"
+    not_found: "%prefix% &#F87171✘ &#EF4444Il modulo &#F9FAFB%module% &#EF4444non esiste!"
+    loaded_from_file: "%prefix% &#86EFAC✔ &#6B7280Il modulo è stato caricato dal file &#F9FAFB%file%"
+    couldnt_find_file: "%prefix% &#F87171✘ &#EF4444Impossibile trovare il file &#F9FAFB%file%"
+    enabled_placeholder: "&#86EFAC✔"
+    disabled_placeholder: "&#F87171✘"
+  system:
+    diagnose_result: "%prefix% &#6B7280Diagnostica completata &#374151| &#22C55EGiocatori in cache: &#F9FAFB%cacheSize% &#6B7280| &#22C55EGiocatori in attesa di essere salvati: &#F9FAFB%dirtyEntries% &#6B7280| &#22C55ETipo del database: &#F9FAFB%dbType% &#6B7280| &#22C55ETask attive: &#F9FAFB%activeTasks% &#6B7280 | &#22C55EThread pool: &#F9FAFB%threadPoolSize% thread(s) &#6B7280 | &#22C55ETask in coda: &#F9FAFB%queueSize%"
