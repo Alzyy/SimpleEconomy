@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 public class SimpleEconomy extends JavaPlugin {
 
@@ -64,6 +65,9 @@ public class SimpleEconomy extends JavaPlugin {
     @Getter
     private NamespacedKey uuidKey;
     @Getter
+    private Logger logger;
+
+    @Getter
     private BukkitAudiences bukkitAudiences;
     @Getter
     private CurrencyManager currencyManager;
@@ -85,6 +89,7 @@ public class SimpleEconomy extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        logger = Logger.getLogger("SimpleEconomy");
         try {
             Class.forName("it.alzy.simpleeconomy.plugin.utils.ChatUtils");
         } catch (ClassNotFoundException e) {
@@ -116,7 +121,7 @@ public class SimpleEconomy extends JavaPlugin {
             moduleManager.loadModules();
 
         } catch (Exception e) {
-            getLogger().severe("An error occurred during plugin initialization: " + e.getMessage());
+            getLogger().severe("An error occurred during instance initialization: " + e.getMessage());
             disableSelf();
         }
     }
@@ -240,7 +245,7 @@ public class SimpleEconomy extends JavaPlugin {
                 storage = new MySQLStorage(this, info);
             }
             default -> {
-                getLogger().severe("Invalid storage system: '" + system + "'. Disabling plugin.");
+                getLogger().severe("Invalid storage system: '" + system + "'. Disabling instance.");
                 disableSelf();
             }
         }
@@ -287,10 +292,10 @@ public class SimpleEconomy extends JavaPlugin {
 
     private void registerListeners() {
         var pm = getServer().getPluginManager();
-        pm.registerEvents(new PlayerListener(), this);
+        pm.registerEvents(new PlayerListener(this, languageManager), this);
 
         if (SettingsConfig.getInstance().areVoucherEnabled()) {
-            pm.registerEvents(new VoucherEvents(), this);
+            pm.registerEvents(new VoucherEvents(this, languageManager), this);
         }
     }
 

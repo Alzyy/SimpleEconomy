@@ -184,9 +184,8 @@ public class DiscordWebhook {
             this.footerIcon = iconUrl;
         }
 
-        public Embed addField(String name, String value, boolean inline) {
+        public void addField(String name, String value, boolean inline) {
             this.fields.add(new Field(name, value, inline));
-            return this;
         }
     }
 
