@@ -30,7 +30,6 @@ dependencies {
 
     compileOnly project(':api')
 
-    implementation 'io.github.alzyy:simpleeconomy-api:1.0.1'
     implementation 'com.github.NaTorOG:SimpleConfig:1.0.6'
     implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
     implementation "com.zaxxer:HikariCP:7.0.2"
