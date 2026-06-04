@@ -100,7 +100,7 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
 
     @Override
     public CompletableFuture<Boolean> hasAccount(UUID uuid) {
-        return plugin.getStorage().hasAccount(uuid);
+        return instance.getStorage().hasAccount(uuid);
     }
 
     @Override

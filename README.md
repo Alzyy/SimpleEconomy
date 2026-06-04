@@ -1,60 +1,140 @@
+## **SimpleEconomy**
+**SimpleEconomy** is a lightweight, high-performance economy plugin for **Spigot 1.21**.
+It supports data storage via **MySQL**, **SQLite**, or **flat file**, and fully integrates with **Vault** for compatibility with other economy-based plugins.
 
-# 🪙 SimpleEconomy - Development Branch
+Enjoying the plugin? Leave a review! It only takes a moment, but it means the world to me.
 
-> **⚠️ WARNING: UNSTABLE BUILD**
-> This branch is currently tracking major architectural changes, including **Multicurrency support** and a new **Modular system**. These features are undergoing intensive testing and are not ready for production use.
+## **✅ Features**
 
----
+* ✅ Vault-compatible economy system
+* ⚡ Lightweight and optimized for performance
+* Configurable data storage (MySQL, SQLite, or flat file)
+* Core economy commands: /eco, /pay, /balance, /withdraw
+* Permission-based command access
+* Discord Webhook integration for transaction logging
+* Automatic transaction logging with rotation support
 
-## 🛠 Current Development Focus
+## **Installation**
 
-This branch serves as the staging area for the upcoming major update. Key areas of development:
+1. Download the plugin .jar file from the [SpigotMC page](https://www.spigotmc.org/resources/simpleeconomy.127423/).
+2. Place it in your server’s `/plugins` folder.
+3. Start or reload the server to generate configuration files.
+4. Open `config.yml` and set your preferred storage method: `mysql`, `sqlite`, or `file`.
+5. Configure the Discord Webhook URL in `config.yml` (optional).
+6. Make sure **Vault** is installed, along with a permissions plugin like **LuckPerms**.
 
-| Feature | Status | Description |
-| --- | --- | --- |
-| **Multicurrency System** | 🟠 In Progress | Core logic, commands, and storage updated to support multiple currencies. |
-| **Modular System** | 🟠 In Progress | Implementation of the `EconomyModule` framework for external extensions. |
-| **Storage Optimization** | 🟢 Improved | Refactored caching and storage layer for better performance and scalability. |
-| **Unit Testing** | 🟢 Implemented | Integration of unit tests to ensure API reliability during refactoring. |
+## **Commands**
 
----
+### **/eco <set|give|remove> <player> <amount>**
+Admin command to manage a player’s balance
+**Examples:**
 
-## 🚀 Key Changes in this Version
+/eco set Alzy 100
+/eco give Steve 50
+/eco remove Alex 25
 
-### Multicurrency Support
+### **/pay <player> <amount>**
+Allows players to send money to each other
+**Example:**
 
-The API and storage layers have been refactored to treat balances as currency-dependent.
+/pay Steve 10
 
-* All core commands (`/eco`, `/pay`, `/balance`, etc.) are now currency-aware.
-* Storage providers are updated to handle mapping balances to specific currency keys.
+### **/withdraw <amount>**
+Allows players to create vouchers
+**Example:**
 
-### Modular Framework
+/withdraw 10
 
-Introduced the `EconomyModule` interface. This allows developers to extend SimpleEconomy's functionality without modifying the Core plugin code, improving maintainability and reducing conflict risks.
+### **/balance or /bal**
+Displays the player’s current balance
+**Example:**
 
-### Performance & Scalability
+/balance
 
-* **Cache Refactoring:** Improved cache-to-storage synchronization logic to reduce I/O bottlenecks using Caffeine.
-* **Storage Layer:** Re-engineered the database abstraction layer to support more complex data structures required by the multicurrency update.
+## **Permissions**
 
----
+| Permission                  | Description                  |
+|-----------------------------|------------------------------|
+| simpleconomy.balance.others | View other players' balances |
+| simpleconomy.eco.set        | Use /eco set                 |
+| simpleconomy.eco.give       | Use /eco give                |
+| simpleconomy.eco.remove     | Use /eco remove              |
+| simpleconomy.command.reload | Reload the plugin            |
 
-## 💻 Developer Notes
+## **⚙️ Configuration**
+Inside `config.yml`, choose your preferred storage system and auto-save interval:
 
-If you are contributing to this branch, please adhere to these standards:
+```yaml
+storage-system: sqlite
+auto-save-time: 5 # In minutes
+webhook-url: "your_discord_webhook_url" # Optional
+log-transactions-to-discord: true # Enable or disable Discord logging
+```
 
-1. **Backward Compatibility:** While we move toward a modular system, ensure existing Vault-based integrations remain functional.
-2. **Asynchronous Integrity:** All currency-based operations **must** be executed asynchronously. Use `CompletableFuture` for all API calls.
-3. **Testing:** New tests are highly appreciated.
----
+## **API for Developers**
 
-## 🐞 Bug Reporting
+### **Getting Started**
+The `SimpleEconomyAPI` provides methods to interact with the economy system programmatically. Here are some examples:
 
-Found an issue with the system currently under development?
+#### **Get a Player's Balance**
+```java
+EconomyProvider economyProvider = SimpleEconomyAPI.getProvider();
+OfflinePlayer player = Bukkit.getOfflinePlayer("Alzy");
+CompletableFuture<Double> balanceFuture = economyProvider.getBalance(player);
+balanceFuture.thenAccept(balance -> {
+    System.out.println("Player's balance: " + balance);
+});
+```
 
-* Open an issue on GitHub with the prefix `[DEV-TEST]`.
-* Please include your server logs and the specific storage provider you are using (MySQL/SQLite/FlatFile).
-* Write me on Discord @ 0x416c7a79 
----
+#### **Deposit Money**
+```java
+economyProvider.deposit(player, 100.0).thenAccept(result -> {
+    if (result == TransactionResult.SUCCESS) {
+        System.out.println("Deposit successful!");
+    }
+});
+```
 
+#### **Withdraw Money**
+```java
+economyProvider.withdraw(player, 50.0).thenAccept(result -> {
+    if (result == TransactionResult.SUCCESS) {
+        System.out.println("Withdrawal successful!");
+    }
+});
+```
 
+### **Placeholders**
+If you use **[PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/)**, SimpleEconomy provides the following placeholders:
+
+| Placeholder                   | Description                                                         |
+|-------------------------------|---------------------------------------------------------------------|
+| %seco_balance_normal%         | Returns the player’s balance as a raw double                        |
+| %seco_balance_formatted%      | Returns the player’s balance in a formatted string (e.g. 10k, 1.2M) |
+| %seco_top_position%           | For player position in baltop                                       |
+| %seco_baltop_$number%         | For name of $number player in baltop                                |
+| %seco_baltop_$number_balance% | For balance of $number player in baltop                             |
+
+Run `/papi reload` after installing to load the placeholders.
+
+## **Discord Webhook**
+The plugin supports logging transactions to a Discord channel using webhooks. Configure the webhook URL and logging options in `config.yml`. Example:
+
+```yaml
+webhook-url: "https://discord.com/api/webhooks/..."
+log-transactions-to-discord: true
+log-pay-to-discord: true
+log-admin-to-discord: true
+log-withdrawals-to-discord: true
+log-voucher-creations: true
+```
+
+## **License**
+This plugin is licensed under the **GNU GPLv3 License**.
+
+## **❤️ Credits**
+Made with love by [Alzy](https://github.com/Alzyy/SimpleEconomy)
+
+## **❗ IMPORTANT!**
+This is my first plugin, and while it may not be perfect, I’ve put a lot of care into making it simple, stable, and easy to use.
+I welcome suggestions, bug reports, and feature requests — feel free to open an issue or pull request on GitHub.
