@@ -27,12 +27,10 @@ public class VirtualCurrencyTest {
         storageField.setAccessible(true);
         storageField.set(plugin, new MockStorage());
 
-        if (plugin.getCurrencyManager() == null) {
-            Field managerField = SimpleEconomy.class.getDeclaredField("currencyManager");
-            managerField.setAccessible(true);
-            managerField.set(plugin, new CurrencyManager());
-        }
-
+        Field managerField = SimpleEconomy.class.getDeclaredField("currencyManager");
+        managerField.setAccessible(true);
+        managerField.set(plugin, new CurrencyManager());
+        
         server.getScheduler().performOneTick();
     }
 

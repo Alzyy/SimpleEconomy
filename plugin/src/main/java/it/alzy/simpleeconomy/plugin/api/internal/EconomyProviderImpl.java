@@ -9,6 +9,7 @@ import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
 import org.bukkit.Bukkit;
+import org.bukkit.event.Event;
 
 import java.util.Map;
 import java.util.Set;
@@ -44,58 +45,48 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
 
     @Override
     public CompletableFuture<Void> deposit(UUID uuid, String currency, double amount) {
-        return CompletableFuture.runAsync(() -> {
-            PreTransactionEvent preEvent = new PreTransactionEvent(null, uuid, currency, amount, TransactionTypes.DEPOSIT);
-            Bukkit.getPluginManager().callEvent(preEvent);
+        PreTransactionEvent preEvent = new PreTransactionEvent(null, uuid, currency, amount, TransactionTypes.DEPOSIT);
 
+        return callEventAsync(preEvent).thenCompose(v -> {
             if (preEvent.isCancelled()) {
                 throw new IllegalStateException("Transaction cancelled: " + preEvent.getCancelReason());
             }
-        }, plugin.getExecutor()).thenCompose(v -> getBalance(uuid, currency)).thenCompose(current -> {
+            return getBalance(uuid, currency);
+        }).thenCompose(current -> {
             double newBalance = current + amount;
-            return updateBalanceInternal(uuid, currency, newBalance).thenRun(() -> {
-                PostTransactionEvent postEvent = new PostTransactionEvent(null, uuid, currency, amount, TransactionTypes.DEPOSIT);
-                Bukkit.getPluginManager().callEvent(postEvent);
-            });
+            return updateBalanceInternal(uuid, currency, newBalance);
+        }).thenCompose(v -> {
+            PostTransactionEvent postEvent = new PostTransactionEvent(null, uuid, currency, amount, TransactionTypes.DEPOSIT);
+            return callEventAsync(postEvent);
         });
     }
 
     @Override
     public CompletableFuture<Boolean> detract(UUID uuid, String currency, double amount) {
-        return CompletableFuture.supplyAsync(() -> {
-            PreTransactionEvent preEvent = new PreTransactionEvent(uuid, null, currency, amount, TransactionTypes.WITHDRAW);
-            Bukkit.getPluginManager().callEvent(preEvent);
-            return !preEvent.isCancelled();
-        }, plugin.getExecutor()).thenCompose(allowed -> {
-            if (!allowed) return CompletableFuture.completedFuture(false);
+        PreTransactionEvent preEvent = new PreTransactionEvent(uuid, null, currency, amount, TransactionTypes.WITHDRAW);
+
+        return callEventAsync(preEvent).thenCompose(v -> {
+            if (preEvent.isCancelled()) {
+                return CompletableFuture.completedFuture(false);
+            }
 
             return getBalance(uuid, currency).thenCompose(current -> {
                 if (current < amount) {
                     return CompletableFuture.completedFuture(false);
                 }
+
                 double newBalance = current - amount;
-                return updateBalanceInternal(uuid, currency, newBalance).thenApply(v -> {
+                return updateBalanceInternal(uuid, currency, newBalance).thenCompose(v2 -> {
                     PostTransactionEvent postEvent = new PostTransactionEvent(uuid, null, currency, amount, TransactionTypes.WITHDRAW);
-                    Bukkit.getPluginManager().callEvent(postEvent);
-                    return true;
+                    return callEventAsync(postEvent).thenApply(v3 -> true);
                 });
             });
         });
     }
 
-    private CompletableFuture<Void> updateBalanceInternal(UUID uuid, String currency, double newBalance) {
-        return CompletableFuture.runAsync(() -> {
-            plugin.getStorage().save(uuid, currency, newBalance);
-
-            if (plugin.getCache().contains(uuid)) {
-                plugin.getCache().updateCurrency(uuid, currency, newBalance);
-            }
-        }, plugin.getExecutor());
-    }
-
     @Override
     public CompletableFuture<Boolean> hasAccount(UUID uuid) {
-        return instance.getStorage().hasAccount(uuid);
+        return plugin.getStorage().hasAccount(uuid);
     }
 
     @Override
@@ -111,26 +102,23 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
             }
 
             PreTransactionEvent preEvent = new PreTransactionEvent(from, to, currency, amount, TransactionTypes.PAY);
-            Bukkit.getPluginManager().callEvent(preEvent);
 
-            if (preEvent.isCancelled()) {
-                return CompletableFuture.completedFuture(TransactionResult.ERROR);
-            }
+            return callEventAsync(preEvent).thenCompose(v -> {
+                if (preEvent.isCancelled()) {
+                    return CompletableFuture.completedFuture(TransactionResult.ERROR);
+                }
 
-            return detract(from, currency, amount)
-            .thenCompose(success -> {
-                if (!success) return CompletableFuture.completedFuture(TransactionResult.ERROR);
+                return detract(from, currency, amount).thenCompose(success -> {
+                    if (!success) return CompletableFuture.completedFuture(TransactionResult.ERROR);
 
-                return deposit(to, currency, amount)
-                        .thenApply(v -> {
-                            PostTransactionEvent postEvent = new PostTransactionEvent(from, to, currency, amount, TransactionTypes.PAY);
-                            Bukkit.getPluginManager().callEvent(postEvent);
-                            return TransactionResult.SUCCESS;
-                        })
-                        .exceptionallyCompose(ex -> {
-                            plugin.getLogger().severe("Transfer failed during deposit to " + to + " (Tier full?). Refunding " + from);
-                            return deposit(from, currency, amount).thenApply(v -> TransactionResult.ERROR);
-                        });
+                    return deposit(to, currency, amount).thenCompose(depV -> {
+                        PostTransactionEvent postEvent = new PostTransactionEvent(from, to, currency, amount, TransactionTypes.PAY);
+                        return callEventAsync(postEvent).thenApply(postV -> TransactionResult.SUCCESS);
+                    }).exceptionallyCompose(ex -> {
+                        plugin.getLogger().severe("Transfer failed during deposit to " + to + ". Refunding " + from);
+                        return deposit(from, currency, amount).thenApply(refundV -> TransactionResult.ERROR);
+                    });
+                });
             });
         });
     }
@@ -138,5 +126,28 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
     @Override
     public Set<String> getAvailableVirtualCurrencies() {
         return plugin.getCurrencyManager().getAllCurrencies().stream().map(VirtualCurrency::getName).collect(Collectors.toSet());
+    }
+
+    private CompletableFuture<Void> updateBalanceInternal(UUID uuid, String currency, double newBalance) {
+        return CompletableFuture.runAsync(() -> {
+            plugin.getStorage().save(uuid, currency, newBalance);
+
+            if (plugin.getCache().contains(uuid)) {
+                plugin.getCache().updateCurrency(uuid, currency, newBalance);
+            }
+        }, plugin.getExecutor());
+    }
+
+    private CompletableFuture<Void> callEventAsync(Event ev) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                Bukkit.getPluginManager().callEvent(ev);
+                future.complete(null);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
     }
 }

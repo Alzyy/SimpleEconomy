@@ -9,6 +9,8 @@ public enum LanguageKeys {
     PLAYER_NOT_FOUND("messages.system.player_not_found"),
     INVENTORY_FULL("messages.system.inventory_full"),
     SELF_COMMAND("messages.system.self_command_error"),
+    DIAGNOSE_RESULT("messages.system.diagnose_result"),
+
 
     INVALID_AMOUNT("messages.errors.invalid_amount"),
     NEGATIVE_AMOUNT("messages.errors.negative_amount"),
@@ -67,8 +69,7 @@ public enum LanguageKeys {
     MODULE_LOADED_FROM_FILE("messages.modules.loaded_from_file"),
     MODULE_COULDNT_FIND_FILE("messages.modules.couldnt_find_file"),
     MODULE_ENABLED_PLACEHOLDER("messages.modules.enabled_placeholder"),
-    MODULE_DISABLED_PLACEHOLDER("messages.modules.disabled_placeholder"),
-    DIAGNOSE_RESULT("messages.system.diagnose_result");
+    MODULE_DISABLED_PLACEHOLDER("messages.modules.disabled_placeholder");
 
 
     private final String path;

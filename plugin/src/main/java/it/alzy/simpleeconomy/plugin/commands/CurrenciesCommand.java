@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 @CommandAlias("currencies|currs|curs")
 @CommandPermission("simpleconomy.command.currencies")
+@Description("Manage your multi currencies with this command")
 public class CurrenciesCommand extends BaseCommand {
 
     private final SimpleEconomy plugin = SimpleEconomy.getInstance();

@@ -1,10 +1,7 @@
 package it.alzy.simpleeconomy.plugin.commands;
 
 import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.CommandAlias;
-import co.aikar.commands.annotation.CommandCompletion;
-import co.aikar.commands.annotation.CommandPermission;
-import co.aikar.commands.annotation.Subcommand;
+import co.aikar.commands.annotation.*;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
 import it.alzy.simpleeconomy.plugin.i18n.enums.LanguageKeys;
@@ -12,6 +9,7 @@ import org.bukkit.entity.Player;
 
 @CommandAlias("modules")
 @CommandPermission("simpleeconomy.command.modules")
+@Description("Manage the modules in your modules folder.")
 public class ModulesCommand extends BaseCommand {
 
 

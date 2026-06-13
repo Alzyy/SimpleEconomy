@@ -8,6 +8,7 @@ messages:
     player_not_found: '%prefix% &#F87171✘ &#EF4444Player not found &#6B7280| &#FBBF24Check the name and try again'
     inventory_full: '%prefix% &#F97316✘ &#EF4444Your inventory is full!'
     self_command_error: '%prefix% &#F97316✘ &#EF4444You cannot use this command on yourself'
+    diagnose_result: "%prefix% &#6B7280Diagnose completed &#374151| &#22C55EPlayers in cache: &#F9FAFB%cacheSize% &#6B7280| &#22C55EPlayers waiting to be saved: &#F9FAFB%dirtyEntries% &#6B7280| &#22C55EDatabase type: &#F9FAFB%dbType% &#6B7280| &#22C55EActive tasks: &#F9FAFB%activeTasks% &#6B7280 | &#22C55EThread pool: &#F9FAFB%threadPoolSize% thread(s) &#6B7280 | &#22C55ETasks in queue: &#F9FAFB%queueSize%"
   errors:
     invalid_amount: '%prefix% &#F87171✘ &#EF4444Invalid amount &#6B7280| &#FBBF24Enter a valid number'
     negative_amount: '%prefix% &#F87171✘ &#EF4444Amount must be positive &#6B7280| &#FBBF24Use a number above zero'
@@ -67,5 +68,4 @@ messages:
     couldnt_find_file: "%prefix% &#F87171✘ &#EF4444Couldn't find the file &#F9FAFB%file%"
     enabled_placeholder: "&#86EFAC✔"
     disabled_placeholder: "&#F87171✘"
-  system:
-    diagnose_result: "%prefix% &#6B7280Diagnose completed &#374151| &#22C55EPlayers in cache: &#F9FAFB%cacheSize% &#6B7280| &#22C55EPlayers waiting to be saved: &#F9FAFB%dirtyEntries% &#6B7280| &#22C55EDatabase type: &#F9FAFB%dbType% &#6B7280| &#22C55EActive tasks: &#F9FAFB%activeTasks% &#6B7280 | &#22C55EThread pool: &#F9FAFB%threadPoolSize% thread(s) &#6B7280 | &#22C55ETasks in queue: &#F9FAFB%queueSize%"
+

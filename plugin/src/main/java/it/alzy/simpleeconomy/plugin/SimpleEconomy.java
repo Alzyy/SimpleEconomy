@@ -64,8 +64,6 @@ public class SimpleEconomy extends JavaPlugin {
     private NamespacedKey amountKey;
     @Getter
     private NamespacedKey uuidKey;
-    @Getter
-    private Logger logger;
 
     @Getter
     private BukkitAudiences bukkitAudiences;
@@ -89,7 +87,6 @@ public class SimpleEconomy extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        logger = Logger.getLogger("SimpleEconomy");
         try {
             Class.forName("it.alzy.simpleeconomy.plugin.utils.ChatUtils");
         } catch (ClassNotFoundException e) {
@@ -176,7 +173,11 @@ public class SimpleEconomy extends JavaPlugin {
     }
 
     private void disableSelf() {
-        getServer().getPluginManager().disablePlugin(this);
+        try {
+            getServer().getPluginManager().disablePlugin(this);
+        } catch (Exception e) {
+            getLogger().severe("Failed to disable plugin: " + e.getMessage());
+        }
     }
 
     private void initializeCore() {
@@ -295,7 +296,7 @@ public class SimpleEconomy extends JavaPlugin {
         pm.registerEvents(new PlayerListener(this, languageManager), this);
 
         if (SettingsConfig.getInstance().areVoucherEnabled()) {
-            pm.registerEvents(new VoucherEvents(this, languageManager), this);
+            pm.registerEvents(new VoucherEvents(), this);
         }
     }
 

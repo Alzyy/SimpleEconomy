@@ -81,4 +81,32 @@ public class CacheTest {
         assertNull(cache.get(uuid), "Cache should be empty after invalidateAll");
         assertTrue(cache.getAndClearDirtyPlayers().isEmpty(), "Dirty set should be empty after invalidateAll");
     }
+
+    @Test
+    @DisplayName("Test with Caffeine cache to ensure it behaves correctly under concurrent access")
+    void testCaffeineCacheConcurrentAccess() throws InterruptedException {
+        Cache cache = new Cache();
+        UUID uuid = UUID.randomUUID();
+        Map<String, Double> balances = new HashMap<>();
+        balances.put("money", 30.0);
+
+        cache.put(uuid, balances);
+
+        Runnable updateTask = () -> {
+            for (int i = 0; i < 100; i++) {
+                cache.updateCurrency(uuid, "money", 30.0 + i);
+            }
+        };
+
+        Thread thread1 = new Thread(updateTask);
+        Thread thread2 = new Thread(updateTask);
+
+        thread1.start();
+        thread2.start();
+
+        thread1.join();
+        thread2.join();
+
+        assertNotNull(cache.get(uuid), "Cached balances should still be present after concurrent updates");
+    }
 }

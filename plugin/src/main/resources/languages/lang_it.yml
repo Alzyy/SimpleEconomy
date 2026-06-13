@@ -8,6 +8,7 @@ messages:
     player_not_found: '%prefix% &#F87171✘ &#EF4444Giocatore non trovato &#6B7280| &#FBBF24Controlla il nome e riprova'
     inventory_full: '%prefix% &#F97316✘ &#EF4444Il tuo inventario è pieno!'
     self_command_error: '%prefix% &#F97316✘ &#EF4444Non puoi usare questo comando su te stesso'
+    diagnose_result: "%prefix% &#6B7280Diagnostica completata &#374151| &#22C55EGiocatori in cache: &#F9FAFB%cacheSize% &#6B7280| &#22C55EGiocatori in attesa di essere salvati: &#F9FAFB%dirtyEntries% &#6B7280| &#22C55ETipo del database: &#F9FAFB%dbType% &#6B7280| &#22C55ETask attive: &#F9FAFB%activeTasks% &#6B7280 | &#22C55EThread pool: &#F9FAFB%threadPoolSize% thread(s) &#6B7280 | &#22C55ETask in coda: &#F9FAFB%queueSize%"
   errors:
     invalid_amount: '%prefix% &#F87171✘ &#EF4444Importo non valido &#6B7280| &#FBBF24Inserisci un numero valido'
     negative_amount: '%prefix% &#F87171✘ &#EF4444L''importo deve essere positivo &#6B7280| &#FBBF24Usa un numero sopra lo zero'
@@ -67,5 +68,3 @@ messages:
     couldnt_find_file: "%prefix% &#F87171✘ &#EF4444Impossibile trovare il file &#F9FAFB%file%"
     enabled_placeholder: "&#86EFAC✔"
     disabled_placeholder: "&#F87171✘"
-  system:
-    diagnose_result: "%prefix% &#6B7280Diagnostica completata &#374151| &#22C55EGiocatori in cache: &#F9FAFB%cacheSize% &#6B7280| &#22C55EGiocatori in attesa di essere salvati: &#F9FAFB%dirtyEntries% &#6B7280| &#22C55ETipo del database: &#F9FAFB%dbType% &#6B7280| &#22C55ETask attive: &#F9FAFB%activeTasks% &#6B7280 | &#22C55EThread pool: &#F9FAFB%threadPoolSize% thread(s) &#6B7280 | &#22C55ETask in coda: &#F9FAFB%queueSize%"
