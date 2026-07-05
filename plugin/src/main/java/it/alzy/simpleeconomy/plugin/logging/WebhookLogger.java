@@ -18,6 +18,18 @@ public class WebhookLogger {
             return;
         }
 
+        boolean enabled = switch (type.toLowerCase()) {
+            case "pay" -> config.logPayToDiscord();
+            case "withdraw" -> config.logWithdrawalsToDiscord();
+            case "admin" -> config.logAdminToDiscord();
+            case "voucher" -> config.logVoucherCreations();
+            default -> true;
+        };
+
+        if (!enabled) {
+            return;
+        }
+
         String url = config.webhookURL();
         if (url == null || url.isEmpty() || url.contains("your_webhook_url")) {
             SimpleEconomy.getInstance().getLogger().warning("Webhook URL is invalid or not configured.");

@@ -5,7 +5,6 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
 import co.aikar.commands.annotation.Description;
 import co.aikar.commands.annotation.Subcommand;
-import io.papermc.paper.plugin.configuration.PluginMeta;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.i18n.LanguageManager;
@@ -24,10 +23,9 @@ public class SECommand extends BaseCommand {
     private final LanguageManager languageManager = plugin.getLanguageManager();
 
     @Default
-    @SuppressWarnings("UnstableApiUsage")
     public void root(Player player) {
-        PluginMeta pluginMeta = plugin.getPluginMeta();
-        String currentVersion = pluginMeta.getVersion();
+        @SuppressWarnings("deprecation")
+        String currentVersion = plugin.getDescription().getVersion();
         player.sendMessage(MiniMessage.miniMessage().deserialize(
                 "<gradient:#22C55E:#16A34A><bold>✔ SimpleEconomy</bold></gradient> <gray>| Version </gray><white>"
                         + currentVersion + "</white>\n"

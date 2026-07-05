@@ -34,18 +34,20 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
 
     @Override
     public CompletableFuture<Void> setBalance(UUID uuid, String currency, double amount) {
+        double rounded = plugin.getDoubleUtils().round(amount);
         return CompletableFuture.runAsync(() -> {
-            plugin.getStorage().save(uuid, currency, amount);
+            plugin.getStorage().save(uuid, currency, rounded);
 
             if (plugin.getCache().contains(uuid)) {
-                plugin.getCache().updateCurrency(uuid, currency, amount);
+                plugin.getCache().updateCurrency(uuid, currency, rounded);
             }
         }, plugin.getExecutor());
     }
 
     @Override
     public CompletableFuture<Void> deposit(UUID uuid, String currency, double amount) {
-        PreTransactionEvent preEvent = new PreTransactionEvent(null, uuid, currency, amount, TransactionTypes.DEPOSIT);
+        double roundedAmount = plugin.getDoubleUtils().round(amount);
+        PreTransactionEvent preEvent = new PreTransactionEvent(null, uuid, currency, roundedAmount, TransactionTypes.DEPOSIT);
 
         return callEventAsync(preEvent).thenCompose(v -> {
             if (preEvent.isCancelled()) {
@@ -53,17 +55,18 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
             }
             return getBalance(uuid, currency);
         }).thenCompose(current -> {
-            double newBalance = current + amount;
+            double newBalance = current + roundedAmount;
             return updateBalanceInternal(uuid, currency, newBalance);
         }).thenCompose(v -> {
-            PostTransactionEvent postEvent = new PostTransactionEvent(null, uuid, currency, amount, TransactionTypes.DEPOSIT);
+            PostTransactionEvent postEvent = new PostTransactionEvent(null, uuid, currency, roundedAmount, TransactionTypes.DEPOSIT);
             return callEventAsync(postEvent);
         });
     }
 
     @Override
     public CompletableFuture<Boolean> detract(UUID uuid, String currency, double amount) {
-        PreTransactionEvent preEvent = new PreTransactionEvent(uuid, null, currency, amount, TransactionTypes.WITHDRAW);
+        double roundedAmount = plugin.getDoubleUtils().round(amount);
+        PreTransactionEvent preEvent = new PreTransactionEvent(uuid, null, currency, roundedAmount, TransactionTypes.WITHDRAW);
 
         return callEventAsync(preEvent).thenCompose(v -> {
             if (preEvent.isCancelled()) {
@@ -71,13 +74,13 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
             }
 
             return getBalance(uuid, currency).thenCompose(current -> {
-                if (current < amount) {
+                if (current < roundedAmount) {
                     return CompletableFuture.completedFuture(false);
                 }
 
-                double newBalance = current - amount;
+                double newBalance = current - roundedAmount;
                 return updateBalanceInternal(uuid, currency, newBalance).thenCompose(v2 -> {
-                    PostTransactionEvent postEvent = new PostTransactionEvent(uuid, null, currency, amount, TransactionTypes.WITHDRAW);
+                    PostTransactionEvent postEvent = new PostTransactionEvent(uuid, null, currency, roundedAmount, TransactionTypes.WITHDRAW);
                     return callEventAsync(postEvent).thenApply(v3 -> true);
                 });
             });
@@ -101,22 +104,23 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
                 return CompletableFuture.completedFuture(TransactionResult.INSUFFICIENT_FUNDS);
             }
 
-            PreTransactionEvent preEvent = new PreTransactionEvent(from, to, currency, amount, TransactionTypes.PAY);
+            double roundedAmount = plugin.getDoubleUtils().round(amount);
+            PreTransactionEvent preEvent = new PreTransactionEvent(from, to, currency, roundedAmount, TransactionTypes.PAY);
 
             return callEventAsync(preEvent).thenCompose(v -> {
                 if (preEvent.isCancelled()) {
                     return CompletableFuture.completedFuture(TransactionResult.ERROR);
                 }
 
-                return detract(from, currency, amount).thenCompose(success -> {
+                return detract(from, currency, roundedAmount).thenCompose(success -> {
                     if (!success) return CompletableFuture.completedFuture(TransactionResult.ERROR);
 
-                    return deposit(to, currency, amount).thenCompose(depV -> {
-                        PostTransactionEvent postEvent = new PostTransactionEvent(from, to, currency, amount, TransactionTypes.PAY);
+                    return deposit(to, currency, roundedAmount).thenCompose(depV -> {
+                        PostTransactionEvent postEvent = new PostTransactionEvent(from, to, currency, roundedAmount, TransactionTypes.PAY);
                         return callEventAsync(postEvent).thenApply(postV -> TransactionResult.SUCCESS);
                     }).exceptionallyCompose(ex -> {
                         plugin.getLogger().severe("Transfer failed during deposit to " + to + ". Refunding " + from);
-                        return deposit(from, currency, amount).thenApply(refundV -> TransactionResult.ERROR);
+                        return deposit(from, currency, roundedAmount).thenApply(refundV -> TransactionResult.ERROR);
                     });
                 });
             });
@@ -129,11 +133,12 @@ public record EconomyProviderImpl(SimpleEconomy plugin) implements EconomyProvid
     }
 
     private CompletableFuture<Void> updateBalanceInternal(UUID uuid, String currency, double newBalance) {
+        double roundedBalance = plugin.getDoubleUtils().round(newBalance);
         return CompletableFuture.runAsync(() -> {
-            plugin.getStorage().save(uuid, currency, newBalance);
+            plugin.getStorage().save(uuid, currency, roundedBalance);
 
             if (plugin.getCache().contains(uuid)) {
-                plugin.getCache().updateCurrency(uuid, currency, newBalance);
+                plugin.getCache().updateCurrency(uuid, currency, roundedBalance);
             }
         }, plugin.getExecutor());
     }

@@ -28,6 +28,7 @@ import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.managers.CurrencyManager;
 import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
 import it.alzy.simpleeconomy.plugin.storage.Cache;
+import it.alzy.simpleeconomy.plugin.utils.DoubleUtils;
 import it.alzy.simpleeconomy.tests.MockStorage;
 
 public class LargeScaleStressTest {
@@ -61,6 +62,10 @@ public class LargeScaleStressTest {
 
         Field currencyField = CurrencyManager.class.getDeclaredField("currencies");
         currencyField.setAccessible(true);
+
+        Field doubleUtilsField = SimpleEconomy.class.getDeclaredField("doubleUtils");
+        doubleUtilsField.setAccessible(true);
+        doubleUtilsField.set(plugin, new DoubleUtils());
 
         @SuppressWarnings("unchecked")
         Map<String, VirtualCurrency> currencies = (Map<String, VirtualCurrency>) currencyField.get(currencyManager);

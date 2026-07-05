@@ -1,12 +1,12 @@
 plugins {
     id 'java'
-    id 'com.gradleup.shadow' version '9.0.0-beta13'
+    id("com.gradleup.shadow") version "9.3.1"
 }
 
 
 description = 'SimpleEconomy'
 group = 'it.alzy.simpleeconomy'
-version = '3.4'
+version = '3.5'
 
 repositories {
     mavenCentral()
@@ -37,16 +37,13 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.46'
     implementation 'co.aikar:acf-paper:0.5.1-SNAPSHOT'
     implementation 'com.zaxxer:HikariCP:7.0.2'
-
-    compileOnly 'org.projectlombok:lombok:1.18.46'
-    annotationProcessor 'org.projectlombok:lombok:1.18.46'
-
     compileOnly 'com.github.ben-manes.caffeine:caffeine:3.2.4'
 
 
     compileOnly 'com.github.kaepsis:VaultAPI:ennamo'
     compileOnly 'me.clip:placeholderapi:2.11.7'
     compileOnly 'net.kyori:adventure-platform-bukkit:4.4.1'
+    implementation 'org.bstats:bstats-bukkit:3.2.1'
 
     // FIX CVE
     implementation 'org.codehaus.plexus:plexus-utils:4.0.3'
@@ -63,9 +60,6 @@ dependencies {
     testImplementation 'org.xerial:sqlite-jdbc:3.53.2.0'
     testImplementation 'com.github.ben-manes.caffeine:caffeine:3.2.4'
     testImplementation 'io.github.alzyy:simpleeconomy-api:1.0.1'
-
-
-
 }
 
 test {
@@ -111,22 +105,19 @@ processResources {
 
 shadowJar {
     dependsOn('test')
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    def libsPath = "it.alzy.simpleeconomy.libs"
+    archiveFileName.set("${project.description}.jar")
 
-    from(sourceSets.main.output)
-    from(project(':api').sourceSets.main.output)
-    
+    exclude 'META-INF/maven/**'
+
     minimize {
         exclude(dependency('co.aikar:acf-paper:.*'))
     }
-    
+
     mergeServiceFiles()
-    archiveFileName.set("${project.description}.jar")
-    
-    relocate('co.aikar.commands', "${libsPath}.acf")
-    relocate('co.aikar.locales', "${libsPath}.locales")
-    
-    relocate('com.zaxxer.hikari', "${libsPath}.hikari")
+
+    relocate('co.aikar.commands', "${project.group}.libs.acf")
+    relocate('co.aikar.locales', "${project.group}.libs.locales")
+    relocate('org.bstats', "${project.group}.libs.bstats")
+    relocate('com.zaxxer.hikari', "${project.group}.libs.hikari")
 }
 

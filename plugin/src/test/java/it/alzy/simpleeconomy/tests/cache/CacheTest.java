@@ -1,9 +1,17 @@
 package it.alzy.simpleeconomy.tests.cache;
 
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.storage.Cache;
+import it.alzy.simpleeconomy.plugin.utils.DoubleUtils;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockbukkit.mockbukkit.MockBukkit;
+import org.mockbukkit.mockbukkit.ServerMock;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -13,6 +21,32 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CacheTest {
+
+    private SimpleEconomy plugin;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        ServerMock server = MockBukkit.mock();
+        plugin = MockBukkit.load(SimpleEconomy.class);
+
+        try {
+            Field instanceField = SimpleEconomy.class.getDeclaredField("instance");
+            instanceField.setAccessible(true);
+            instanceField.set(null, plugin);
+        } catch (NoSuchFieldException e) {
+        }
+
+        Field doubleUtilsField = SimpleEconomy.class.getDeclaredField("doubleUtils");
+        doubleUtilsField.setAccessible(true);
+        doubleUtilsField.set(plugin, new DoubleUtils());
+
+        server.getScheduler().performOneTick();
+    }
+
+    @AfterEach
+    void tearDown() {
+        MockBukkit.unmock();
+    }
 
     @Test
     @DisplayName("Stores balances in a concurrent map and marks player dirty")

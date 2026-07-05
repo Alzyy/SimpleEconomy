@@ -1,5 +1,6 @@
 package it.alzy.simpleeconomy.plugin.utils;
 
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
 import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
 
@@ -21,15 +22,21 @@ public class FormatUtils {
     public String formatBalance(double balance) {
         SettingsConfig config = SettingsConfig.getInstance();
         String currencySymbol = config.currencySymbol();
-        if (!config.isFormattingEnabled()) return formatDecimal(balance);
-        return retrieveFormattedBalance(currencySymbol, balance);
+        
+        double roundedBalance = SimpleEconomy.getInstance().getDoubleUtils().round(balance);
+        
+        if (!config.isFormattingEnabled()) return formatDecimal(roundedBalance);
+        return retrieveFormattedBalance(currencySymbol, roundedBalance);
     }
 
     public String formatVirtualCurrencyBalance(VirtualCurrency vc, double balance) {
         SettingsConfig config = SettingsConfig.getInstance();
         String currencySymbol = vc.getSymbol();
-        if (!(config.isFormattingEnabled())) return formatDecimal(balance);
-        return retrieveFormattedBalance(currencySymbol, balance);
+        
+        double roundedBalance = SimpleEconomy.getInstance().getDoubleUtils().round(balance);
+        
+        if (!(config.isFormattingEnabled())) return formatDecimal(roundedBalance);
+        return retrieveFormattedBalance(currencySymbol, roundedBalance);
     }
 
     private String retrieveFormattedBalance(String currencySymbol, double balance) {
@@ -42,7 +49,8 @@ public class FormatUtils {
         }
         double divisor = entry.getKey();
         String suffix = entry.getValue();
-        double shortNumber = balance / divisor;
+        
+        double shortNumber = SimpleEconomy.getInstance().getDoubleUtils().round(balance / divisor);
         return formatDecimal(shortNumber) + suffix + currencySymbol;
     }
 
@@ -50,7 +58,7 @@ public class FormatUtils {
         if (value == Math.floor(value)) {
             return String.format("%.0f", value);
         } else {
-            return String.format("%.1f", value);
+            return String.valueOf(value);
         }
     }
 }

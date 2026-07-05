@@ -1,5 +1,5 @@
 # ───────────────────────────────────────────────
-# SimpleEconomy by AlzyIT v2.8
+# SimpleEconomy by AlzyIT v3.5
 # Main configuration file.
 # ───────────────────────────────────────────────
 
@@ -54,6 +54,13 @@ settings:
   # Enable discord webhook logging
   enable-discord-logging: false
 
+  # Enabling metrics helps me see how many servers are using this plugin!
+  # It's completely anonymous and has zero impact on server performance.
+  # Please consider leaving it enabled to support the development.
+  enable-metrics: true
+
+  # How many decimal places do you want to be rounded? Note: To change this value, you must restart the server for it to take effect due to possible concurrency issues.
+  decimal-places: 2
 
 
 storage:

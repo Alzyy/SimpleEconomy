@@ -1,6 +1,7 @@
 package it.alzy.simpleeconomy.plugin.storage;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -14,9 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Cache {
 
     private final com.github.benmanes.caffeine.cache.Cache<@NotNull UUID, Map<String, Double>> cache;
-
     private final Set<UUID> dirtyPlayers = new HashSet<>();
-
     private final ReentrantLock lock = new ReentrantLock();
 
     public Cache() {
@@ -24,16 +23,19 @@ public class Cache {
                 .maximumSize(10000)
                 .expireAfterAccess(30, TimeUnit.MINUTES)
                 .build();
-
     }
 
     public void put(UUID uuid, Map<String, Double> balances) {
         lock.lock();
         try {
-            if (!(balances instanceof ConcurrentHashMap)) {
-                balances = new ConcurrentHashMap<>(balances);
+            ConcurrentHashMap<String, Double> roundedBalances = new ConcurrentHashMap<>();
+            if (balances != null) {
+                for (Map.Entry<String, Double> entry : balances.entrySet()) {
+                    double roundedValue = SimpleEconomy.getInstance().getDoubleUtils().round(entry.getValue());
+                    roundedBalances.put(entry.getKey(), roundedValue);
+                }
             }
-            cache.put(uuid, balances);
+            cache.put(uuid, roundedBalances);
             dirtyPlayers.add(uuid);
         } finally {
             lock.unlock();
@@ -56,9 +58,10 @@ public class Cache {
     public void updateCurrency(UUID uuid, String currency, double amount) {
         lock.lock();
         try {
+            double rounded = SimpleEconomy.getInstance().getDoubleUtils().round(amount);
             Map<String, Double> balances = cache.getIfPresent(uuid);
             if (balances != null) {
-                balances.put(currency, amount);
+                balances.put(currency, rounded);
                 dirtyPlayers.add(uuid);
             }
         } finally {

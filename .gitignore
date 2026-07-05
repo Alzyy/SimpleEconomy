@@ -6,4 +6,4 @@ bin/
 gradle/
 bin
 build/
-gradle.properties
+plugin/gradle.properties

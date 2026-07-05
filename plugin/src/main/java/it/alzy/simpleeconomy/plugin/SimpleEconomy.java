@@ -28,6 +28,7 @@ import it.alzy.simpleeconomy.plugin.utils.*;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 public class SimpleEconomy extends JavaPlugin {
 
@@ -84,6 +84,9 @@ public class SimpleEconomy extends JavaPlugin {
     @Getter
     private boolean isPaper;
 
+    @Getter
+    private DoubleUtils doubleUtils;
+
     @Override
     public void onEnable() {
         instance = this;
@@ -105,7 +108,7 @@ public class SimpleEconomy extends JavaPlugin {
 
         try {
             loadConfigurations();
-
+            
             if (!validateInitialConfig()) {
                 disableSelf();
                 return;
@@ -116,6 +119,7 @@ public class SimpleEconomy extends JavaPlugin {
             initializeFeatures();
             moduleManager = new ModuleManager(this);
             moduleManager.loadModules();
+
 
         } catch (Exception e) {
             getLogger().severe("An error occurred during instance initialization: " + e.getMessage());
@@ -212,6 +216,8 @@ public class SimpleEconomy extends JavaPlugin {
             updateUtils.checkForUpdates();
             new CheckUpdateTask(this).register();
         }
+
+        doubleUtils = new DoubleUtils();
     }
 
     private boolean isClassPresent() {
@@ -280,6 +286,11 @@ public class SimpleEconomy extends JavaPlugin {
 
         if (SettingsConfig.getInstance().isAutoPurgeEnabled()) {
             new AutoPurgeTask(this).register();
+        }
+        if(SettingsConfig.getInstance().enableMetrics()) {
+            int pluginID = 31999;
+            Metrics metrics = new Metrics(this, pluginID);
+            getLogger().info("Metrics enabled! Thanks for supporting the project.");
         }
         loadApis();
         currencyManager = new CurrencyManager();

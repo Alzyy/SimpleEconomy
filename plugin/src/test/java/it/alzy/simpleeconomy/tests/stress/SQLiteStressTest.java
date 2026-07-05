@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bukkit.plugin.java.JavaPlugin;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +18,7 @@ import org.mockbukkit.mockbukkit.MockBukkit;
 
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.storage.impl.SQLiteStorage;
+import it.alzy.simpleeconomy.plugin.utils.DoubleUtils;
 
 public class SQLiteStressTest {
     private SimpleEconomy plugin;
@@ -32,16 +32,24 @@ public class SQLiteStressTest {
     void setUp() throws Exception {
         MockBukkit.mock();
         plugin = MockBukkit.load(SimpleEconomy.class);
-        Field dataFolderField = JavaPlugin.class.getDeclaredField("dataFolder");
-        dataFolderField.setAccessible(true);
-        dataFolderField.set(plugin, tempDir.toFile());
+
+        try {
+            Field instanceField = SimpleEconomy.class.getDeclaredField("instance");
+            instanceField.setAccessible(true);
+            instanceField.set(null, plugin);
+        } catch (NoSuchFieldException e) {
+        }
+
+        Field doubleUtilsField = SimpleEconomy.class.getDeclaredField("doubleUtils");
+        doubleUtilsField.setAccessible(true);
+        doubleUtilsField.set(plugin, new DoubleUtils());
 
         sqlite = new SQLiteStorage(plugin);
-        sqlite.init();
-
         Field storageField = SimpleEconomy.class.getDeclaredField("storage");
         storageField.setAccessible(true);
         storageField.set(plugin, sqlite);
+        sqlite.init();
+
     }
 
     @AfterEach

@@ -2,6 +2,7 @@ package it.alzy.simpleeconomy.tests.events;
 
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.configurations.SettingsConfig;
+import it.alzy.simpleeconomy.plugin.utils.DoubleUtils;
 import it.alzy.simpleeconomy.tests.MockStorage;
 import org.junit.jupiter.api.*;
 import org.mockbukkit.mockbukkit.MockBukkit;
@@ -25,6 +26,9 @@ public class PlayerJoinTest {
         Field storageField = SimpleEconomy.class.getDeclaredField("storage");
         storageField.setAccessible(true);
         storageField.set(plugin, new MockStorage());
+        Field doubleUtilsField = SimpleEconomy.class.getDeclaredField("doubleUtils");
+        doubleUtilsField.setAccessible(true);
+        doubleUtilsField.set(plugin, new DoubleUtils());
 
         server.getScheduler().performOneTick();
     }

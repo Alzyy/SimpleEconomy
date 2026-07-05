@@ -3,6 +3,7 @@ package it.alzy.simpleeconomy.tests.currency;
 import it.alzy.simpleeconomy.plugin.SimpleEconomy;
 import it.alzy.simpleeconomy.plugin.managers.CurrencyManager;
 import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
+import it.alzy.simpleeconomy.plugin.utils.DoubleUtils;
 import it.alzy.simpleeconomy.tests.MockStorage;
 import org.junit.jupiter.api.*;
 import org.mockbukkit.mockbukkit.MockBukkit;
@@ -23,6 +24,13 @@ public class VirtualCurrencyTest {
         ServerMock server = MockBukkit.mock();
         plugin = MockBukkit.load(SimpleEconomy.class);
 
+        try {
+            Field instanceField = SimpleEconomy.class.getDeclaredField("instance");
+            instanceField.setAccessible(true);
+            instanceField.set(null, plugin);
+        } catch (NoSuchFieldException e) {
+        }
+
         Field storageField = SimpleEconomy.class.getDeclaredField("storage");
         storageField.setAccessible(true);
         storageField.set(plugin, new MockStorage());
@@ -30,6 +38,10 @@ public class VirtualCurrencyTest {
         Field managerField = SimpleEconomy.class.getDeclaredField("currencyManager");
         managerField.setAccessible(true);
         managerField.set(plugin, new CurrencyManager());
+
+        Field doubleUtilsField = SimpleEconomy.class.getDeclaredField("doubleUtils");
+        doubleUtilsField.setAccessible(true);
+        doubleUtilsField.set(plugin, new DoubleUtils());
         
         server.getScheduler().performOneTick();
     }
@@ -72,5 +84,4 @@ public class VirtualCurrencyTest {
         VirtualCurrency currency = new VirtualCurrency("Crystal Coins", "CC");
         assertEquals("crystal_coins", currency.getColumnOrKey(), "Currency keys should be normalized to snake_case");
     }
-
 }

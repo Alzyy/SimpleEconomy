@@ -240,6 +240,14 @@ public class SettingsConfig extends LightConfig {
         return Map.of("title", "Log", "description", "No template", "color", "#FFFFFF");
     }
 
+    public boolean enableMetrics() {
+        return this.fileConfiguration.getBoolean("settings.enable-metrics", true);
+    }
+
+    public int getDecimalPlaces() {
+        return this.fileConfiguration.getInt("settings.decimal-places", 2);
+    }
+
     public void checkMissingKeys() {
         InputStream resourceStream = SimpleEconomy.getInstance().getResource("config.yml");
         if (resourceStream != null) {
