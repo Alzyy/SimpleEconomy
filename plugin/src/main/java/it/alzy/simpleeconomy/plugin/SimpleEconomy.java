@@ -2,6 +2,8 @@ package it.alzy.simpleeconomy.plugin;
 
 import co.aikar.commands.InvalidCommandArgument;
 import co.aikar.commands.PaperCommandManager;
+import it.alzy.simpleeconomy.api.EconomyCore;
+import it.alzy.simpleeconomy.api.EconomyModule;
 import it.alzy.simpleeconomy.api.SimpleEconomyAPI;
 import it.alzy.simpleeconomy.plugin.api.PAPIExpansion;
 import it.alzy.simpleeconomy.plugin.api.internal.EconomyProviderImpl;
@@ -16,6 +18,7 @@ import it.alzy.simpleeconomy.plugin.logging.TransactionLogger;
 import it.alzy.simpleeconomy.plugin.logging.WebhookLogger;
 import it.alzy.simpleeconomy.plugin.managers.CurrencyManager;
 import it.alzy.simpleeconomy.plugin.managers.ModuleManager;
+import it.alzy.simpleeconomy.plugin.model.LoadedModule;
 import it.alzy.simpleeconomy.plugin.model.VirtualCurrency;
 import it.alzy.simpleeconomy.plugin.records.DatabaseInfo;
 import it.alzy.simpleeconomy.plugin.storage.Cache;
@@ -39,8 +42,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
-public class SimpleEconomy extends JavaPlugin {
+public class SimpleEconomy extends JavaPlugin implements EconomyCore {
 
     @Getter
     private static SimpleEconomy instance;
@@ -108,7 +112,7 @@ public class SimpleEconomy extends JavaPlugin {
 
         try {
             loadConfigurations();
-            
+
             if (!validateInitialConfig()) {
                 disableSelf();
                 return;
@@ -268,8 +272,7 @@ public class SimpleEconomy extends JavaPlugin {
         }
         if (SettingsConfig.getInstance().registerPlaceholderAPI()) {
             if (getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) {
-                getLogger().warning(
-                        "PlaceholderAPI not detected, but 'use-placeholderapi' is enabled. Please install PlaceholderAPI or disable this option.");
+                getLogger().warning("PlaceholderAPI not detected, but 'use-placeholderapi' is enabled. Please install PlaceholderAPI or disable this option.");
             } else {
                 new PAPIExpansion().register();
             }
@@ -384,5 +387,23 @@ public class SimpleEconomy extends JavaPlugin {
         SettingsConfig.getInstance().checkMissingKeys();
         CurrenciesConfig.getInstance().registerLightConfig(this);
     }
+
+
+    @Override
+    public Logger getCoreLogger() {
+        return super.getLogger();
+    }
+
+    @Override
+    public File getCoreDataFolder() {
+        return super.getDataFolder();
+    }
+
+    @Override
+	public EconomyModule getModule(String name) {
+	    LoadedModule loaded = moduleManager.getModule(name);
+		return loaded != null ? loaded.getInstance() : null;
+	}
+
 
 }

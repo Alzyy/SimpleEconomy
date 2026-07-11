@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'io.github.alzyy'
-version = '1.0.1'
+version = '1.0.2'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -59,8 +59,8 @@ publishing {
                 url.set('https://github.com/alzyy/SimpleEconomy')
                 licenses {
                     license {
-                        name.set('MIT License')
-                        url.set('https://opensource.org/licenses/MIT')
+                        name.set('GPL-3.0 License')
+                        url.set('https://opensource.org/license/gpl-3.0')
                     }
                 }
                 developers {
@@ -82,7 +82,7 @@ publishing {
 
 signing {
     required { project.gradle.taskGraph.hasTask(":api:buildBundle") || project.gradle.taskGraph.hasTask("buildBundle") }
-    
+
     def pgpSigningKeyBase64 = System.getenv("GPG_SIGNING_KEY_BASE64") ?: project.findProperty("signing.secretKey")
     def pgpPassword = System.getenv("GPG_PASSPHRASE") ?: project.findProperty("signing.password")
     def pgpKeyId = "01AD5A0D"
@@ -90,28 +90,35 @@ signing {
     if (pgpSigningKeyBase64 && pgpPassword) {
         def cleanBase64 = pgpSigningKeyBase64.toString().replaceAll("\\s", "")
         byte[] decryptedKey = Base64.getDecoder().decode(cleanBase64)
-        
+
         useInMemoryPgpKeys(pgpKeyId, new String(decryptedKey, java.nio.charset.StandardCharsets.UTF_8), pgpPassword.toString())
     } else {
         useInMemoryPgpKeys(pgpKeyId, "", "")
     }
-    
+
     sign publishing.publications.mavenJava
 }
 
 tasks.register('generateChecksums') {
     dependsOn tasks.build, tasks.named('signMavenJavaPublication')
 
+    def targetDir = layout.buildDirectory
+    def currentVersion = version.toString()
+
     doLast {
+        def buildDirFile = targetDir.get().asFile
+        def libsDir = new File(buildDirFile, "libs")
+        def pubDir = new File(buildDirFile, "publications/mavenJava")
+
         def filesToHash = [
-                file("$buildDir/libs/simpleeconomy-api-${version}.jar"),
-                file("$buildDir/libs/simpleeconomy-api-${version}.jar.asc"),
-                file("$buildDir/libs/simpleeconomy-api-${version}-sources.jar"),
-                file("$buildDir/libs/simpleeconomy-api-${version}-sources.jar.asc"),
-                file("$buildDir/libs/simpleeconomy-api-${version}-javadoc.jar"),
-                file("$buildDir/libs/simpleeconomy-api-${version}-javadoc.jar.asc"),
-                file("$buildDir/publications/mavenJava/pom-default.xml"),
-                file("$buildDir/publications/mavenJava/pom-default.xml.asc")
+                new File(libsDir, "simpleeconomy-api-${currentVersion}.jar"),
+                new File(libsDir, "simpleeconomy-api-${currentVersion}.jar.asc"),
+                new File(libsDir, "simpleeconomy-api-${currentVersion}-sources.jar"),
+                new File(libsDir, "simpleeconomy-api-${currentVersion}-sources.jar.asc"),
+                new File(libsDir, "simpleeconomy-api-${currentVersion}-javadoc.jar"),
+                new File(libsDir, "simpleeconomy-api-${currentVersion}-javadoc.jar.asc"),
+                new File(pubDir, "pom-default.xml"),
+                new File(pubDir, "pom-default.xml.asc")
         ]
 
         filesToHash.each { f ->
@@ -131,16 +138,17 @@ tasks.register('generateChecksums') {
 tasks.register('buildBundle', Zip) {
     group = 'build'
     description = 'Create a ZIP ready for Maven Central upload'
-    
+
     dependsOn tasks.build, tasks.named('signMavenJavaPublication'), tasks.generateChecksums
 
     archiveBaseName.set('simpleeconomy-api')
     archiveVersion.set(version)
-    destinationDirectory.set(file("$buildDir/bundle"))
+
+    destinationDirectory.set(layout.buildDirectory.dir("bundle"))
 
     def mavenPath = "io/github/alzyy/simpleeconomy-api/${version}"
 
-    from("$buildDir/libs") {
+    from(layout.buildDirectory.dir("libs")) {
         include "simpleeconomy-api-${version}.jar"
         include "simpleeconomy-api-${version}.jar.asc"
         include "simpleeconomy-api-${version}.jar.md5"
@@ -156,13 +164,13 @@ tasks.register('buildBundle', Zip) {
         into mavenPath
     }
 
-    from("$buildDir/publications/mavenJava") {
+    from(layout.buildDirectory.dir("publications/mavenJava")) {
         include "pom-default.xml"
         include "pom-default.xml.asc"
-        
+
         include "pom-default.xml.md5"
         include "pom-default.xml.sha1"
-        
+
         into mavenPath
         rename 'pom-default.xml', "simpleeconomy-api-${version}.pom"
         rename 'pom-default.xml.asc', "simpleeconomy-api-${version}.pom.asc"

@@ -1,7 +1,6 @@
-
 allprojects {
     group = 'it.alzy.simpleeconomy'
-    version = '3.4'
+    version = '3.6'
 
     repositories {
         mavenCentral()
@@ -9,7 +8,6 @@ allprojects {
         maven { url = 'https://jitpack.io' }
         maven { url = 'https://repo.aikar.co/content/groups/aikar/' }
         maven { url = 'https://repo.extendedclip.com/releases/' }
-        
     }
 }
 

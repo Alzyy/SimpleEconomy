@@ -62,4 +62,13 @@ public class SimpleEconomyAPI {
         }
         provider = economyProvider;
     }
+
+    /**
+     * Returns whether an economy provider has been set.
+     *
+     * @return {@code true} if the provider is set, {@code false} otherwise
+     */
+    public static boolean isProviderSet() {
+        return provider != null;
+    }
 }

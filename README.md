@@ -10,7 +10,7 @@
 ![Paper](https://img.shields.io/badge/Paper-Compatible-blue)
 ![Java](https://img.shields.io/badge/Java-21-red)
 ![Vault](https://img.shields.io/badge/Vault-Supported-green)
-![License](https://img.shields.io/badge/License-MIT-lightgrey)
+![License](https://img.shields.io/badge/License-GPL3-lightgrey)
 
 </div>
 

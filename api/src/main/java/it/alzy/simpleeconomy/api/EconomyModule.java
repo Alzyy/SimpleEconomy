@@ -8,12 +8,12 @@ import java.io.File;
 public interface EconomyModule {
 
     /**
-     * Initializes the module with the core plugin instance and a data folder.
+     * Initializes the module with the plugin's core services and a data folder.
      *
-     * @param core the core plugin instance (implementation-specific type)
+     * @param core the plugin's core services, exposed via {@link EconomyCore}
      * @param moduleFolder the module's data folder
      */
-    void onEnable(Object core, File moduleFolder);
+    void onEnable(EconomyCore core, File moduleFolder);
 
     /**
      * Shuts down the module and releases resources.
